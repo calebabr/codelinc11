@@ -179,18 +179,30 @@ export function answer(message: string, userId: string, profileId: string): Chat
     case "wait": {
       // G3 (now) vs G4 (fresh year) — the signature "wait until January" answer.
       tools.push({ name: "find_procedure", status: "done" })
-      const crown = findProcedure("crown")!
+      // Use the procedure named in the question; fall back to a crown.
+      const waitProc = findProcedure(message) ?? findProcedure("crown")!
       tools.push({ name: "estimate_cost", status: "done" })
-      const now = estimate(crown, plan, profile.usage, intent.inNetwork)
-      const fresh = estimate(crown, plan, { ...profile.usage, maxUsed: 0, deductibleMet: 0 }, intent.inNetwork)
+      const now = estimate(waitProc, plan, profile.usage, intent.inNetwork)
+      const fresh = estimate(
+        waitProc,
+        plan,
+        { ...profile.usage, maxUsed: 0, deductibleMet: 0 },
+        intent.inNetwork,
+      )
       const diff = now.youPay - fresh.youPay
+      const maxLeft = plan.annualMax - profile.usage.maxUsed
+      // Describe *this* user's situation accurately rather than assuming it.
+      const nowNote =
+        profile.usage.maxUsed > 0
+          ? ` (you have ${money(maxLeft)} of your annual max left this year)`
+          : " (your annual max is still full this year)"
       const text =
-        `Good question, ${firstName}. For your **crown**:\n\n` +
-        `• **Now:** you pay ${money(now.youPay)} (you've used most of this year's max).\n` +
+        `Good question, ${firstName}. For your **${waitProc.name.toLowerCase()}**:\n\n` +
+        `• **Now:** you pay ${money(now.youPay)}${nowNote}.\n` +
         `• **In January (new plan year):** you pay ${money(fresh.youPay)}.\n\n` +
         (diff > 0
           ? `Waiting until January saves you **${money(diff)}**. If it's not urgent, that's the cheaper path.`
-          : `There's no savings from waiting in your case.`) +
+          : `In your case there's no savings from waiting — the cost is the same either way, so no need to delay.`) +
         `\n\n(If a dentist says it's urgent, don't wait — get care first.)`
       return {
         text: withDisclaimer(text),
