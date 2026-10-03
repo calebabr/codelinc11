@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, type FormEvent } from "react"
-import { FileText, Loader2, Paperclip, Send, X } from "lucide-react"
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
+import { FileText, Loader2, Mic, Paperclip, Send, X } from "lucide-react"
+import { useSpeechRecognition } from "@/lib/useSpeechRecognition"
 import { MAX_PDF_BYTES } from "@/lib/api/assistant"
 import { Disclaimer } from "@/components/Disclaimer"
 import { useChat, useSuggestions } from "./useAssistant"
@@ -92,6 +93,20 @@ export function AssistantChat({
   const fileRef = useRef<HTMLInputElement>(null)
   const endRef = useRef<HTMLLIElement>(null)
 
+  // Voice input (Wrigley): dictated words are appended to whatever is already typed.
+  const baseTextRef = useRef("")
+  const onTranscript = useCallback((spoken: string, isFinal: boolean) => {
+    const base = baseTextRef.current
+    const combined = base ? `${base} ${spoken}` : spoken
+    setText(combined)
+    if (isFinal) baseTextRef.current = combined
+  }, [])
+  const speech = useSpeechRecognition({ onTranscript })
+  const toggleVoice = () => {
+    if (!speech.listening) baseTextRef.current = text.trim()
+    speech.toggle()
+  }
+
   useEffect(() => setText(""), [memberId])
   useEffect(() => {
     endRef.current?.scrollIntoView?.({ block: "end" })
@@ -99,7 +114,9 @@ export function AssistantChat({
 
   const submit = (q: string) => {
     if (!q.trim() || busy) return
+    if (speech.listening) speech.stop()
     setText("")
+    baseTextRef.current = ""
     void send(q).then(() => onSent?.())
   }
   const onForm = (e: FormEvent) => {
@@ -179,6 +196,11 @@ export function AssistantChat({
           </div>
         )}
 
+        {speech.error && (
+          <p role="alert" className="mb-2 text-xs text-[var(--warn-ink)]">
+            {speech.error}
+          </p>
+        )}
         <form onSubmit={onForm} className="flex items-end gap-2">
           <input
             ref={fileRef}
@@ -207,10 +229,23 @@ export function AssistantChat({
             <input
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder={`Ask about ${memberName}'s plan`}
+              placeholder={speech.listening ? "Listening…" : `Ask about ${memberName}'s plan`}
               className="h-11 w-full rounded-full border border-line bg-white px-4 text-sm"
             />
           </label>
+          {speech.supported && (
+            <button
+              type="button"
+              className={`btn shrink-0 !px-3 ${speech.listening ? "btn-orange" : "btn-outline"}`}
+              aria-label={speech.listening ? "Stop voice input" : "Start voice input"}
+              aria-pressed={speech.listening}
+              title={speech.listening ? "Stop voice input" : "Speak your question"}
+              onClick={toggleVoice}
+              disabled={busy}
+            >
+              <Mic className="size-4" aria-hidden />
+            </button>
+          )}
           <button type="submit" className="btn btn-orange shrink-0 !px-4" disabled={busy || !text.trim()} aria-label="Send">
             <Send className="size-4" aria-hidden />
           </button>
