@@ -1,13 +1,12 @@
 # BACKEND.md: Backend People and Agents
 
-Read [FEATURES.md](FEATURES.md) first. That file says **what** to build; this one says **how** the backend gets built and who does what. The backend has four workstreams with separate folders, so they can run in parallel without conflicts:
+Read [FEATURES.md](FEATURES.md) first. That file says **what** to build; this one says **how** the backend gets built and who does what. The backend has three workstreams with separate folders, so they can run in parallel without conflicts:
 
 | Workstream | Human reviewer | AI agent (writes code + tests) | Folders |
 |---|---|---|---|
-| **A. API & integration** | CS1 (merge captain) | Claude Code + sub-agents | `backend/app/main.py`, `models.py`, `extract.py`, `backend/fixtures/`, `backend/tests/test_api.py`, `.github/`, root config, `docs/ARCHITECTURE.md` |
-| **B. Math engine** | M (applied math) | Kiro (spec mode) | `backend/app/engine/`, `backend/tests/test_engine*.py`, `docs/MATH.md`, `.kiro/` |
-| **C. AI / RAG** | CS2 | Claude Code + sub-agents | `backend/app/agent/`, `backend/app/rag/`, `backend/tests/test_agent*.py`, `backend/tests/test_rag_eval.py`, `docs/AI.md` |
-| **D. Data, QA & pitch** | CS4 | IBM Bob | `backend/data/`, `backend/tests/test_extra_*.py`, `README.md`, `docs/pitch/` |
+| **A. API & integration** | BE (merge captain) | Claude Code + sub-agents | `backend/app/main.py`, `models.py`, `extract.py`, `backend/fixtures/`, `backend/tests/test_api.py`, `.github/`, root config, `docs/ARCHITECTURE.md` |
+| **B. Math engine + data** | M (applied math) | Kiro (spec mode) | `backend/app/engine/`, `backend/tests/test_engine*.py`, `backend/data/`, `docs/MATH.md`, `.kiro/` |
+| **C. AI / RAG** | FLEX (flex teammate) | Claude Code + sub-agents | `backend/app/agent/`, `backend/app/rag/`, `backend/tests/test_agent*.py`, `backend/tests/test_rag_eval.py`, `docs/AI.md` |
 
 **Agents write the code, tests and docs. Humans direct, check and approve.** Each "human" section below is a checklist of what to tell the agent and what to verify before approving.
 
@@ -15,7 +14,7 @@ Read [FEATURES.md](FEATURES.md) first. That file says **what** to build; this on
 
 ---
 
-## 1. Shared backend setup (CS1's agent, first 45 minutes)
+## 1. Shared backend setup (BE's agent, first 45 minutes)
 
 ```bash
 cd backend && python -m venv .venv
@@ -53,13 +52,14 @@ backend/
 
 ---
 
-## 2. Workstream A: API & integration (CS1 + Claude Code)
+## 2. Workstream A: API & integration (BE + Claude Code)
 
-### CS1 (human): integration reviewer + merge captain
-- **Directs:** tells the API agent which endpoint to build next (order below), approves every change to the API contract (`models.py`) before it's merged, and announces it in `#contract` so CS3's agent reruns `npm run gen:api`.
-- **Checks before merging any PR (from any workstream):** CI is green; the agent's report lists the tests it ran; the change stays in that workstream's folders; for endpoint PRs, CS1 opens `/docs`, sends the G3 request, and sees `you_pay: 800`.
+### BE (human): integration reviewer + merge captain
+Git process for the whole team: [GIT-WORKFLOW.md](GIT-WORKFLOW.md). BE and FLEX set up the repo, branch protection and CI in the first 40 minutes.
+- **Directs:** tells the API agent which endpoint to build next (order below), approves every change to the API contract (`models.py`) before it's merged, and announces it in `#contract` so FE's agent reruns `npm run gen:api`.
+- **Checks before merging any PR (from any workstream):** CI is green; the agent's report lists the tests it ran; the change stays in that workstream's folders; for endpoint PRs, BE opens `/docs`, sends the G3 request, and sees `you_pay: 800`.
 - **Runs the integration checkpoints** (6:30 PM, 10:00 PM, 2:00 AM, 5:00 AM): pulls `main`, clicks through the app with the team.
-- Fills gaps: if a workstream falls behind, CS1 points their own agent at the problem.
+- Fills gaps: if a workstream falls behind, BE points their own agent at the problem.
 
 ### API agent (Claude Code)
 - **Job:** routes, Pydantic models, stub fixtures, PDF extraction endpoint, `.ics` endpoint, CI, deployment config.
@@ -70,10 +70,10 @@ backend/
 1. **By 2:30 PM:** `models.py` with every request/response model from FEATURES.md; **every endpoint returns stub JSON** from `fixtures/` (stub values = golden numbers, so stubs and real results match). CORS enabled. CI running.
 2. **By 6:30 PM:** `/plans`, `/procedures`, `/estimate` wired to the real engine (as soon as M's `estimate()` passes G1–G6).
 3. **By 10:00 PM:** `/schedule` wired to the real engine.
-4. **By 2:00 AM:** `/benefits-status`, `/reminders.ics`, `/chat` (SSE, wraps CS2's agent loop).
+4. **By 2:00 AM:** `/benefits-status`, `/reminders.ics`, `/chat` (SSE, wraps FLEX's agent loop).
 5. **2:00–5:00 AM:** `/plans/extract` (F6) or `/simulate` (F7). Deploy the backend (Render, Railway or Fly.io) **and** keep a local backup ready.
 
-**SSE events for `/chat`** (agreed with CS2 and CS3): `tool_start {name}`, `tool_end {name}`, `token {text}`, `done {}`, `error {message}`.
+**SSE events for `/chat`** (agreed with FLEX and FE): `tool_start {name}`, `tool_end {name}`, `token {text}`, `done {}`, `error {message}`.
 
 ### Sub-agent team
 | Sub-agent | Job |
@@ -83,7 +83,7 @@ backend/
 | **DevOps** | GitHub Actions (`ruff`, `pytest`, and the frontend's `typecheck`/`build`/`test`), Dockerfile or Render config, `.env.example` |
 | **Docs writer** | `backend/README.md` (setup, run, test) and `docs/ARCHITECTURE.md` (the diagram from the deep dive, kept up to date) |
 
-### `backend/CLAUDE.md` (shared by CS1's and CS2's agents)
+### `backend/CLAUDE.md` (shared by BE's and FLEX's agents)
 ```markdown
 # Backend rules
 @../docs/CONVENTIONS.md
@@ -118,7 +118,7 @@ M writes almost no code. M's value is **knowing what the right answer is**.
 - **Pure functions only:** no web code, no LLM calls, no file access except reading `data/`. Input in, result + trace out.
 - **Not allowed:** changing a golden expected value to make a test pass (stop and tell M instead), or editing anything outside its folders.
 - Set up a Kiro **steering file** (`.kiro/steering/engine.md`) containing the rules above and a pointer to `docs/CONVENTIONS.md` and `docs/FEATURES.md`.
-- **Credits:** spend them on spec + implementation of `estimate`, `annual`, `sequencer`. If Kiro credits run out, a Claude Code seat (usually CS1's) takes over engine tasks using the same spec files in `.kiro/specs/`. M still reviews.
+- **Credits:** spend them on spec + implementation of `estimate`, `annual`, `sequencer`. If Kiro credits run out, a Claude Code seat (usually BE's) takes over engine tasks using the same spec files in `.kiro/specs/`. M still reviews.
 
 ### Specs, in order
 | Spec | Functions | Must pass | Due |
@@ -139,13 +139,13 @@ M writes almost no code. M's value is **knowing what the right answer is**.
 
 ---
 
-## 4. Workstream C: AI / RAG (CS2 + Claude Code)
+## 4. Workstream C: AI / RAG (FLEX + Claude Code)
 
-### CS2 (human): AI behavior reviewer
+### FLEX (human): AI behavior reviewer
 - **Directs:** decides how the AI should sound and behave (tone, safety wording, when to ask a follow-up), and describes it to the agent, which writes the prompts.
 - **Approves the evaluation sets** the agent drafts (25 lay phrases → codes; 10 chat questions → expected numbers). Adds tricky cases the agent didn't think of.
 - **Checks before approving:** reads 5–10 real answers from the chat at each checkpoint (tests can't judge tone); confirms the retrieval score in `docs/AI.md` is ≥ 90%; confirms the number guard catches a made-up dollar amount.
-- Agrees the tool list with M (which engine functions exist) and the SSE events with CS1 and CS3.
+- Agrees the tool list with M (which engine functions exist) and the SSE events with BE and FE.
 
 ### AI agent (Claude Code)
 - **Job:** procedure search index, plan-doc index, tool definitions wrapping the engine, the tool-calling loop, prompts, the number guard, the extraction prompt (F6).
@@ -173,23 +173,20 @@ M writes almost no code. M's value is **knowing what the right answer is**.
 
 ---
 
-## 5. Workstream D: Data, QA & pitch (CS4 + IBM Bob)
+## 5. Data, QA, README and pitch (spread across the team)
 
-### CS4 (human): data + demo reviewer
-- **Gathers the facts** (the one job that needs a human, because the sources are websites and a video): real plan values from the reference site and the enrollment video, and FAIR Health fees (50th and 80th percentile) for ZIP 27401 for ~30 procedures. Puts them in a simple spreadsheet; Bob turns it into JSON and drafts the synonyms, and CS4 checks them.
-- **The moment real values are in,** tells M, who updates the golden numbers in FEATURES.md §2 (and the tests) **before** anyone else changes anything.
-- **QA:** tests the app as a user at every checkpoint and files bugs on the task board.
-- **Pitch:** demo script, slides, backup video. Owns the README.
-- When the data is done (about 5 PM), **pairs with M** on the engine or makes the Figma style tile (FRONTEND.md §9).
+There is no separate "data person" any more. These jobs have owners:
 
-### Data/QA agent (IBM Bob)
-- **Ask mode:** explain plan rules, check that each CDT code's category matches the plan's definitions, sanity-check FAIR Health numbers.
-- **Agent mode:**
-  - scripts in `backend/data/scripts/` that turn CS4's spreadsheet or notes into `cdt_codes.json`, `fees_27401.json` and `plans/*.json`, with a validation script (every code has a category, a fee and at least 3 synonyms)
-  - extra tests (`test_extra_*.py`): data integrity, every plan file loads into the `Plan` model
-  - `README.md`: what it is, screenshots, how to run, architecture, team
-- **Reviewer:** reviews open PRs for bugs and missing tests. A second AI catches different mistakes than the one that wrote the code.
-- **Credits:** Bob's trial has 50 coins. Use them for the data scripts, the README and 3–4 important PR reviews.
+| Job | Owner | How |
+|---|---|---|
+| **Gather real plan facts** (plan values from the reference site and the enrollment video; FAIR Health 50th/80th percentile fees for ZIP 27401 for ~30 procedures) | **M** | M collects them into a simple spreadsheet. M's Kiro agent (vibe mode, small task) converts it to `cdt_codes.json`, `fees_27401.json`, `plans/*.json` with a validation script: every code has a category, a fee and at least 3 synonyms. M then updates the golden numbers in FEATURES.md §2 **before** anyone else changes anything. |
+| **Plan-document text for RAG** (benefits booklet sections as markdown in `backend/data/plan_docs/`) | **M** gathers, **FLEX's** agent indexes | |
+| **Data integrity tests** (every plan file loads into the `Plan` model; every code has a fee) | **M's** Kiro agent | `backend/tests/test_engine_data.py` |
+| **QA: use the app like a user** at every checkpoint, file bugs on the task board | **Everyone** at checkpoints; **FLEX** runs the full pass at 2:00 AM and 5:00 AM when the AI work is stable | Use the three demo flows from FEATURES.md §3 |
+| **README, pitch, demo script, slides, backup video** | **DES** | With **IBM Bob** drafting README and script text from the docs; DES edits and designs. See [FRONTEND.md §1](FRONTEND.md) |
+| **PR reviews by a second AI** | **DES's Bob** (optional) | Ask Bob to review 3–4 important PRs (engine, contract, agent). A second AI catches different mistakes. Bob's trial has 50 coins, so use them selectively. |
+
+**Gap filling:** FLEX is the flexible teammate. When the AI work is on track, FLEX asks at the stand-up which workstream is behind and points their agent at it. If M's Kiro credits run out, FLEX's Claude Code seat takes over engine tasks from the spec files in `.kiro/specs/`, and M still reviews.
 
 ---
 
@@ -199,12 +196,12 @@ Each person's **docs-writer sub-agent** keeps these current. Judges ask "how did
 
 | File | Owner | Contents |
 |---|---|---|
-| `README.md` | CS4 | Pitch, screenshots, quick start, team |
-| `docs/ARCHITECTURE.md` | CS1 | Diagram, request flow, folder map |
+| `README.md` | DES (Bob drafts) | Pitch, screenshots, quick start, team |
+| `docs/ARCHITECTURE.md` | BE | Diagram, request flow, folder map |
 | `docs/MATH.md` | M | Formulas, worked examples, sequencer and Monte Carlo explained |
-| `docs/AI.md` | CS2 | Tools, prompts, number guard, evaluation scores |
-| `/docs` (auto-generated by FastAPI) | CS1 | Interactive API reference |
-| `frontend/README.md` | CS3 | Setup, scripts, component map |
+| `docs/AI.md` | FLEX | Tools, prompts, number guard, evaluation scores |
+| `/docs` (auto-generated by FastAPI) | BE | Interactive API reference |
+| `frontend/README.md` | FE | Setup, scripts, component map |
 | `.kiro/specs/` | M | Requirements → design → tasks for the engine |
 
 ---
@@ -215,6 +212,6 @@ Each person's **docs-writer sub-agent** keeps these current. Judges ask "how did
 - [ ] Tests added; `pytest -q` and `ruff check .` pass
 - [ ] Golden tests still pass (expected values never changed without M's approval)
 - [ ] The agent's report says what the human should check, and the human checked it
-- [ ] If the API shape changed: CS1 approved it and announced it in `#contract`
+- [ ] If the API shape changed: BE approved it and announced it in `#contract`
 - [ ] Docs updated if behavior changed
-- [ ] PR opened, reviewed by a person (plus Bob if credits allow), merged by CS1
+- [ ] PR opened, reviewed by a person (plus Bob if credits allow), merged by BE
