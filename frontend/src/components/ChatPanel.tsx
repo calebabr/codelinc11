@@ -53,24 +53,35 @@ function renderText(text: string) {
   })
 }
 
+function introMessage(name: string): ChatMessage {
+  return {
+    id: "intro",
+    role: "assistant",
+    text: `Hi ${name.split(" ")[0]}! I already know your plan and history. Ask me anything about your coverage.`,
+  }
+}
+
 export function ChatPanel() {
   const { userId, activeProfile, learn } = useUser()
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  // One conversation thread per profile, so switching profiles never wipes a
+  // chat — each person keeps their own ongoing conversation.
+  const [threads, setThreads] = useState<Record<string, ChatMessage[]>>({})
   const [input, setInput] = useState("")
   const [busy, setBusy] = useState(false)
   const [liveTools, setLiveTools] = useState<ToolCall[]>([])
   const [streaming, setStreaming] = useState("")
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  // Reset the conversation when the active profile changes — context is per user.
+  const messages = threads[activeProfile.id] ?? [introMessage(activeProfile.name)]
+
+  // Seed an intro the first time we see a profile; never reset existing threads.
   useEffect(() => {
-    setMessages([
-      {
-        id: "intro",
-        role: "assistant",
-        text: `Hi ${activeProfile.name.split(" ")[0]}! I already know your plan and history. Ask me anything about your coverage.`,
-      },
-    ])
+    setThreads((prev) =>
+      prev[activeProfile.id]
+        ? prev
+        : { ...prev, [activeProfile.id]: [introMessage(activeProfile.name)] },
+    )
+    // Clear only the transient in-flight UI, not the saved conversation.
     setStreaming("")
     setLiveTools([])
   }, [activeProfile.id, activeProfile.name])
@@ -79,13 +90,25 @@ export function ChatPanel() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })
   }, [messages, streaming, liveTools])
 
+  function appendToThread(profileId: string, msg: ChatMessage) {
+    setThreads((prev) => ({
+      ...prev,
+      [profileId]: [...(prev[profileId] ?? [introMessage(activeProfile.name)]), msg],
+    }))
+  }
+
+  function clearActiveThread() {
+    setThreads((prev) => ({ ...prev, [activeProfile.id]: [introMessage(activeProfile.name)] }))
+  }
+
   async function send(text: string) {
     const trimmed = text.trim()
     if (!trimmed || busy) return
     setInput("")
     setBusy(true)
+    const pid = activeProfile.id
     const userMsg: ChatMessage = { id: `u${Date.now()}`, role: "user", text: trimmed }
-    setMessages((m) => [...m, userMsg])
+    appendToThread(pid, userMsg)
 
     // Hand the chatbot the user_id + active person; it retrieves the account.
     const result = answer(trimmed, userId, activeProfile.id)
@@ -108,10 +131,12 @@ export function ChatPanel() {
     }
 
     // Commit the finished message and clear the live state.
-    setMessages((m) => [
-      ...m,
-      { id: `a${Date.now()}`, role: "assistant", text: result.text, tools: result.tools },
-    ])
+    appendToThread(pid, {
+      id: `a${Date.now()}`,
+      role: "assistant",
+      text: result.text,
+      tools: result.tools,
+    })
     setStreaming("")
     setLiveTools([])
 
@@ -136,7 +161,7 @@ export function ChatPanel() {
           variant="ghost"
           size="icon-sm"
           className="ml-auto"
-          onClick={() => setMessages((m) => m.slice(0, 1))}
+          onClick={clearActiveThread}
           aria-label="Clear conversation"
         >
           <RotateCcw className="size-4" />
