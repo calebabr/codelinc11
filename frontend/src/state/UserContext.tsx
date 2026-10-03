@@ -6,13 +6,21 @@
 // ACTIVE profile — the same isolation a real backend would enforce by user_id.
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
-import type { AiContext, Profile } from "@/lib/types"
-import { SEED_PROFILES } from "@/lib/seed"
+import type { Account, AiContext, Profile } from "@/lib/types"
+import { SEED_ACCOUNTS, SEED_PROFILES } from "@/lib/seed"
 
 const STORAGE_KEY = "pce.profiles.v1"
 const ACTIVE_KEY = "pce.activeProfile.v1"
 
+// The signed-in user. In a real app this comes from auth; here it's fixed to
+// the seeded account. Every account read is scoped to this id.
+const SEED_ACCOUNT = SEED_ACCOUNTS[0]
+
 interface UserState {
+  // The signed-in account's unique id. The chatbot is handed this to retrieve data.
+  userId: string
+  // The whole account record (subscriber + covered people), kept in sync with profiles.
+  account: Account
   profiles: Profile[]
   activeId: string
   activeProfile: Profile
@@ -53,7 +61,20 @@ export function UserProvider({ children }: { children: ReactNode }) {
     [profiles, activeId],
   )
 
+  const account: Account = useMemo(
+    () => ({ ...SEED_ACCOUNT, members: profiles }),
+    [profiles],
+  )
+
+  // Keep the retrieval source (used by the chatbot via getAccountByUserId) in
+  // sync with the live, possibly-learned/added profiles for this user.
+  useEffect(() => {
+    SEED_ACCOUNT.members = profiles
+  }, [profiles])
+
   const value: UserState = {
+    userId: SEED_ACCOUNT.userId,
+    account,
     profiles,
     activeId: activeProfile.id,
     activeProfile,

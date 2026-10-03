@@ -20,10 +20,23 @@ benefit usage and preferences.
 
 ## The chatbot (feature F5 + "Personalized AI Context")
 
-- **Per-user context.** Each profile is its own record (`src/lib/types.ts` →
-  `Profile.aiContext`) holding plan highlights, previous procedures, previous
-  questions and preferences. The assistant reads only the **active** profile's
-  record — the same isolation a real backend enforces by `user_id`.
+- **Account keyed by `user_id`.** The top-level record is an `Account`
+  (`src/lib/types.ts` → `Account`) holding the subscriber, **plan tier**,
+  **coverage type**, and all **covered people** (dependents). The chatbot is
+  handed the `user_id` and retrieves the account through
+  `getAccountByUserId(userId)` in `src/lib/accountApi.ts` — which returns records
+  for **exactly that id and nothing else** (the data-isolation boundary a real
+  backend enforces with `WHERE user_id = :authenticated_user`). An unknown or
+  empty id returns no data.
+- **Know-your-profile / eligibility.** `eligibilitySummary(account)` gives the
+  snapshot the bot reads: plan tier, coverage type, who's covered, **dental
+  visits used/remaining per person per year**, **major work done this year**, and
+  **per-dependent eligibility** (age limit, full-time-student rule). The Chatbot
+  page shows this as a table; ask *"who's covered on my plan?"* to see it in chat.
+- **Per-user context.** Each covered person is its own record
+  (`Profile.aiContext`) holding plan highlights, previous procedures, previous
+  questions and preferences. The assistant reads only the **active** person's
+  record.
 - **Tool calls + streaming.** Answers show "Calculating…" tool chips
   (`find_procedure`, `estimate_cost`, `get_benefits_status`, …) then stream in
   token by token, mirroring the planned SSE flow.
@@ -52,10 +65,11 @@ src/
 ├── App.tsx                  # nav shell + floating chat drawer
 ├── state/UserContext.tsx    # profiles + active profile, saved to localStorage
 ├── lib/
-│   ├── types.ts             # domain types (Profile, Plan, AiContext, …)
-│   ├── seed.ts              # demo plan, procedures, family profiles
+│   ├── types.ts             # domain types (Account, Profile, Plan, AiContext, …)
+│   ├── seed.ts              # demo plan, procedures, account + covered people
 │   ├── mockApi.ts           # THE money engine (golden numbers G1–G6, S2)
-│   ├── chat.ts              # the personalized assistant "agent"
+│   ├── accountApi.ts        # getAccountByUserId (isolation) + eligibility engine
+│   ├── chat.ts              # the personalized assistant "agent" (user_id driven)
 │   └── format.ts            # money/date formatting only (no math)
 ├── components/
 │   ├── ChatPanel.tsx        # streaming chat + tool chips + learning loop

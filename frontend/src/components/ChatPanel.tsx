@@ -8,6 +8,8 @@ import { answer } from "@/lib/chat"
 import type { ChatMessage, ToolCall } from "@/lib/types"
 
 const TOOL_LABELS: Record<string, string> = {
+  retrieve_account: "Looking up your account…",
+  get_eligibility: "Checking eligibility…",
   find_procedure: "Finding procedure…",
   estimate_cost: "Calculating cost…",
   get_benefits_status: "Checking your benefits…",
@@ -18,11 +20,11 @@ const TOOL_LABELS: Record<string, string> = {
 }
 
 const SUGGESTIONS = [
+  "Who's covered on my plan?",
   "What will a crown cost me?",
   "What if I wait until January?",
   "What do I have left this year?",
   "Plan my year",
-  "What's in my dental history?",
 ]
 
 function renderText(text: string) {
@@ -52,7 +54,7 @@ function renderText(text: string) {
 }
 
 export function ChatPanel() {
-  const { activeProfile, learn } = useUser()
+  const { userId, activeProfile, learn } = useUser()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState("")
   const [busy, setBusy] = useState(false)
@@ -85,8 +87,8 @@ export function ChatPanel() {
     const userMsg: ChatMessage = { id: `u${Date.now()}`, role: "user", text: trimmed }
     setMessages((m) => [...m, userMsg])
 
-    // Compute the answer from the ACTIVE profile's context.
-    const result = answer(trimmed, activeProfile)
+    // Hand the chatbot the user_id + active person; it retrieves the account.
+    const result = answer(trimmed, userId, activeProfile.id)
 
     // Simulate tool-call chips arriving one at a time.
     for (const tool of result.tools) {

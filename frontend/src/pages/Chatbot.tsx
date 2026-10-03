@@ -3,12 +3,24 @@ import { Badge } from "@/components/ui/badge"
 import { ChatPanel } from "@/components/ChatPanel"
 import { useUser } from "@/state/UserContext"
 import { getPlan } from "@/lib/mockApi"
-import { Brain, FileText, History, MessageSquare, Star } from "lucide-react"
+import { eligibilitySummary } from "@/lib/accountApi"
+import {
+  Brain,
+  CheckCircle2,
+  FileText,
+  Fingerprint,
+  History,
+  MessageSquare,
+  Star,
+  Users,
+  XCircle,
+} from "lucide-react"
 
 export function Chatbot() {
-  const { activeProfile } = useUser()
+  const { account, activeProfile } = useUser()
   const plan = getPlan(activeProfile.planId)
   const ctx = activeProfile.aiContext
+  const elig = eligibilitySummary(account)
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6">
@@ -19,6 +31,91 @@ export function Chatbot() {
           history and preferences — and the assistant learns from every chat.
         </p>
       </div>
+
+      {/* Know-your-profile: the account the chatbot retrieves by user_id */}
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle className="flex flex-wrap items-center gap-2">
+            <Fingerprint className="size-4 text-primary" />
+            Account the assistant retrieves
+            <Badge variant="secondary" className="font-mono">
+              user_id: {account.userId}
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2 text-sm">
+            <Badge variant="outline">Plan: {elig.planName}</Badge>
+            <Badge variant="outline" className="capitalize">
+              Tier: {elig.planTier}
+            </Badge>
+            <Badge variant="outline">Coverage: {elig.coverageType}</Badge>
+            <Badge variant="outline" className="gap-1">
+              <Users className="size-3" />
+              {elig.coveredCount} of {elig.members.length} covered
+            </Badge>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-xs text-muted-foreground">
+                  <th className="py-1.5 pr-3 font-medium">Covered person</th>
+                  <th className="py-1.5 pr-3 font-medium">Eligibility</th>
+                  <th className="py-1.5 pr-3 font-medium">Visits / year</th>
+                  <th className="py-1.5 font-medium">Major work this year</th>
+                </tr>
+              </thead>
+              <tbody>
+                {elig.members.map((m) => (
+                  <tr key={m.id} className="border-b last:border-0 align-top">
+                    <td className="py-2 pr-3">
+                      <p className="font-medium">{m.name}</p>
+                      <p className="text-xs capitalize text-muted-foreground">
+                        {m.relationship} · age {m.age}
+                        {m.isFullTimeStudent ? " · student" : ""}
+                      </p>
+                    </td>
+                    <td className="py-2 pr-3">
+                      <span
+                        className={`inline-flex items-center gap-1 ${
+                          m.eligible ? "text-emerald-700" : "text-destructive"
+                        }`}
+                      >
+                        {m.eligible ? (
+                          <CheckCircle2 className="size-3.5" />
+                        ) : (
+                          <XCircle className="size-3.5" />
+                        )}
+                        {m.eligible ? "Eligible" : "Not eligible"}
+                      </span>
+                      <p className="mt-0.5 text-xs text-muted-foreground">{m.eligibilityReason}</p>
+                    </td>
+                    <td className="py-2 pr-3">
+                      <span className="font-medium">
+                        {m.visitsUsed} / {m.visitsPerYear}
+                      </span>
+                      <p className="text-xs text-muted-foreground">{m.visitsLeft} left</p>
+                    </td>
+                    <td className="py-2">
+                      {m.hadMajorWorkThisYear ? (
+                        <span className="text-amber-700">{m.majorWorkThisYear.join(", ")}</span>
+                      ) : (
+                        <span className="text-muted-foreground">None</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+            The chatbot is handed the <span className="font-mono">user_id</span> and retrieves only
+            this account's records. Ask it <em>"who's covered on my plan?"</em> to see this read
+            back in chat.
+          </p>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
         {/* Chat */}

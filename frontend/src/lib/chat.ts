@@ -14,6 +14,7 @@
 
 import type { AiContext, Profile, ToolCall } from "./types"
 import { benefitsStatus, estimate, findProcedure, getPlan, yearPlanS2 } from "./mockApi"
+import { eligibilitySummary, getAccountByUserId, getMember } from "./accountApi"
 import { money } from "./format"
 
 export interface ChatTurnResult {
@@ -24,7 +25,17 @@ export interface ChatTurnResult {
 }
 
 interface Intent {
-  kind: "estimate" | "wait" | "benefits" | "year" | "plan" | "history" | "mustHave" | "greeting" | "unknown"
+  kind:
+    | "estimate"
+    | "wait"
+    | "benefits"
+    | "year"
+    | "plan"
+    | "history"
+    | "mustHave"
+    | "profile"
+    | "greeting"
+    | "unknown"
   inNetwork: boolean
 }
 
@@ -33,13 +44,20 @@ function classify(message: string): Intent {
   const inNetwork = !/(out[- ]?of[- ]?network|different dentist|not in network)/.test(m)
   if (/(hi|hello|hey|what can you|help)\b/.test(m) && m.length < 40)
     return { kind: "greeting", inNetwork }
+  // "know your profile" / account-level eligibility questions.
+  if (
+    /(my profile|my account|who('s| is) covered|covered people|family|dependents?|eligib|plan tier|coverage type|visits? (per|this) year|major work)/.test(
+      m,
+    )
+  )
+    return { kind: "profile", inNetwork }
   if (/(wait|january|next year|next plan year|hold off|later)/.test(m) && /(crown|cap|procedure|it)/.test(m))
     return { kind: "wait", inNetwork }
   if (/(left|remaining|how much.*(max|benefit)|benefits|used|deductible|expire)/.test(m))
     return { kind: "benefits", inNetwork }
   if (/(plan my year|sequence|order|schedule|save|optimi[sz]e|cheapest.*order)/.test(m))
     return { kind: "year", inNetwork }
-  if (/(my plan|current plan|plan details|coverage|what does my plan cover|deductible|annual max)/.test(m))
+  if (/(my plan|current plan|plan details|what does my plan cover|deductible|annual max)/.test(m))
     return { kind: "plan", inNetwork }
   if (/(history|past|previous procedure|what have i had|did i get)/.test(m))
     return { kind: "history", inNetwork }
@@ -51,13 +69,26 @@ function classify(message: string): Intent {
 }
 
 /**
- * Produce a personalized answer for the active profile. Returns the full text,
- * the sequence of tool calls (for the "Calculating…" chips), and what to learn.
+ * Produce a personalized answer. The chatbot is given the account's `userId`
+ * and which covered person is active (`profileId`); it RETRIEVES the account via
+ * getAccountByUserId — only data for that id — then answers from it.
  */
-export function answer(message: string, profile: Profile): ChatTurnResult {
+export function answer(message: string, userId: string, profileId: string): ChatTurnResult {
+  const account = getAccountByUserId(userId)
+
+  // No account for this user_id → do not leak anyone else's data.
+  if (!account) {
+    return {
+      text: "I couldn't find an account for your sign-in. Please sign in again.",
+      tools: [{ name: "retrieve_account", status: "done" }],
+      learned: {},
+    }
+  }
+
+  const profile = getMember(account, profileId) ?? account.members[0]
   const plan = getPlan(profile.planId)
   const intent = classify(message)
-  const tools: ToolCall[] = []
+  const tools: ToolCall[] = [{ name: "retrieve_account", status: "done" }]
   const learned: Partial<AiContext> = {
     previousQuestions: [...profile.aiContext.previousQuestions, message].slice(-8),
   }
@@ -69,11 +100,41 @@ export function answer(message: string, profile: Profile): ChatTurnResult {
       return {
         text:
           `Hi ${firstName}! I'm your plan assistant and I already know your coverage. ` +
-          `You're on the ${plan.name} with ${money(plan.annualMax - profile.usage.maxUsed)} left of your annual max this year. ` +
-          `Ask me things like "what will a crown cost?", "what if I wait until January?", or "what do I have left?"`,
+          `You're on the ${plan.name} (${account.planTier} tier, ${account.coverageType}) with ${money(plan.annualMax - profile.usage.maxUsed)} left of your annual max this year. ` +
+          `Ask me "who's covered on my plan?", "what will a crown cost?", or "what do I have left?"`,
         tools,
         learned,
       }
+
+    case "profile": {
+      // The "know your profile" answer: retrieve the whole account and lay out
+      // tier, coverage type, covered people and per-person eligibility.
+      tools.push({ name: "get_eligibility", status: "done" })
+      const e = eligibilitySummary(account)
+      const header =
+        `Here's your account, ${firstName} (ref ${account.userId}):\n\n` +
+        `• **Plan:** ${e.planName} — ${e.planTier} tier, ${e.coverageType}\n` +
+        `• **Covered people:** ${e.coveredCount} of ${e.members.length}\n`
+      const people = e.members
+        .map((m) => {
+          const status = m.eligible ? "✅ eligible" : "⛔ not eligible"
+          const major = m.hadMajorWorkThisYear
+            ? `major work this year: ${m.majorWorkThisYear.join(", ")}`
+            : "no major work this year"
+          return (
+            `\n**${m.name}** (${m.relationship}, age ${m.age}${m.isFullTimeStudent ? ", student" : ""}) — ${status}\n` +
+            `   • ${m.eligibilityReason}\n` +
+            `   • Dental visits: ${m.visitsUsed} of ${m.visitsPerYear} used (${m.visitsLeft} left)\n` +
+            `   • ${major}`
+          )
+        })
+        .join("\n")
+      return {
+        text: header + people,
+        tools,
+        learned: appendHighlight(learned, profile, "Reviewed account profile & eligibility."),
+      }
+    }
 
     case "plan": {
       tools.push({ name: "get_plan_details", status: "done" })

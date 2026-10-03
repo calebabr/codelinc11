@@ -47,6 +47,9 @@ export interface BenefitUsage {
   deductibleMet: number
   cleaningsUsed: number
   cleaningsLimit: number
+  // Dental visits (exams/cleanings) used this plan year, per person.
+  visitsUsed: number
+  visitsPerYear: number
 }
 
 export interface DentalHistoryItem {
@@ -66,8 +69,8 @@ export interface ScheduleEvent {
   note?: string
 }
 
-// A single person's record. This is the "user-specific database record":
-// everything the AI needs lives here, scoped to one profile id.
+// A single covered person on the account. This is one person's record;
+// everything the AI needs about them lives here, scoped to a profile id.
 export interface Profile {
   id: string
   name: string
@@ -81,6 +84,24 @@ export interface Profile {
   schedule: ScheduleEvent[]
   // AI Context: learned, per-profile. The chatbot reads and appends to this.
   aiContext: AiContext
+}
+
+// How a plan is sold to the subscriber.
+export type PlanTier = "basic" | "standard" | "premium"
+export type CoverageType = "PPO" | "HMO" | "indemnity"
+
+// The ACCOUNT is the top-level record, keyed by a unique user_id. The chatbot
+// is given the user_id, looks the account up, and only ever sees the people and
+// data belonging to that id (data isolation). An account owns the subscriber
+// plus any covered dependents (the "covered people").
+export interface Account {
+  userId: string
+  subscriberName: string
+  planId: string
+  planTier: PlanTier
+  coverageType: CoverageType
+  // Everyone covered under this account, including the subscriber (relationship "self").
+  members: Profile[]
 }
 
 export interface AiContext {
@@ -109,6 +130,36 @@ export interface EstimateResult {
   covered: boolean
   reason?: string
   trace: TraceStep[]
+}
+
+// ----- Eligibility ("know your profile") shapes -----
+
+// Per-person eligibility snapshot the chatbot reads.
+export interface MemberEligibility {
+  id: string
+  name: string
+  relationship: Profile["relationship"]
+  age: number
+  isFullTimeStudent: boolean
+  // Is this person eligible to be covered on the plan right now?
+  eligible: boolean
+  eligibilityReason: string
+  ageLimit: number
+  visitsUsed: number
+  visitsPerYear: number
+  visitsLeft: number
+  hadMajorWorkThisYear: boolean
+  majorWorkThisYear: string[] // procedure names, major category, this plan year
+}
+
+export interface AccountEligibility {
+  userId: string
+  subscriberName: string
+  planName: string
+  planTier: PlanTier
+  coverageType: CoverageType
+  coveredCount: number
+  members: MemberEligibility[]
 }
 
 export type ChatRole = "user" | "assistant"

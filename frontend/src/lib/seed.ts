@@ -2,7 +2,7 @@
 // golden scenarios in docs/FEATURES.md §2 so the chatbot's answers line up
 // with the rest of the planned app.
 
-import type { Plan, Procedure, Profile } from "./types"
+import type { Account, Plan, Procedure, Profile } from "./types"
 
 export const DEMO_PPO: Plan = {
   id: "demo_ppo",
@@ -148,7 +148,14 @@ export const SEED_PROFILES: Profile[] = [
     age: 38,
     isFullTimeStudent: false,
     planId: "demo_ppo",
-    usage: { maxUsed: 1100, deductibleMet: 50, cleaningsUsed: 1, cleaningsLimit: 2 },
+    usage: {
+      maxUsed: 1100,
+      deductibleMet: 50,
+      cleaningsUsed: 1,
+      cleaningsLimit: 2,
+      visitsUsed: 1,
+      visitsPerYear: 2,
+    },
     history: [
       {
         id: "h1",
@@ -173,6 +180,14 @@ export const SEED_PROFILES: Profile[] = [
         code: "D3330",
         youPaid: 220,
         planPaid: 880,
+      },
+      {
+        id: "h4",
+        date: "2026-09-28",
+        procedureName: "Crown, porcelain/ceramic",
+        code: "D2740",
+        youPaid: 800,
+        planPaid: 400,
       },
     ],
     mustHaves: ["major services (crowns)", "root canals"],
@@ -216,7 +231,14 @@ export const SEED_PROFILES: Profile[] = [
     age: 36,
     isFullTimeStudent: false,
     planId: "demo_ppo",
-    usage: { maxUsed: 0, deductibleMet: 0, cleaningsUsed: 0, cleaningsLimit: 2 },
+    usage: {
+      maxUsed: 0,
+      deductibleMet: 0,
+      cleaningsUsed: 0,
+      cleaningsLimit: 2,
+      visitsUsed: 0,
+      visitsPerYear: 2,
+    },
     history: [],
     mustHaves: ["preventive"],
     schedule: [
@@ -242,7 +264,14 @@ export const SEED_PROFILES: Profile[] = [
     age: 15,
     isFullTimeStudent: true,
     planId: "demo_ppo",
-    usage: { maxUsed: 240, deductibleMet: 50, cleaningsUsed: 2, cleaningsLimit: 2 },
+    usage: {
+      maxUsed: 240,
+      deductibleMet: 50,
+      cleaningsUsed: 2,
+      cleaningsLimit: 2,
+      visitsUsed: 2,
+      visitsPerYear: 2,
+    },
     history: [
       {
         id: "h1",
@@ -282,3 +311,18 @@ export const SEED_PROFILES: Profile[] = [
     },
   },
 ]
+
+// The account: one subscriber (Alex) with their covered dependents, all under a
+// single unique user_id. This is the top-level record the chatbot is handed.
+export const SEED_ACCOUNTS: Account[] = [
+  {
+    userId: "usr_8821",
+    subscriberName: "Alex Rivera",
+    planId: "demo_ppo",
+    planTier: "premium",
+    coverageType: "PPO",
+    members: SEED_PROFILES,
+  },
+]
+
+export const DEFAULT_USER_ID = SEED_ACCOUNTS[0].userId

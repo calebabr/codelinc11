@@ -209,7 +209,14 @@ function AddProfileCard({
       age: Number(age) || 0,
       isFullTimeStudent: false,
       planId: defaultPlanId,
-      usage: { maxUsed: 0, deductibleMet: 0, cleaningsUsed: 0, cleaningsLimit: 2 },
+      usage: {
+        maxUsed: 0,
+        deductibleMet: 0,
+        cleaningsUsed: 0,
+        cleaningsLimit: 2,
+        visitsUsed: 0,
+        visitsPerYear: 2,
+      },
       mustHaves: [],
     })
     setName("")
