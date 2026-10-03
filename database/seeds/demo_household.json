@@ -1,0 +1,54 @@
+{
+  "demo_today": "2026-11-01",
+  "plan_tiers": [
+    {"id": "basic", "name": "Basic", "monthly_cents": 2800, "annual_max_cents": 100000, "deductible_cents": 10000, "preventive_pct": 100, "basic_pct": 50, "major_pct": 0, "ortho_pct": 0},
+    {"id": "preferred", "name": "Preferred", "monthly_cents": 4400, "annual_max_cents": 150000, "deductible_cents": 5000, "preventive_pct": 100, "basic_pct": 80, "major_pct": 50, "ortho_pct": 50},
+    {"id": "premium", "name": "Premium", "monthly_cents": 6100, "annual_max_cents": 250000, "deductible_cents": 5000, "preventive_pct": 100, "basic_pct": 90, "major_pct": 70, "ortho_pct": 60}
+  ],
+  "households": [
+    {"id": "hh-rivera", "name": "Rivera household", "plan_tier_id": "preferred"}
+  ],
+  "members": [
+    {"id": "m-jordan", "household_id": "hh-rivera", "name": "Jordan Rivera", "relationship": "self", "age": 41, "full_time_student": 0, "status": "active", "role": "primary", "has_login": 1},
+    {"id": "m-alex", "household_id": "hh-rivera", "name": "Alex Rivera", "relationship": "spouse", "age": 39, "full_time_student": 0, "status": "active", "role": "adult", "has_login": 1},
+    {"id": "m-maya", "household_id": "hh-rivera", "name": "Maya Rivera", "relationship": "child", "age": 9, "full_time_student": 0, "status": "active", "role": "managed", "has_login": 0},
+    {"id": "m-noah", "household_id": "hh-rivera", "name": "Noah Rivera", "relationship": "child", "age": 23, "full_time_student": 1, "status": "pending", "status_note": "Over age 19. Covered to age 26 only as a full-time student; enrollment verification needed.", "role": "adult", "has_login": 1}
+  ],
+  "accounts": [
+    {"id": "acct-jordan", "member_id": "m-jordan", "email": "jordan.rivera@example.test", "display_name": "Jordan Rivera"},
+    {"id": "acct-alex", "member_id": "m-alex", "email": "alex.rivera@example.test", "display_name": "Alex Rivera"},
+    {"id": "acct-noah", "member_id": "m-noah", "email": "noah.rivera@example.test", "display_name": "Noah Rivera"}
+  ],
+  "member_usage": [
+    {"member_id": "m-jordan", "plan_year": 2026, "max_used_cents": 21000, "deductible_met_cents": 0, "visits": 1, "cleanings_used": 1},
+    {"member_id": "m-alex", "plan_year": 2026, "max_used_cents": 110000, "deductible_met_cents": 5000, "visits": 3, "cleanings_used": 1},
+    {"member_id": "m-maya", "plan_year": 2026, "max_used_cents": 26000, "deductible_met_cents": 0, "visits": 1, "cleanings_used": 1},
+    {"member_id": "m-noah", "plan_year": 2026, "max_used_cents": 0, "deductible_met_cents": 0, "visits": 0, "cleanings_used": 0}
+  ],
+  "visits": [
+    {"member_id": "m-jordan", "visit_date": "2026-02-14", "procedure_code": "D1110", "description": "Cleaning and exam", "billed_cents": 21000, "plan_paid_cents": 21000, "patient_paid_cents": 0},
+    {"member_id": "m-maya", "visit_date": "2026-02-14", "procedure_code": "D1110", "description": "Cleaning and sealants", "billed_cents": 26000, "plan_paid_cents": 26000, "patient_paid_cents": 0},
+    {"member_id": "m-alex", "visit_date": "2026-02-20", "procedure_code": "D1110", "description": "Cleaning", "billed_cents": 12000, "plan_paid_cents": 12000, "patient_paid_cents": 0},
+    {"member_id": "m-alex", "visit_date": "2026-06-03", "procedure_code": "D2392", "description": "Filling (2 surfaces)", "billed_cents": 34000, "plan_paid_cents": 22000, "patient_paid_cents": 12000},
+    {"member_id": "m-alex", "visit_date": "2026-08-12", "procedure_code": "D7210", "description": "Surgical extraction", "billed_cents": 95000, "plan_paid_cents": 76000, "patient_paid_cents": 19000}
+  ],
+  "appointments": [
+    {"member_id": "m-jordan", "kind": "appointment", "due_date": "2026-11-18", "title": "Cleaning and exam", "note": "Second cleaning of the year."},
+    {"member_id": "m-alex", "kind": "reminder", "due_date": "2026-12-15", "title": "Use your remaining benefits", "note": "$400 of the yearly maximum is left. It resets on Jan 1."},
+    {"member_id": "m-maya", "kind": "appointment", "due_date": "2026-12-04", "title": "Checkup and cleaning", "note": null},
+    {"member_id": "m-noah", "kind": "reminder", "due_date": "2026-11-30", "title": "Send student enrollment proof", "note": "Needed to keep Noah covered."}
+  ],
+  "member_context": [
+    {"member_id": "m-jordan", "plan_highlights": "Preferred plan. Cleanings 100%, fillings 80%, crowns 50%. $50 deductible, $1,500 yearly maximum. Plan year starts Jan 1."},
+    {"member_id": "m-alex", "plan_highlights": "Preferred plan. $1,100 of the $1,500 yearly maximum is used and the deductible is met, so $400 is left this year."},
+    {"member_id": "m-maya", "plan_highlights": "Preferred plan. Covered as a child. Orthodontia is covered at 50%."},
+    {"member_id": "m-noah", "plan_highlights": "Preferred plan. Coverage is pending until student enrollment is verified."}
+  ],
+  "member_preferences": [
+    {"member_id": "m-jordan", "kind": "preference", "text": "Likes morning appointments."},
+    {"member_id": "m-alex", "kind": "must_have", "text": "Wants to stay with the current dentist."},
+    {"member_id": "m-alex", "kind": "preference", "text": "Prefers to spread big costs across plan years when it is safe."},
+    {"member_id": "m-maya", "kind": "preference", "text": "Nervous at the dentist. Short visits work best."},
+    {"member_id": "m-noah", "kind": "preference", "text": "Wants low out-of-pocket cost while in school."}
+  ]
+}

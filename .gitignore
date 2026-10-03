@@ -25,3 +25,8 @@ test-results/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Local-only
+.worktrees/
+*.tar.gz
+*.log

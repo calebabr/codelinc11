@@ -51,7 +51,7 @@ gh auth login
 ```
 
 **Step 2: Make the first commit directly on `main`** (the one time this is allowed). BE's agent creates the skeleton from the docs:
-- the folder structure from `path1-deep-dive.md` §2 (`backend/`, `frontend/`, `docs/`) with empty placeholder files,
+- the folder structure from `docs/planning/path1-deep-dive.md` §2 (`backend/`, `frontend/`, `docs/`) with empty placeholder files,
 - the `docs/` files from this project,
 - `CLAUDE.md` (root), `backend/CLAUDE.md`, `frontend/CLAUDE.md`,
 - a `.gitignore` (below), a `.env.example`, and the PR template (below),

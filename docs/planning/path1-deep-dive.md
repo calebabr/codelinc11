@@ -435,7 +435,7 @@ TOOLS = [
 
 - **Libraries:** `fastapi`, `uvicorn`, `pydantic`, `sqlmodel` (SQLite), `numpy`, `pulp` (optional), `pdfplumber`, `rank_bm25`, `sentence-transformers` (or provider embeddings), `ics`, and your LLM provider's SDK.
 - **Session/state:** for the demo, one user is enough. Store usage in SQLite under a demo user ID, or keep it in the frontend and send it with each request (the simplest option).
-- **Golden tests (`tests/test_engine.py`):** M works out these numbers **first** on paper (they're in [docs/FEATURES.md §2](docs/FEATURES.md)). The engine agent turns them into test code before writing the engine, then writes code until they pass.
+- **Golden tests (`tests/test_engine.py`):** M works out these numbers **first** on paper (they're in [docs/FEATURES.md §2](../FEATURES.md)). The engine agent turns them into test code before writing the engine, then writes code until they pass.
   - preventive cleaning → deductible waived, 100%, you pay $0
   - first filling of the year → deductible applied
   - crown with $400 max left → capped (the $800 case above)
@@ -490,7 +490,7 @@ TOOLS = [
 
 ### 8.1 Who gets which tool
 
-Exact folder and file ownership is in **[docs/FEATURES.md §1](docs/FEATURES.md)**; the summary below is for orientation.
+Exact folder and file ownership is in **[docs/FEATURES.md §1](../FEATURES.md)**; the summary below is for orientation.
 
 | Person | Who | Main area | AI tool | Why this pairing |
 |---|---|---|---|---|
@@ -510,7 +510,7 @@ If Kiro credits run short, FLEX's Claude Code seat takes over engine tasks from 
 2. **The API contract is shared and protected.** `backend/app/models.py` (Pydantic) is the single source of truth. Generate TypeScript types from FastAPI's OpenAPI schema with `openapi-typescript` into `frontend/src/lib/api-types.ts`. Only **BE** changes the contract, after posting the change in Discord.
 3. **Golden numbers come from M, first.** M sets them; the engine agent writes `backend/tests/test_engine.py` from them; it's the contract between the math and everyone else. **No agent may change a golden expected value** without M's approval. Put this rule in every agent's instruction file.
 4. **Stubs first.** By 2:30 PM, BE ships every endpoint returning fixture JSON from `backend/fixtures/`. FLEX and FE build against the stubs and are never blocked waiting on the engine.
-5. **Small PRs, often.** Merge to `main` every 60–90 minutes. **`main` must always run and be demoable.** Authors merge their own-folder PRs after checking; BE merges anything touching shared files. The full Git guide is [docs/GIT-WORKFLOW.md](docs/GIT-WORKFLOW.md). GitHub Actions runs `pytest`, `tsc --noEmit` and lint on every PR.
+5. **Small PRs, often.** Merge to `main` every 60–90 minutes. **`main` must always run and be demoable.** Authors merge their own-folder PRs after checking; BE merges anything touching shared files. The full Git guide is [docs/GIT-WORKFLOW.md](../GIT-WORKFLOW.md). GitHub Actions runs `pytest`, `tsc --noEmit` and lint on every PR.
 6. **One set of conventions for all agents.** Write `docs/CONVENTIONS.md` once (stack, folder ownership, "never compute dollar amounts in the LLM", "don't edit golden tests", code style, how to run tests). Then point every tool at it:
    - **Claude Code:** root `CLAUDE.md` containing `@docs/CONVENTIONS.md`, plus a short `frontend/CLAUDE.md` and `backend/CLAUDE.md` for area-specific commands.
    - **Kiro:** a steering file in `.kiro/steering/` that references the same doc.
@@ -539,7 +539,7 @@ If Kiro credits run short, FLEX's Claude Code seat takes over engine tasks from 
 
 - **Task board:** GitHub Projects or a `TASKS.md` with columns Todo / Doing / Done. Each card names its owner. Agents can read `TASKS.md` for context.
 - **Discord:** one channel per area (`#engine`, `#backend`, `#agent`, `#frontend`, `#data`) and `#contract` for API changes.
-- **Stand-ups + integration checkpoints:** at 2:30 PM, 6:30 PM, 10:00 PM, 2:00 AM, 5:00 AM and 7:00 AM (same times as [docs/FEATURES.md §4](docs/FEATURES.md)). Everyone pulls `main`, clicks through the app together for 10 minutes, then each person says what's done, what's next, and what's blocking them.
+- **Stand-ups + integration checkpoints:** at 2:30 PM, 6:30 PM, 10:00 PM, 2:00 AM, 5:00 AM and 7:00 AM (same times as [docs/FEATURES.md §4](../FEATURES.md)). Everyone pulls `main`, clicks through the app together for 10 minutes, then each person says what's done, what's next, and what's blocking them.
 - **Sleep shifts (optional):** Shift A sleeps 1–4 AM, Shift B sleeps 4–7 AM. Never have M and BE asleep at the same time. Leave a handoff note in `TASKS.md` before sleeping.
 
 ### 8.5 First 3 hours (1:30–4:30 PM)
@@ -554,7 +554,7 @@ If Kiro credits run short, FLEX's Claude Code seat takes over engine tasks from 
 
 ### Schedule
 
-The schedule lives in **[docs/FEATURES.md §4](docs/FEATURES.md)** (feature by feature, with checkpoints at 6:30 PM, 10:00 PM, 2:00 AM and 5:00 AM, code freeze at 7:00 AM, rehearsal 7–10 AM). Deploy at code freeze (Vercel for the frontend, Render/Railway for the backend) **and** keep a local backup.
+The schedule lives in **[docs/FEATURES.md §4](../FEATURES.md)** (feature by feature, with checkpoints at 6:30 PM, 10:00 PM, 2:00 AM and 5:00 AM, code freeze at 7:00 AM, rehearsal 7–10 AM). Deploy at code freeze (Vercel for the frontend, Render/Railway for the backend) **and** keep a local backup.
 
 **Fallbacks if you fall behind:** sequencer → greedy rule instead of exhaustive search. RAG → keyword search only. Chat drawer → LLM explanations only on the Estimate card. Never cut the golden tests.
 

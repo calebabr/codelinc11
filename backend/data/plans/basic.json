@@ -1,0 +1,23 @@
+{
+  "id": "basic",
+  "name": "Basic",
+  "description": "Lowest premium. Covers cleanings and exams in full, and half of basic care. Major work is not covered.",
+  "monthly_premium": 28.0,
+  "deductible": 100,
+  "deductible_waived_for": [
+    "preventive"
+  ],
+  "annual_max": 1000,
+  "coinsurance": {
+    "preventive": 1.0,
+    "basic": 0.5,
+    "major": 0.0
+  },
+  "frequency": {
+    "D1110": 2,
+    "D0120": 2
+  },
+  "plan_year_start_month": 1,
+  "alternate_benefit": true,
+  "orthodontia_child": 0.0
+}

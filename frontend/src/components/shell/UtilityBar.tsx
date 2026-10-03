@@ -1,0 +1,28 @@
+import { useSession } from "@/state/SessionContext"
+import { MemberSwitcher } from "./MemberSwitcher"
+
+// Slim burgundy bar above the main nav: household name, member switcher, sign-in state.
+export function UtilityBar() {
+  const { household, account, signOut } = useSession()
+  return (
+    <div className="bg-burgundy text-white">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-1.5 text-xs">
+        <span className="truncate font-medium" data-testid="household-label">
+          {household.name}
+        </span>
+        <div className="flex items-center gap-3">
+          <MemberSwitcher />
+          {account ? (
+            <button type="button" onClick={signOut} className="hidden underline-offset-2 hover:underline sm:inline">
+              Sign out
+            </button>
+          ) : (
+            <a href="/login" className="underline-offset-2 hover:underline">
+              Sign in
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}

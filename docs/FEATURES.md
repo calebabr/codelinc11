@@ -1,7 +1,7 @@
 # FEATURES.md: What We're Building, Who Builds It, and When It's Done
 
 **This is the shared source of truth.** Every person and every AI agent reads this file. If a feature changes, it changes here first.
-Companion briefs: [FRONTEND.md](FRONTEND.md) (FE + DES and the UI agent) and [BACKEND.md](BACKEND.md) (M, BE, FLEX and their agents). Full technical detail: [../path1-deep-dive.md](../path1-deep-dive.md).
+Companion briefs: [FRONTEND.md](FRONTEND.md) (FE + DES and the UI agent) and [BACKEND.md](BACKEND.md) (M, BE, FLEX and their agents). Full technical detail: [planning/path1-deep-dive.md](planning/path1-deep-dive.md).
 
 ---
 

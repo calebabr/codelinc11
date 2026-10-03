@@ -1,0 +1,23 @@
+{
+  "id": "premium",
+  "name": "Premium",
+  "description": "Highest premium and the most coverage. Preventive 100%, basic 90%, major 70%. $2,500 yearly maximum.",
+  "monthly_premium": 61.0,
+  "deductible": 50,
+  "deductible_waived_for": [
+    "preventive"
+  ],
+  "annual_max": 2500,
+  "coinsurance": {
+    "preventive": 1.0,
+    "basic": 0.9,
+    "major": 0.7
+  },
+  "frequency": {
+    "D1110": 2,
+    "D0120": 2
+  },
+  "plan_year_start_month": 1,
+  "alternate_benefit": true,
+  "orthodontia_child": 0.6
+}

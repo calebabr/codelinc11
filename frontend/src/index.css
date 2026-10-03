@@ -1,14 +1,39 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
-@import "@fontsource-variable/fraunces/opsz.css";
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+  Portal look (decision D5, from Sai's prototype).
+  Token names are fixed in agents/tasks/PLAN.md ("Look"). Do not rename them.
+  Pages use tokens (bg-burgundy, text-ink, border-line ...), never raw colors.
+  Full rules: docs/design/portal-look.md. Live reference: /style.
+*/
+
 @theme inline {
-    --font-heading: 'Fraunces Variable', Georgia, serif;
-    --font-sans: 'Geist Variable', sans-serif;
+    --font-heading: 'Source Sans 3', 'Segoe UI', system-ui, -apple-system, Helvetica, Arial, sans-serif;
+    --font-sans: 'Source Sans 3', 'Segoe UI', system-ui, -apple-system, Helvetica, Arial, sans-serif;
+
+    /* Portal tokens as Tailwind colors: bg-burgundy, text-orange, border-line, bg-soft ... */
+    --color-burgundy: var(--burgundy);
+    --color-burgundy-dark: var(--burgundy-dark);
+    --color-orange: var(--orange);
+    --color-orange-dark: var(--orange-dark);
+    --color-ink: var(--ink);
+    --color-muted-ink: var(--muted);
+    --color-line: var(--line);
+    --color-soft: var(--soft);
+    --color-ok: var(--ok);
+    --color-ok-ink: var(--ok-ink);
+    --color-warn: var(--warn);
+    --color-warn-ink: var(--warn-ink);
+    --color-tint-orange: var(--tint-orange);
+    --color-tint-ok: var(--tint-ok);
+    --color-tint-warn: var(--tint-warn);
+    --color-track: var(--track);
+
+    /* shadcn semantic colors (existing ui components keep working) */
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -25,16 +50,11 @@
     --color-ring: var(--ring);
     --color-input: var(--input);
     --color-border: var(--border);
-    --color-ok: var(--ok);
-    --color-warn: var(--warn);
-    --color-ink: var(--ink);
-    --color-burgundy: var(--burgundy);
-    --color-orange: var(--orange);
     --color-destructive: var(--destructive);
     --color-accent-foreground: var(--accent-foreground);
     --color-accent: var(--accent);
     --color-muted-foreground: var(--muted-foreground);
-    --color-muted: var(--muted);
+    --color-muted: var(--muted-surface);
     --color-secondary-foreground: var(--secondary-foreground);
     --color-secondary: var(--secondary);
     --color-primary-foreground: var(--primary-foreground);
@@ -45,9 +65,11 @@
     --color-card: var(--card);
     --color-foreground: var(--foreground);
     --color-background: var(--background);
+    /* Legacy names used by pages built before the portal look. They now resolve to portal colors. */
     --color-savings: var(--savings);
     --color-savings-ink: var(--savings-ink);
     --color-paper: var(--paper);
+
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);
@@ -55,46 +77,72 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
+    --radius-card: 18px;
+    --radius-pill: 999px;
+
+    --shadow-card: 0 10px 30px rgba(101, 0, 48, 0.12);
 }
 
 :root {
-    /* "Editorial finance": warm paper, ink text, Lincoln maroon, orange only for savings */
-    --paper: #faf7f2;
-    --background: #faf7f2;
-    --foreground: #1f1a17;
-    --card: #fffdf9;
-    --card-foreground: #1f1a17;
-    --popover: #fffdf9;
-    --popover-foreground: #1f1a17;
-    --primary: #6b0f2a;
-    --primary-foreground: #faf7f2;
-    --secondary: #f1ebe3;
-    --secondary-foreground: #1f1a17;
-    --muted: #f1ebe3;
-    --muted-foreground: #6e645c;
-    --accent: #f4e8e6;
-    --accent-foreground: #6b0f2a;
+    /* ---- Portal tokens (fixed names, see PLAN.md) ---- */
+    --burgundy: #650030;
+    --burgundy-dark: #45001f;
+    --orange: #FF4F17;
+    --orange-dark: #d93d0a;
+    --ink: #1c1c1e;
+    --muted: #5f6368;          /* secondary TEXT color. For muted backgrounds use bg-muted (--muted-surface). */
+    --line: #e6e1e3;
+    --soft: #faf6f7;
+    --ok: #1a7f4b;
+    --warn: #b26a00;
+
+    /* ---- Supporting tokens ---- */
+    --burgundy-light: #8a1646;     /* end of the hero gradient */
+    --ok-ink: #146b3d;             /* text on the ok tint (AA) */
+    --warn-ink: #8a5100;           /* text on the warn tint (AA) */
+    --tint-orange: #fff4ef;        /* notes, highlighted table cells */
+    --tint-ok: #e6f5ec;
+    --tint-warn: #fff1dc;
+    --track: #f1e8ec;              /* empty part of a coverage bar */
+    --muted-surface: #f1e8ec;      /* shadcn bg-muted */
+
+    /* ---- shadcn semantic mapping onto the portal palette ---- */
+    --background: #ffffff;
+    --foreground: var(--ink);
+    --card: #ffffff;
+    --card-foreground: var(--ink);
+    --popover: #ffffff;
+    --popover-foreground: var(--ink);
+    --primary: var(--burgundy);
+    --primary-foreground: #ffffff;
+    --secondary: var(--soft);
+    --secondary-foreground: var(--burgundy);
+    --muted-foreground: var(--muted);
+    --accent: var(--tint-orange);
+    --accent-foreground: var(--burgundy);
     --destructive: #b42318;
-    --border: #e6ded3;
-    --input: #ddd3c6;
-    --ring: #6b0f2a;
-    /* Orange: large savings figures only. Use savings-ink for small text (better contrast). */
-    --savings: #f5591f;
-    --savings-ink: #c2410c;
-    --chart-1: #6b0f2a;
-    --chart-2: #f5591f;
-    --chart-3: #b08968;
-    --chart-4: #a3485e;
-    --chart-5: #d6c7b5;
-    --radius: 0.375rem;
-    --sidebar: #f1ebe3;
-    --sidebar-foreground: #1f1a17;
-    --sidebar-primary: #6b0f2a;
-    --sidebar-primary-foreground: #faf7f2;
-    --sidebar-accent: #f4e8e6;
-    --sidebar-accent-foreground: #6b0f2a;
-    --sidebar-border: #e6ded3;
-    --sidebar-ring: #6b0f2a;
+    --border: var(--line);
+    --input: var(--line);
+    --ring: var(--orange);
+    --chart-1: var(--burgundy);
+    --chart-2: var(--orange);
+    --chart-3: var(--ok);
+    --chart-4: var(--warn);
+    --chart-5: #cfa9b9;
+    --radius: 0.625rem;
+    --sidebar: var(--soft);
+    --sidebar-foreground: var(--ink);
+    --sidebar-primary: var(--burgundy);
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: var(--tint-orange);
+    --sidebar-accent-foreground: var(--burgundy);
+    --sidebar-border: var(--line);
+    --sidebar-ring: var(--orange);
+
+    /* Legacy aliases (old editorial names), now portal colors */
+    --paper: var(--soft);
+    --savings: var(--orange-dark);   /* big savings figures and text on white (4.5:1) */
+    --savings-ink: var(--orange-dark);
 }
 
 /* Dark theme (not toggled in the app) kept strictly on the brand palette. */
@@ -109,7 +157,7 @@
     --primary-foreground: #ffffff;
     --secondary: var(--burgundy);
     --secondary-foreground: #ffffff;
-    --muted: var(--burgundy);
+    --muted-surface: var(--burgundy);
     --muted-foreground: var(--line);
     --accent: var(--orange);
     --accent-foreground: #ffffff;
@@ -136,35 +184,188 @@
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground antialiased;
-  }
   html {
     @apply font-sans;
+    scroll-behavior: smooth;
   }
-  h1, h2, h3 {
-    @apply font-heading tracking-tight text-foreground;
-    font-optical-sizing: auto;
+  body {
+    @apply bg-background text-foreground antialiased;
+    line-height: 1.5;
+  }
+  h1, h2, h3, h4 {
+    @apply font-heading tracking-tight;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
   }
   ::selection {
-    @apply bg-primary text-primary-foreground;
+    @apply bg-burgundy text-white;
+  }
+  :focus-visible {
+    outline: 3px solid var(--orange);
+    outline-offset: 2px;
   }
 }
 
-/* Big dollar figures: serif, digits line up in columns. Usage: <span className="money text-6xl">$800</span> */
+/* Big dollar figures: digits line up in columns. Usage: <span className="money text-6xl">$800</span> */
 @utility money {
-  font-family: var(--font-heading);
   font-variant-numeric: tabular-nums lining-nums;
-  font-weight: 500;
+  font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1;
 }
 
-/* Small uppercase label above a number, like a printed statement */
+/* Small uppercase label above a number or section title. Orange-dark keeps 4.5:1 on white. */
 @utility eyebrow {
   font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--muted-foreground);
+  color: var(--orange-dark);
+}
+
+/* Page width, same as the portal (.wrap) */
+@utility wrap {
+  max-width: 1160px;
+  margin-inline: auto;
+  padding-inline: 1rem;
+  @media (min-width: 640px) {
+    padding-inline: 1.5rem;
+  }
+}
+
+@layer components {
+  /* ---- Pill buttons: .btn plus one of .btn-orange, .btn-outline, .btn-ghost ---- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 2px solid transparent;
+    border-radius: var(--radius-pill);
+    padding: 0.7rem 1.5rem;
+    min-height: 44px;
+    font: inherit;
+    font-weight: 700;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .btn:disabled, .btn[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  /* Orange pill. Uses orange-dark as the fill so white text passes AA (4.5:1). Pure orange is for glows and accents. */
+  .btn-orange { background: var(--orange-dark); color: #fff; }
+  .btn-orange:hover:not(:disabled) { background: #b83208; }
+  .btn-outline { background: #fff; color: var(--burgundy); border-color: var(--burgundy); }
+  .btn-outline:hover:not(:disabled) { background: var(--burgundy); color: #fff; }
+  /* Ghost is for use on burgundy (hero, utility areas): white outline, transparent fill */
+  .btn-ghost { background: transparent; color: #fff; border-color: #fff; }
+  .btn-ghost:hover:not(:disabled) { background: #fff; color: var(--burgundy); }
+
+  /* ---- Cards ---- */
+  .portal-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-card);
+    padding: 1.5rem;
+  }
+  .portal-card-title { margin: 0 0 0.25rem; color: var(--burgundy); font-size: 1.125rem; font-weight: 700; }
+  /* Selected / hover state for choosable cards (plan tiers, member cards) */
+  .portal-card-select { border-width: 2px; cursor: pointer; transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s; }
+  .portal-card-select:hover { border-color: #cfa9b9; transform: translateY(-2px); }
+  .portal-card-select[aria-pressed="true"], .portal-card-select[data-selected="true"] {
+    border-color: var(--orange);
+    box-shadow: var(--shadow-card);
+  }
+  /* Soft section background */
+  .section-soft { background: var(--soft); }
+
+  /* ---- Coverage bar: <div class="coverage"><i style="width:73%"></i></div> ---- */
+  .coverage {
+    height: 14px;
+    background: var(--track);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+  }
+  .coverage > i {
+    display: block;
+    height: 100%;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(90deg, var(--burgundy), var(--orange));
+    transition: width 0.5s;
+  }
+  /* Thin variant for use on burgundy */
+  .coverage-on-dark { height: 10px; background: rgba(255, 255, 255, 0.25); }
+  .coverage-on-dark > i { background: var(--orange); }
+
+  /* ---- Status chips. Always include a word or icon, never color alone ---- */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: var(--radius-pill);
+    padding: 0.2rem 0.8rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+  .chip-ok { background: var(--tint-ok); color: var(--ok-ink); }
+  .chip-warn { background: var(--tint-warn); color: var(--warn-ink); }
+  .chip-pending { background: var(--tint-warn); color: var(--warn-ink); border: 1px dashed var(--warn); }
+  .chip-off { background: #f1f1f1; color: var(--muted); text-decoration: line-through; }
+
+  /* ---- Note callout ---- */
+  .note {
+    padding: 0.75rem 1rem;
+    border-left: 4px solid var(--orange);
+    background: var(--tint-orange);
+    border-radius: 6px;
+    font-size: 0.9rem;
+  }
+
+  /* ---- Hero banner: burgundy gradient with the orange glow. Put content in a child with .relative ---- */
+  .hero-banner {
+    position: relative;
+    overflow: hidden;
+    color: #fff;
+    background: linear-gradient(120deg, var(--burgundy-dark) 0%, var(--burgundy) 55%, var(--burgundy-light) 100%);
+  }
+  .hero-banner::after {
+    content: "";
+    position: absolute;
+    right: -120px;
+    top: -120px;
+    width: 520px;
+    height: 520px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--orange) 0%, rgba(255, 79, 23, 0) 68%);
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  .hero-banner > * { position: relative; z-index: 1; }
+  .hero-banner .eyebrow { color: #ffb199; }
+  /* Frosted summary panel inside the hero */
+  .hero-summary {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(6px);
+    border-radius: var(--radius-card);
+    padding: 1.5rem;
+  }
+
+  /* ---- Utility bar (slim, above the nav) and sticky nav ---- */
+  .util-bar { background: var(--burgundy-dark); color: #fff; font-size: 0.8125rem; }
+  .nav-bar { background: #fff; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; }
+  .nav-link { padding: 0.375rem 0; font-weight: 600; font-size: 0.9375rem; border-bottom: 2px solid transparent; }
+  .nav-link:hover, .nav-link[aria-current="page"], .nav-link.active { border-color: var(--orange); color: var(--burgundy); }
+
+  /* ---- Result panel (burgundy gradient, white text) ---- */
+  .result-panel {
+    background: linear-gradient(135deg, var(--burgundy), var(--burgundy-dark));
+    color: #fff;
+    border-radius: var(--radius-card);
+    padding: 1.75rem;
+  }
 }
