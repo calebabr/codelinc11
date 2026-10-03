@@ -76,6 +76,7 @@ codelinc11/
 │   │   │   ├── estimate.py      # single-procedure cost math
 │   │   │   ├── annual.py        # apply many procedures in order within a plan year
 │   │   │   ├── sequencer.py     # Plan My Year optimizer
+│   │   │   ├── status.py        # benefits_status() for My Benefits
 │   │   │   └── simulate.py      # Monte Carlo plan comparison
 │   │   ├── agent/
 │   │   │   ├── tools.py         # tool schemas -> engine functions
@@ -121,7 +122,7 @@ class Plan(BaseModel):
     coinsurance: dict[Category, float]         # plan's share: {"preventive":1.0,"basic":0.8,"major":0.5,"ortho":0.5}
     oon_coinsurance: dict[Category, float] | None = None
     waiting_months: dict[Category, int] = {}   # e.g. {"major": 12}
-    frequency: dict[str, str] = {}             # {"D1110": "2/plan_year", "D2740": "1/5y/tooth"}
+    frequency: dict[str, int] = {}             # max per plan year, e.g. {"D1110": 2}
     ortho_lifetime_max: float | None = None
 
 class Procedure(BaseModel):
@@ -136,7 +137,7 @@ class Usage(BaseModel):                        # per member per plan year
     plan_year: int
     deductible_met: float = 0
     max_used: float = 0
-    history: list[tuple[str, date]] = []       # (code, date) for frequency checks
+    history: list[str] = []                    # codes already done this plan year (frequency checks)
 
 class TreatmentItem(BaseModel):
     code: str
@@ -179,6 +180,14 @@ def estimate(proc: Procedure, plan: Plan, usage: Usage, in_network: bool = True)
     billed = proc.fee_p50 if in_network else proc.fee_p80
     trace.append(TraceStep(label="Typical cost", amount=billed,
                            note=f"FAIR Health typical charge for {proc.name}"))
+
+    # Frequency limit (G6): e.g. only 2 cleanings per plan year
+    limit = plan.frequency.get(proc.code)
+    if limit is not None and usage.history.count(proc.code) >= limit:
+        trace.append(TraceStep(label="Not covered", amount=billed,
+                               note=f"Your plan covers {limit} of these per plan year"))
+        return {"plan_pays": 0.0, "you_pay": round(billed, 2), "balance_bill": 0.0,
+                "deductible_used": 0.0, "max_used": 0.0, "trace": trace}
 
     # Deductible
     if proc.category in plan.deductible_waived_for:
@@ -237,6 +246,7 @@ def run_year(items: list[Procedure], plan: Plan, start_usage: Usage):
         r = estimate(p, plan, usage)
         usage.deductible_met += r["deductible_used"]
         usage.max_used += r["max_used"]
+        usage.history.append(p.code)     # so frequency limits apply to later items
         results.append(r)
     return results, usage
 ```
@@ -252,20 +262,22 @@ The sequencer and the Monte Carlo simulation both reuse this function. **One eng
 - frequency and waiting-period rules.
 
 **Approach A: exact brute force (recommended; it's simple and correct).**
-A real treatment plan has at most about 10 items and 2–3 plan years, so 2¹⁰ = 1,024 combinations. Score every valid assignment with the exact `run_year` engine and keep the best. It runs in milliseconds and is provably optimal for this problem size.
+A real treatment plan has at most about 10 items. With 2 plan years that's 2¹⁰ = 1,024 combinations (3 plan years would be 3¹⁰ = 59,049, still fast). Score every valid assignment with the exact `run_year` engine and keep the best. It runs in milliseconds and is provably optimal for this problem size.
 
 ```python
 # backend/app/engine/sequencer.py
 from itertools import product
 
-def best_schedule(items, plan, usage_now, years=2):
+def best_schedule(items, plan, usage_now, catalog, years=2):
+    # items are TreatmentItems; catalog maps code -> Procedure
     best = None
     for assign in product(range(years), repeat=len(items)):
         if not feasible(items, assign):          # urgency, dependencies, deadlines, waiting periods
             continue
         total_oop = 0
         for y in range(years):
-            year_items = order_within_year([it for it, a in zip(items, assign) if a == y])
+            year_treat = order_within_year([it for it, a in zip(items, assign) if a == y], plan, catalog)
+            year_items = [catalog[it.code] for it in year_treat]
             start = usage_now if y == 0 else Usage(plan_year=usage_now.plan_year + y)
             res, _ = run_year(year_items, plan, start)
             total_oop += sum(r["you_pay"] for r in res)
@@ -277,7 +289,7 @@ def best_schedule(items, plan, usage_now, years=2):
     return {"assignment": best[1], "oop": best[2], "savings": baseline - best[2]}
 ```
 
-Inside each year, schedule in order of urgency, then dependencies, then put the most expensive items first (so they're covered before the max runs out). Pick months by spacing appointments (for example, one per month), with **December/January splits** when a treatment straddles the plan-year boundary.
+Inside each year, order items by urgency, then dependencies, then make sure the deductible lands on the item with the **lowest coinsurance** (in scenario S2 that's the crown at 50%, which saves the patient $15 compared with applying it to a filling). If it's unclear which order is cheapest, try every valid order within the year: it's at most a few items. Pick months by spacing appointments (for example, one per month), with **December/January splits** when a treatment straddles the plan-year boundary.
 
 **Approach B: integer program (good for the pitch, use if you have time).**
 For more items or month-level detail, formulate it as a mixed-integer program in PuLP:
@@ -291,7 +303,7 @@ For more items or month-level detail, formulate it as a mixed-integer program in
 
 The deductible term is an approximation, so **always recompute the chosen schedule with the exact engine** before showing numbers.
 
-**The demo moment:** "Your dentist recommended a root canal, a crown and two fillings. Doing everything now costs you $1,640. Our plan: the root canal and fillings in November, the crown on January 8. You pay $1,065, **a $575 saving**, with no medically urgent care delayed."
+**The demo moment:** "Your dentist recommended a root canal, a crown and two fillings. You have $400 left in this year's maximum. Doing everything now costs you $2,300. Our plan: the urgent root canal now, then the crown and fillings in January when your maximum resets. You pay $1,405, **an $895 saving**, with no urgent care delayed." (The full calculation is scenario S2 in `docs/FEATURES.md`.)
 
 ### 4.4 My Benefits: tracker and use-it-or-lose-it
 
@@ -416,21 +428,21 @@ TOOLS = [
 | GET | `/procedures?q=` | Hybrid search of procedures (for autocomplete too) |
 | POST | `/estimate` | `{plan_id, code, in_network, usage}` → breakdown + trace |
 | POST | `/schedule` | `{plan_id, items[], usage}` → schedule, OOP, savings, baseline |
-| GET/POST | `/usage` | Read or update benefits usage |
+| GET | `/benefits-status` | Remaining max, deductible progress, frequency used, unused preventive value (usage sent as query/body) |
 | GET | `/reminders.ics` | Calendar file for unused benefits |
 | POST | `/simulate` | `{plan_ids[], profile, known_items[]}` → distribution stats |
 | POST | `/chat` | Agent turn, streamed back over SSE |
 
 - **Libraries:** `fastapi`, `uvicorn`, `pydantic`, `sqlmodel` (SQLite), `numpy`, `pulp` (optional), `pdfplumber`, `rank_bm25`, `sentence-transformers` (or provider embeddings), `ics`, and your LLM provider's SDK.
 - **Session/state:** for the demo, one user is enough. Store usage in SQLite under a demo user ID, or keep it in the frontend and send it with each request (the simplest option).
-- **Golden tests (`tests/test_engine.py`):** write these **first**, by hand on a whiteboard, then code until they pass.
+- **Golden tests (`tests/test_engine.py`):** M works out these numbers **first** on paper (they're in [docs/FEATURES.md §2](docs/FEATURES.md)). The engine agent turns them into test code before writing the engine, then writes code until they pass.
   - preventive cleaning → deductible waived, 100%, you pay $0
   - first filling of the year → deductible applied
   - crown with $400 max left → capped (the $800 case above)
   - same crown in January → $625
   - out-of-network → balance billing shown
   - 3rd cleaning → frequency limit, not covered
-  - sequencer: the example above saves $575, and an urgent item is never moved
+  - sequencer: the example above saves $895, and an urgent item is never moved
 
 ---
 
@@ -454,13 +466,13 @@ TOOLS = [
 **3. Plan My Year**
 - A treatment list builder: add procedures, mark urgency, set a dependency ("after root canal").
 - A **YearTimeline**: months across the x-axis with a plan-year divider, and procedures as chips in their scheduled months. Below it, a stacked bar per year showing annual max used vs remaining.
-- A **savings banner**: "Doing everything now: $1,640 → Optimized: $1,065 → **You save $575**."
+- A **savings banner**: "Doing everything now: $2,300 → Optimized: $1,405 → **You save $895**."
 - A toggle "Compare to doing everything now" that animates chips moving between the two schedules (a good demo moment).
 - A "Why this order?" explanation from the LLM, based on the trace.
 
 **4. My Benefits**
 - A radial gauge for the annual max, a progress bar for the deductible, and cleanings used (for example, 1 of 2).
-- An October-or-later banner: "You have $1,100 and 1 cleaning left. Book before Dec 31." with an **Add to calendar** button (`.ics`).
+- An October-or-later banner: "You have $400 and 1 cleaning left. Book before Dec 31." with an **Add to calendar** button (`.ics`).
 
 **5. Choose a Plan (stretch)**
 - A profile selector, known planned work, and overlapping histograms or box plots per plan.
@@ -478,13 +490,15 @@ TOOLS = [
 
 ### 8.1 Who gets which tool
 
-| Person | Role | Owns (folders) | AI tool | Why this pairing |
+Exact folder and file ownership is in **[docs/FEATURES.md §1](docs/FEATURES.md)**; the summary below is for orientation.
+
+| Person | Role | Main area | AI tool | Why this pairing |
 |---|---|---|---|---|
-| **M: Applied math** | Math lead | `backend/app/engine/`, `backend/tests/` | **Kiro (spec mode)** | Spec-driven development fits the engine: requirements (the plan rules) → design (formulas) → tasks → code + tests. M checks the math, the agent writes the Python. The specs also serve as judging documentation. |
-| **CS1** | Backend + integration, **merge captain** | `backend/app/main.py`, `models.py`, `extract.py`, deployment, CI | **Claude Code** | The most cross-cutting coding work: routes, schemas, PDF extraction, connecting everything |
-| **CS2** | LLM/RAG agent | `backend/app/agent/`, `backend/app/rag/` | **Claude Code** | Tool loop, retrieval, prompts and the number guard: lots of iterative code |
-| **CS3** | Frontend | `frontend/` | **Claude Code** | The largest amount of code: 5 screens, charts, chat drawer |
-| **CS4** | Data, QA + pitch; second pair of hands on the engine | `backend/data/`, `docs/`, `README.md`, demo script | **IBM Bob** (Ask + Agent modes) | Ask mode to research insurance rules, Agent mode to write seed-data scripts and extra tests, review PRs, write the README. Pairs with M on the engine when the data is done. |
+| **M: Applied math** | Math lead | Math engine + golden tests | **Kiro (spec mode)** | Spec-driven development fits the engine: requirements (the plan rules) → design (formulas) → tasks → code + tests. M checks the math, the agent writes the Python. The specs also serve as judging documentation. |
+| **CS1** | Backend + integration, **merge captain** | API routes, contract, fixtures, CI, deployment | **Claude Code** | The most cross-cutting coding work: routes, schemas, PDF extraction, connecting everything |
+| **CS2** | LLM/RAG agent | AI agent loop, RAG, evaluations | **Claude Code** | Tool loop, retrieval, prompts and the number guard: lots of iterative code |
+| **CS3** | Frontend | The React app | **Claude Code** | The largest amount of code: 5 screens, charts, chat drawer |
+| **CS4** | Data, QA + pitch; second pair of hands on the engine | Seed data, README, pitch and demo script | **IBM Bob** (Ask + Agent modes) | Ask mode to research insurance rules, Agent mode to write seed-data scripts and extra tests, review PRs, write the README. Pairs with M on the engine when the data is done. |
 
 If you only get one Kiro/Bob seat, give it to **M** (Kiro). CS4 then works without an agent, or shares a Claude Code seat during off-shifts.
 
@@ -494,7 +508,7 @@ If you only get one Kiro/Bob seat, give it to **M** (Kiro). CS4 then works witho
 
 1. **One repo, folder ownership.** Each person and their agent edits **only their own folders** (table above). Changes outside them go through the owner. This prevents nearly all merge conflicts.
 2. **The API contract is shared and protected.** `backend/app/models.py` (Pydantic) is the single source of truth. Generate TypeScript types from FastAPI's OpenAPI schema with `openapi-typescript` into `frontend/src/lib/api-types.ts`. Only **CS1** changes the contract, after posting the change in Discord.
-3. **Golden tests are written by hand, by M, first.** `backend/tests/test_engine.py` is the contract between the math and everyone else. **No agent may edit the golden tests** without M's approval. Put this rule in every agent's instruction file.
+3. **Golden numbers come from M, first.** M sets them; the engine agent writes `backend/tests/test_engine.py` from them; it's the contract between the math and everyone else. **No agent may change a golden expected value** without M's approval. Put this rule in every agent's instruction file.
 4. **Stubs first.** By 2:30 PM, CS1 ships every endpoint returning fixture JSON from `backend/fixtures/`. CS2 and CS3 build against the stubs and are never blocked waiting on the engine.
 5. **Small PRs, often.** Merge to `main` every 60–90 minutes. **`main` must always run and be demoable.** CS1 merges. GitHub Actions runs `pytest`, `tsc --noEmit` and lint on every PR.
 6. **One set of conventions for all agents.** Write `docs/CONVENTIONS.md` once (stack, folder ownership, "never compute dollar amounts in the LLM", "don't edit golden tests", code style, how to run tests). Then point every tool at it:
@@ -525,8 +539,7 @@ If you only get one Kiro/Bob seat, give it to **M** (Kiro). CS4 then works witho
 
 - **Task board:** GitHub Projects or a `TASKS.md` with columns Todo / Doing / Done. Each card names its owner. Agents can read `TASKS.md` for context.
 - **Discord:** one channel per area (`#engine`, `#backend`, `#agent`, `#frontend`, `#data`) and `#contract` for API changes.
-- **Stand-ups:** 5 minutes at 4:30 PM, 7:30 PM, 10:30 PM, 1:30 AM, 4:30 AM and 7:00 AM. Each person says what's done, what's next, and what's blocking them.
-- **Integration checkpoints:** at 6:30 PM and 10:00 PM, everyone stops, pulls `main` and clicks through the app together for 10 minutes.
+- **Stand-ups + integration checkpoints:** at 2:30 PM, 6:30 PM, 10:00 PM, 2:00 AM, 5:00 AM and 7:00 AM (same times as [docs/FEATURES.md §4](docs/FEATURES.md)). Everyone pulls `main`, clicks through the app together for 10 minutes, then each person says what's done, what's next, and what's blocking them.
 - **Sleep shifts (optional):** Shift A sleeps 1–4 AM, Shift B sleeps 4–7 AM. Never have M and CS1 asleep at the same time. Leave a handoff note in `TASKS.md` before sleeping.
 
 ### 8.5 First 3 hours (1:30–4:30 PM)
@@ -541,15 +554,7 @@ If you only get one Kiro/Bob seat, give it to **M** (Kiro). CS4 then works witho
 
 ### Schedule
 
-| Time | Milestone |
-|---|---|
-| **2:30 PM** | Scope locked, API contract (endpoint JSON shapes) agreed and written down, everyone unblocked |
-| **6:30 PM** | Estimate tab works end to end with real engine numbers (no LLM yet) |
-| **10:00 PM** | LLM procedure matching + explanations working; sequencer returns correct savings on golden tests |
-| **2:00 AM** | Plan My Year UI complete; My Benefits + `.ics` done; chat drawer working |
-| **5:00 AM** | Stretch: Choose a Plan Monte Carlo *or* plan PDF upload, not both |
-| **7:00 AM** | **Code freeze.** Bug fixes only. Deploy (Vercel for frontend + Render/Railway for backend) **and** keep a local backup |
-| **8–10 AM** | Rehearse demo 3+ times, record a backup video, finish README |
+The schedule lives in **[docs/FEATURES.md §4](docs/FEATURES.md)** (feature by feature, with checkpoints at 6:30 PM, 10:00 PM, 2:00 AM and 5:00 AM, code freeze at 7:00 AM, rehearsal 7–10 AM). Deploy at code freeze (Vercel for the frontend, Render/Railway for the backend) **and** keep a local backup.
 
 **Fallbacks if you fall behind:** sequencer → greedy rule instead of exhaustive search. RAG → keyword search only. Chat drawer → LLM explanations only on the Estimate card. Never cut the golden tests.
 
@@ -559,7 +564,7 @@ If you only get one Kiro/Bob seat, give it to **M** (Kiro). CS4 then works witho
 
 1. **Problem (30 s):** "Dental benefits are confusing. Most people don't know what they'll owe until the bill arrives, and billions in annual maximums go unused every year." *(Check this statistic before using it.)*
 2. **Estimate (60 s):** Type "I need a cap on my back tooth." The agent asks a quick follow-up, maps it to D2740, and shows "You pay $800" with the waterfall. Open "Show the math." Toggle out-of-network to show balance billing.
-3. **Plan My Year (90 s):** Add root canal + crown + 2 fillings. "Doing it all now: $1,640." Click Optimize, the chips move, "**Save $575**", with the reasoning. Point out that the urgent item stayed in place.
-4. **My Benefits (30 s):** "$1,100 left, 1 cleaning left. Add to calendar."
+3. **Plan My Year (90 s):** Add root canal + crown + 2 fillings. "Doing it all now: $2,300." Click Optimize, the chips move, "**Save $895**", with the reasoning. Point out that the urgent item stayed in place.
+4. **My Benefits (30 s):** "$400 left, 1 cleaning left. Add to calendar."
 5. **How it works (60 s):** Architecture slide. "The LLM never does math: every dollar figure comes from a tested engine, and a guard checks each number in the AI's answer against the calculation." Mention RAG grounding over real procedure codes and plan documents.
 6. **Close (30 s):** What's next: real claims data, an employer dashboard, Lincoln's other benefits (vision, life).
