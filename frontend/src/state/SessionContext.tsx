@@ -9,7 +9,7 @@
 // hard-code a person or fetch their own token.
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
-import { demoLogin, getDemoAccounts, getHousehold } from "@/lib/api/family"
+import { demoLogin, getDemoAccounts, getHousehold, putHouseholdPlan } from "@/lib/api/family"
 import { errorMessage } from "@/lib/api/planYear"
 import type { DemoAccount, FamilyHousehold, FamilyMember } from "@/lib/types/family"
 
@@ -41,6 +41,10 @@ export interface SessionState {
   accounts: DemoAccount[]
   signIn: (memberId: string) => Promise<void>
   signOut: () => void
+  /** Reload the household from the server (for example after the plan changed). */
+  refreshHousehold: () => Promise<void>
+  /** Switch the household to another plan tier (primary only). Every page updates at once. Throws an ApiError on failure. */
+  changePlan: (tierId: string) => Promise<void>
 }
 
 export type SessionStatus = "loading" | "ready" | "error" | "signed-out"
@@ -153,6 +157,19 @@ export function SessionProvider({ children, initialMemberId }: { children: React
     setActiveId(null)
     setStatus("signed-out")
   }, [])
+  const refreshHousehold = useCallback(async () => {
+    if (!signed) return
+    const fresh = await getHousehold(signed.household.id, signed.token)
+    setSigned((cur) => (cur ? { ...cur, household: toHousehold(fresh) } : cur))
+  }, [signed])
+  const changePlan = useCallback(
+    async (tierId: string) => {
+      if (!signed) return
+      const fresh = await putHouseholdPlan(signed.household.id, tierId, signed.token)
+      setSigned((cur) => (cur ? { ...cur, household: toHousehold(fresh) } : cur))
+    },
+    [signed],
+  )
   const retry = useCallback(() => setAttempt((n) => n + 1), [])
 
   const value = useMemo<SessionGateState>(() => {
@@ -172,10 +189,12 @@ export function SessionProvider({ children, initialMemberId }: { children: React
         accounts,
         signIn,
         signOut,
+        refreshHousehold,
+        changePlan,
       }
     }
     return { status, error, retry, accounts, signIn, session }
-  }, [signed, status, error, retry, accounts, activeId, signIn, signOut])
+  }, [signed, status, error, retry, accounts, activeId, signIn, signOut, refreshHousehold, changePlan])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

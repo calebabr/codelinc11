@@ -9,11 +9,26 @@ import { SessionProvider } from "./SessionContext"
 interface Call {
   url: string
   method: string
-  body: { member_id?: string } | null
+  body: { member_id?: string; tier_id?: string } | null
   auth: string | null
 }
 let calls: Call[]
 let down = false
+let tier = "preferred"
+const PLAN = (id: string, name: string, premium: number) => ({
+  id,
+  name,
+  description: "",
+  monthly_premium: premium,
+  deductible: 50,
+  deductible_waived_for: ["preventive"],
+  annual_max: 1500,
+  coinsurance: { preventive: 1, basic: 0.8, major: 0.5 },
+  frequency: {},
+  plan_year_start_month: 1,
+  orthodontia_child: 0.5,
+  alternate_benefit: true,
+})
 
 function mockApi() {
   calls = []
@@ -31,6 +46,12 @@ function mockApi() {
         const h = householdFor(body.member_id)
         return ok({ token: `tok-${body.member_id}`, member: h.members.find((m) => m.id === body.member_id), household: h })
       }
+      if (init?.method === "PUT" && url.endsWith("/households/hh-rivera/plan")) {
+        tier = body.tier_id!
+        const h = householdFor("m-jordan")
+        return ok({ ...h, plan_tier: { ...h.plan_tier, id: tier, name: "Premium" } })
+      }
+      if (url.endsWith("/plans")) return ok([PLAN("basic", "Basic", 28), PLAN("preferred", "Preferred", 44), PLAN("premium", "Premium", 61)])
       const hh = url.match(/\/households\/([^/]+)$/)
       if (hh) return ok(householdFor(headers.Authorization!.replace("Bearer tok-", "")))
       return ok([])
@@ -50,6 +71,7 @@ function renderApp(path = "/plans") {
 
 beforeEach(() => {
   down = false
+  tier = "preferred"
   sessionStorage.clear()
   mockApi()
 })
@@ -95,5 +117,17 @@ describe("SessionProvider", () => {
     await user.click(await screen.findByRole("button", { name: /Alex Rivera/ }))
     await waitFor(() => expect(screen.getByTestId("active-member-label")).toHaveTextContent("Alex Rivera"))
     expect(sessionStorage.getItem("dental.signedInMemberId")).toBe("m-alex")
+  })
+
+  it("changePlan updates the plan name in the utility bar without a reload", async () => {
+    const user = userEvent.setup()
+    renderApp("/plans")
+    expect(await screen.findByTestId("plan-label")).toHaveTextContent("Preferred plan")
+    await user.click(await screen.findByTestId("tier-premium"))
+    await user.click(screen.getByRole("button", { name: "Switch to this plan" }))
+    await user.click(screen.getByRole("button", { name: "Yes, switch to Premium" }))
+    await waitFor(() => expect(screen.getByTestId("plan-label")).toHaveTextContent("Premium plan"))
+    expect(tier).toBe("premium")
+    expect(calls.find((c) => c.method === "PUT")!.auth).toBe("Bearer tok-m-jordan")
   })
 })

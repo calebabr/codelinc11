@@ -50,5 +50,8 @@
     {"member_id": "m-alex", "kind": "preference", "text": "Prefers to spread big costs across plan years when it is safe."},
     {"member_id": "m-maya", "kind": "preference", "text": "Nervous at the dentist. Short visits work best."},
     {"member_id": "m-noah", "kind": "preference", "text": "Wants low out-of-pocket cost while in school."}
+  ],
+  "saved_plans": [
+    {"id": "sp-alex-s2", "member_id": "m-alex", "name": "Root canal, crown and two fillings", "items_json": "[{\"id\": \"t1\", \"code\": \"D3330\", \"urgency\": \"urgent\", \"after\": null}, {\"id\": \"t2\", \"code\": \"D2740\", \"urgency\": \"flexible\", \"after\": \"t1\"}, {\"id\": \"t3\", \"code\": \"D2392\", \"urgency\": \"flexible\", \"after\": null}, {\"id\": \"t4\", \"code\": \"D2392\", \"urgency\": \"flexible\", \"after\": null}]", "created_at": "2026-09-15T09:00:00+00:00", "updated_at": "2026-09-15T09:00:00+00:00"}
   ]
 }

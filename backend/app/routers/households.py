@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import APIRouter
+from pydantic import BaseModel
 
 from ..models import Household, InviteRequest, InviteResponse, Member, PlanTierSummary
 from .session import StoreDep, Viewer, guarded
@@ -47,3 +48,13 @@ def create_invite(household_id: str, req: InviteRequest, viewer: Viewer,
         guarded(lambda: store.get_household(viewer, household_id))  # 403/404 as appropriate
     inv = guarded(lambda: store.create_invite(viewer, req.email, req.member_id))
     return InviteResponse(**{k: inv[k] for k in InviteResponse.model_fields})
+
+
+class PlanChange(BaseModel):
+    tier_id: str  # "basic" | "preferred" | "premium"
+
+
+@router.put("/households/{household_id}/plan", response_model=Household)
+def set_household_plan(household_id: str, req: PlanChange, viewer: Viewer, store: StoreDep) -> Household:
+    """Primary switches the household plan tier. 403 non-primary, 404 unknown tier."""
+    return household_model(guarded(lambda: store.set_household_plan(viewer, household_id, req.tier_id)))

@@ -25,6 +25,7 @@ SEED_TABLES = [
     "appointments",
     "member_context",
     "member_preferences",
+    "saved_plans",
 ]
 
 

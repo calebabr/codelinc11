@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { TestSessionProvider } from "@/test/session"
+import { TIER, TestSessionProvider } from "@/test/session"
 import PlansPage from "./PlansPage"
 
 const base = { deductible_waived_for: ["preventive"], frequency: { D1110: 2, D0120: 2 }, plan_year_start_month: 1, alternate_benefit: true }
@@ -11,16 +11,41 @@ const PLANS = [
   { ...base, id: "premium", name: "Premium", description: "Most coverage.", monthly_premium: 61, deductible: 50, annual_max: 2500, coinsurance: { preventive: 1, basic: 0.9, major: 0.7 }, orthodontia_child: 0.6 },
 ]
 
-function renderPage() {
+let putResult: { status: number; body: unknown } = { status: 200, body: null }
+let puts: { url: string; body: unknown; auth: string | null }[] = []
+
+function stubFetch() {
+  puts = []
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: string, init?: RequestInit) => {
+      if (init?.method === "PUT") {
+        const headers = (init.headers ?? {}) as Record<string, string>
+        puts.push({ url: String(input), body: JSON.parse(String(init.body)), auth: headers.Authorization ?? null })
+        const b = putResult.body ?? {
+          id: "hh-rivera",
+          name: "Rivera household",
+          plan_tier: { ...TIER, id: "premium", name: "Premium", annual_max: 2500 },
+          members: [],
+        }
+        return { ok: putResult.status < 400, status: putResult.status, json: async () => b }
+      }
+      return { ok: true, status: 200, json: async () => PLANS }
+    }),
+  )
+}
+
+function renderPage(signedInId = "m-jordan") {
   return render(
-    <TestSessionProvider>
+    <TestSessionProvider signedInId={signedInId}>
       <PlansPage />
     </TestSessionProvider>,
   )
 }
 
 beforeEach(() => {
-  vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, status: 200, json: async () => PLANS })))
+  putResult = { status: 200, body: null }
+  stubFetch()
 })
 afterEach(() => vi.restoreAllMocks())
 
@@ -62,5 +87,87 @@ describe("Plans page", () => {
     renderPage()
     expect(await screen.findByRole("alert")).toHaveTextContent(/can't reach the server/i)
     expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument()
+  })
+
+  describe("switching the household plan", () => {
+    it("shows no button while the household's own tier is selected", async () => {
+      renderPage()
+      await screen.findByTestId("tier-preferred")
+      expect(screen.queryByRole("button", { name: "Switch to this plan" })).toBeNull()
+      expect(screen.queryByRole("button", { name: /Back to Preferred/ })).toBeNull()
+    })
+
+    it("lets the primary switch after a confirm step, then moves the Your plan tag", async () => {
+      const user = userEvent.setup()
+      renderPage()
+      await user.click(await screen.findByTestId("tier-premium"))
+      await user.click(screen.getByRole("button", { name: "Switch to this plan" }))
+      const panel = within(screen.getByTestId("confirm-switch"))
+      expect(panel.getByTestId("change-Yearly maximum")).toHaveTextContent("$1,500 to $2,500")
+      expect(panel.getByTestId("change-Deductible")).toHaveTextContent("$50 to $50")
+      expect(panel.getByTestId("change-Plan pays for major care")).toHaveTextContent("50% to 70%")
+      expect(panel.getByTestId("change-Monthly price")).toHaveTextContent("$44 to $61")
+      expect(panel.getByText(/usage so far .* stays/i)).toBeInTheDocument()
+      expect(puts).toHaveLength(0)
+
+      await user.click(panel.getByRole("button", { name: "Yes, switch to Premium" }))
+      expect(await screen.findByTestId("switch-done")).toHaveTextContent("now on the Premium plan")
+      expect(puts).toHaveLength(1)
+      expect(puts[0].url).toMatch(/\/households\/hh-rivera\/plan$/)
+      expect(puts[0].body).toEqual({ tier_id: "premium" })
+      expect(puts[0].auth).toBe("Bearer tok-m-jordan")
+      expect(within(screen.getByTestId("tier-premium")).getByText("Your plan")).toBeInTheDocument()
+      expect(within(screen.getByTestId("tier-preferred")).queryByText("Your plan")).toBeNull()
+      expect(screen.queryByTestId("confirm-switch")).toBeNull()
+      expect(screen.getByRole("button", { name: "Back to Preferred (demo plan)" })).toBeInTheDocument()
+    })
+
+    it("cancel closes the confirm panel without calling the server", async () => {
+      const user = userEvent.setup()
+      renderPage()
+      await user.click(await screen.findByTestId("tier-basic"))
+      await user.click(screen.getByRole("button", { name: "Switch to this plan" }))
+      await user.click(screen.getByRole("button", { name: "Cancel" }))
+      expect(screen.queryByTestId("confirm-switch")).toBeNull()
+      expect(puts).toHaveLength(0)
+      expect(within(screen.getByTestId("tier-preferred")).getByText("Your plan")).toBeInTheDocument()
+    })
+
+    it("offers no switch button to a non-primary member, only a note", async () => {
+      const user = userEvent.setup()
+      renderPage("m-alex")
+      await user.click(await screen.findByTestId("tier-premium"))
+      expect(screen.queryByRole("button", { name: "Switch to this plan" })).toBeNull()
+      expect(screen.getByText("Only Jordan can change the family plan.")).toBeInTheDocument()
+    })
+
+    it("explains clearly when the server does not have the plan route yet (404)", async () => {
+      const user = userEvent.setup()
+      putResult = { status: 404, body: { detail: "Not Found" } }
+      renderPage()
+      await user.click(await screen.findByTestId("tier-premium"))
+      await user.click(screen.getByRole("button", { name: "Switch to this plan" }))
+      await user.click(screen.getByRole("button", { name: "Yes, switch to Premium" }))
+      expect(await screen.findByRole("alert")).toHaveTextContent(/not available on the server yet/i)
+      expect(within(screen.getByTestId("tier-preferred")).getByText("Your plan")).toBeInTheDocument()
+      expect(screen.getByTestId("confirm-switch")).toBeInTheDocument()
+    })
+
+    it("Back to Preferred switches back after a confirm", async () => {
+      const user = userEvent.setup()
+      renderPage()
+      await user.click(await screen.findByTestId("tier-premium"))
+      await user.click(screen.getByRole("button", { name: "Switch to this plan" }))
+      await user.click(screen.getByRole("button", { name: "Yes, switch to Premium" }))
+      await screen.findByTestId("switch-done")
+
+      putResult = { status: 200, body: { id: "hh-rivera", name: "Rivera household", plan_tier: TIER, members: [] } }
+      await user.click(screen.getByRole("button", { name: "Back to Preferred (demo plan)" }))
+      await user.click(screen.getByRole("button", { name: "Yes, switch to Preferred" }))
+      expect(await screen.findByTestId("switch-done")).toHaveTextContent("now on the Preferred plan")
+      expect(puts.map((p) => p.body)).toEqual([{ tier_id: "premium" }, { tier_id: "preferred" }])
+      expect(within(screen.getByTestId("tier-preferred")).getByText("Your plan")).toBeInTheDocument()
+      expect(screen.queryByRole("button", { name: /Back to Preferred/ })).toBeNull()
+    })
   })
 })

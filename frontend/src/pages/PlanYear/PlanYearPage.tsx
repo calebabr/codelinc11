@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useLocation } from "react-router"
 import type { QuoteHandoff } from "@/features/costs/QuoteView"
 import { useSession } from "@/state/SessionContext"
@@ -8,6 +8,8 @@ import { money } from "@/lib/format"
 import { TreatmentBuilder } from "@/features/planYear/TreatmentBuilder"
 import { SavingsBanner, Timeline, WhyThisOrder } from "@/features/planYear/ResultView"
 import { CalendarReminder, QuestionsCard, SavingsTipsCard } from "@/features/planYear/Extras"
+import { SavedPlans } from "@/features/planYear/SavedPlans"
+import { useSavedPlans } from "@/features/planYear/useSavedPlans"
 import { usePlanYear } from "@/features/planYear/usePlanYear"
 
 function useProcedures() {
@@ -37,14 +39,21 @@ function useProcedures() {
 
 export default function PlanYearPage() {
   const { activeMember, household, token } = useSession()
-  const py = usePlanYear(activeMember.id, household.planTier, token)
+  const py = usePlanYear(activeMember.id, household.planTier, token, household.id)
+  const saved = useSavedPlans(activeMember.id, token)
   const location = useLocation()
   const handoff = (location.state as QuoteHandoff | null)?.treatments
   const { loadItems } = py
+  // Load a hand-off from Costs once per navigation, into whoever is active then.
+  const handled = useRef<string | null>(null)
   useEffect(() => {
-    if (handoff && handoff.length > 0) loadItems(handoff)
-  }, [handoff, loadItems])
+    if (handoff && handoff.length > 0 && handled.current !== location.key) {
+      handled.current = location.key
+      loadItems(handoff)
+    }
+  }, [handoff, loadItems, location.key])
   const procs = useProcedures()
+  const names = useMemo(() => new Map(procs.list.map((p) => [p.code, p.name])), [procs.list])
   const { schedule, benefits, memberUsage } = py
   const first = activeMember.name.split(" ")[0]
 
@@ -65,7 +74,7 @@ export default function PlanYearPage() {
       <p className="note text-sm">Urgent or painful care should never wait. Urgent treatments always stay in the current year.</p>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-        <div className="space-y-4">
+        <div className="space-y-4 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:self-start lg:overflow-y-auto" data-testid="treatments-column">
           <div className="flex flex-wrap gap-2">
             <button type="button" className="btn btn-orange" onClick={py.loadDemo}>Try the demo case</button>
             {py.items.length > 0 && (
@@ -87,6 +96,16 @@ export default function PlanYearPage() {
 
         <div className="space-y-6" aria-live="polite">
           {memberUsage.error && <p role="alert" className="note">{memberUsage.error}</p>}
+          <SavedPlans
+            firstName={first}
+            memberId={activeMember.id}
+            saved={saved}
+            items={py.items}
+            openPlanId={py.openPlanId}
+            names={names}
+            onOpen={(plan) => py.loadItems(plan.items, plan.id)}
+            onSavedAs={(plan) => py.setOpenPlanId(plan.id)}
+          />
           {py.items.length === 0 && (
             <div className="portal-card text-center">
               <p className="portal-card-title">Your plan will show up here</p>

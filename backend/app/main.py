@@ -31,6 +31,7 @@ from .routers import chat as chat_router
 from .routers import households as households_router
 from .routers import members as members_router
 from .routers import questions as questions_router
+from .routers import saved_plans as saved_plans_router
 from .routers import tips as tips_router
 from .routers import treatment_plan as treatment_plan_router
 from .search import search_procedures
@@ -50,6 +51,7 @@ app.include_router(auth_router.router)
 app.include_router(chat_router.router)
 app.include_router(households_router.router)
 app.include_router(members_router.router)
+app.include_router(saved_plans_router.router)
 app.include_router(annual_cost_router.router)
 
 

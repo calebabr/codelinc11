@@ -1,6 +1,6 @@
 import type { FamilyMember } from "@/lib/types/family"
 
-function Node({ m, selected, onSelect }: { m: FamilyMember; selected: boolean; onSelect: () => void }) {
+function Node({ m, selected, onSelect, primaryName }: { m: FamilyMember; selected: boolean; onSelect: () => void; primaryName: string }) {
   const pending = m.status === "pending"
   return (
     <button
@@ -9,7 +9,7 @@ function Node({ m, selected, onSelect }: { m: FamilyMember; selected: boolean; o
       aria-pressed={selected}
       aria-label={`${m.name}, ${m.relationship}, age ${m.age}${pending ? ", pending verification" : ""}`}
       data-testid={`node-${m.id}`}
-      className={`portal-card portal-card-select flex w-40 flex-col items-center gap-1 !p-4 text-center sm:w-48 ${
+      className={`portal-card portal-card-select flex w-36 flex-col items-center gap-1 !p-4 text-center sm:w-48 ${
         pending ? "border-dashed" : ""
       }`}
     >
@@ -24,14 +24,33 @@ function Node({ m, selected, onSelect }: { m: FamilyMember; selected: boolean; o
         {m.relationship} · age {m.age}
       </span>
       <span className="flex flex-wrap justify-center gap-1">
-        {pending && <span className="chip chip-pending">Pending</span>}
-        {m.has_login && <span className="chip chip-ok">Has login</span>}
-        {!m.has_login && m.role === "managed" && <span className="chip chip-off">Managed profile</span>}
+        {pending && <span className="chip chip-pending">Waiting for approval</span>}
+        {!pending && m.has_login && <span className="chip chip-ok">Has their own account</span>}
+        {!pending && !m.has_login && m.role === "managed" && <span className="chip chip-off">Managed by {primaryName}</span>}
       </span>
     </button>
   )
 }
 
+const PARTNER = new Set(["self", "spouse", "partner", "domestic partner"])
+
+/** Decorative connector line. Always hidden from assistive tech. */
+function Line({ className, on, dashed }: { className: string; on?: boolean; dashed?: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      data-testid="connector"
+      data-active={on ? "true" : "false"}
+      className={`absolute ${className} ${on ? "border-burgundy" : "border-[var(--line)]"} ${dashed ? "border-dashed" : ""}`}
+    />
+  )
+}
+
+/*
+ * The backend has no parent or partner field, so the tree is inferred from the
+ * relationship label: self + spouse/partner are the couple; everyone else hangs
+ * from the couple (a child with their own login, such as Noah, hangs the same way).
+ */
 export function FamilyTree({
   members,
   selectedId,
@@ -41,30 +60,68 @@ export function FamilyTree({
   selectedId: string | null
   onSelect: (id: string) => void
 }) {
-  const parents = members.filter((m) => m.relationship === "self" || m.relationship === "spouse")
-  const kids = members.filter((m) => m.relationship !== "self" && m.relationship !== "spouse")
+  const parents = members.filter((m) => PARTNER.has(m.relationship.toLowerCase()))
+  const kids = members.filter((m) => !PARTNER.has(m.relationship.toLowerCase()))
+  const primaryName = (members.find((x) => x.role === "primary")?.name ?? "a parent").split(" ")[0]
+  const parentActive = parents.some((m) => m.id === selectedId)
+  const kidActive = kids.some((m) => m.id === selectedId)
+  const stemOn = parentActive || kidActive
   return (
-    <div role="group" aria-label="Family tree" className="flex flex-col items-center">
+    <div role="group" aria-label="Family tree" className="flex flex-col items-center" data-testid="family-tree">
       {parents.length > 0 && (
-        <div className="flex flex-wrap items-center justify-center gap-y-3">
+        <div className="flex flex-col items-center sm:flex-row" data-testid="couple">
           {parents.map((m, i) => (
-            <div key={m.id} className="flex items-center">
-              {i > 0 && <span aria-hidden="true" className="h-0.5 w-6 bg-[var(--line)]" />}
-              <Node m={m} selected={m.id === selectedId} onSelect={() => onSelect(m.id)} />
+            <div key={m.id} className="flex flex-col items-center sm:flex-row">
+              {i > 0 && (
+                <span
+                  aria-hidden="true"
+                  data-testid="partner-link"
+                  className={`relative flex items-center justify-center text-xs ${
+                    parentActive && (m.id === selectedId || parents[i - 1].id === selectedId) ? "text-burgundy" : "text-[var(--line)]"
+                  } h-6 w-0 border-l-2 border-current sm:h-0 sm:w-8 sm:border-l-0 sm:border-t-2`}
+                >
+                  <span className="absolute rounded-full bg-white px-0.5 leading-none">&#9829;</span>
+                </span>
+              )}
+              <Node primaryName={primaryName} m={m} selected={m.id === selectedId} onSelect={() => onSelect(m.id)} />
             </div>
           ))}
         </div>
       )}
       {kids.length > 0 && (
         <>
-          {parents.length > 0 && <span aria-hidden="true" className="h-6 w-0.5 bg-[var(--line)]" />}
-          <div className="flex flex-wrap justify-center gap-3">
-            {kids.map((m) => (
-              <Node key={m.id} m={m} selected={m.id === selectedId} onSelect={() => onSelect(m.id)} />
-            ))}
+          {parents.length > 0 && (
+            <span
+              aria-hidden="true"
+              data-testid="connector"
+              data-active={stemOn ? "true" : "false"}
+              className={`h-6 w-0 border-l-2 ${stemOn ? "border-burgundy" : "border-[var(--line)]"}`}
+            />
+          )}
+          <div className="flex justify-center" data-testid="children">
+            {kids.map((m, i) => {
+              const on = m.id === selectedId
+              const dashed = m.status === "pending"
+              const multi = kids.length > 1
+              return (
+                <div key={m.id} className="relative flex flex-col items-center px-1 pt-6 sm:px-2">
+                  {parents.length > 0 && (
+                    <>
+                      <Line className="left-1/2 top-0 h-6 -translate-x-px border-l-2" on={on} dashed={dashed} />
+                      {multi && i > 0 && <Line className="left-0 top-0 w-1/2 border-t-2" on={on} />}
+                      {multi && i < kids.length - 1 && <Line className="right-0 top-0 w-1/2 border-t-2" on={kids[i + 1].id === selectedId || on} />}
+                    </>
+                  )}
+                  <Node primaryName={primaryName} m={m} selected={on} onSelect={() => onSelect(m.id)} />
+                </div>
+              )
+            })}
           </div>
         </>
       )}
+      <p className="mt-4 max-w-md text-center text-sm text-muted-foreground" data-testid="tree-legend">
+        Adults 18 and over can have their own account. Children's profiles are managed by a parent.
+      </p>
     </div>
   )
 }

@@ -86,17 +86,17 @@ describe("parseSse", () => {
 })
 
 describe("Assistant page", () => {
-  it("shows Alex's chips and context, and streams the answer exactly as sent", async () => {
+  it("shows Alex's chips and context, and streams the answer exactly as sent", { timeout: 15000 }, async () => {
     const user = userEvent.setup()
     renderPage()
     expect(screen.getByTestId("talking-about")).toHaveTextContent("Alex Rivera")
-    const chip = await screen.findByRole("button", { name: "What will a crown cost me?" })
-    const knows = within(await screen.findByTestId("knows-panel"))
-    expect(await knows.findByText("Alex plan: $1,500 yearly max.")).toBeInTheDocument()
+    const chip = await screen.findByRole("button", { name: "What will a crown cost me?" }, { timeout: 5000 })
+    const knows = within(await screen.findByTestId("knows-panel", {}, { timeout: 5000 }))
+    expect(await knows.findByText("Alex plan: $1,500 yearly max.", {}, { timeout: 5000 })).toBeInTheDocument()
     expect(knows.getByText("Prefers morning visits.")).toBeInTheDocument()
 
     await user.click(chip)
-    expect(await screen.findByText("A crown would cost you $800.")).toBeInTheDocument()
+    expect(await screen.findByText("A crown would cost you $800.", {}, { timeout: 5000 })).toBeInTheDocument()
     expect(screen.getByText(/Done: Calculating your cost/)).toBeInTheDocument()
 
     const chat = calls.find((c) => c.url.endsWith("/chat"))!

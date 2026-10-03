@@ -18,7 +18,7 @@ The router, shell and shared context (T02; you supply the panel component it mou
 
 ## Interfaces
 - Chat: `POST /chat` (streamed events `tool_start`, `tool_end`, `token`, `done`, `error`), `GET /chat/suggestions?member_id=`, the assistant-context endpoint, `POST /chat/attachments`. All for the **active member**.
-- **Layout (Assistant page):** a "Talking about: <name>" header with the member switcher; the chat in the middle; a side panel **"What the assistant knows"** (plan highlights, history, preferences and must-haves, recent questions) for that person. The same chat panel opens from the floating button on every other page.
+- **Layout (Assistant page):** a "Talking about: <name>" header with the member switcher; the chat in the middle; a side panel **"What Your Assistant Knows"** (plan highlights, history, preferences and must-haves, recent questions) for that person. The same chat panel opens from the floating button on every other page.
 - **Recommended questions** as tappable chips above the input; they change with the active member.
 - Show streamed text and tool-status chips ("Calculating…"). Switching the member starts that person's own thread and context. Never mix threads.
 - **Attach a PDF** (PDF only, size limit shown) with a note that sample documents only should be used in the demo; show the file as a removable chip.

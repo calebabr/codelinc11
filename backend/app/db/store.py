@@ -10,6 +10,7 @@ so one person's context can never come back under another person's id.
 
 from __future__ import annotations
 
+import json
 import secrets
 import sqlite3
 from datetime import date, datetime, timezone
@@ -116,6 +117,17 @@ class Store:
             household = {"id": hh["hid"], "name": hh["hname"], "plan_tier": _tier(hh)}
             household["members"] = [dict(m) for m in members]
         return household
+
+    def set_household_plan(self, viewer_id: str, household_id: str, tier_id: str) -> dict[str, Any]:
+        """Primary only: switch the household's plan tier. Returns the updated household."""
+        with session(self.path) as conn:
+            viewer = self._viewer(conn, viewer_id)
+            if viewer["household_id"] != household_id or viewer["role"] != "primary":
+                raise AccessDenied("only the primary account holder can change the plan")
+            if conn.execute("SELECT 1 FROM plan_tiers WHERE id = ?", (tier_id,)).fetchone() is None:
+                raise NotFound(f"plan tier {tier_id}")
+            conn.execute("UPDATE households SET plan_tier_id = ? WHERE id = ?", (tier_id, household_id))
+        return self.get_household(viewer_id, household_id)
 
     def get_member(self, viewer_id: str, member_id: str) -> dict[str, Any]:
         with session(self.path) as conn:
@@ -320,6 +332,66 @@ class Store:
             )
             conn.execute("UPDATE invites SET status = 'accepted' WHERE id = ?", (inv["id"],))
             return dict(conn.execute("SELECT * FROM members WHERE id = ?", (m["id"],)).fetchone())
+
+    # ---- saved Plan My Year plans ---------------------------------------
+    def list_saved_plans(self, viewer_id: str, member_id: str) -> list[dict[str, Any]]:
+        """Saved plans for one person, newest first. `items` is a list of dicts."""
+        with session(self.path) as conn:
+            self._target(conn, viewer_id, member_id)
+            rows = conn.execute(
+                "SELECT * FROM saved_plans WHERE member_id = ? ORDER BY created_at DESC, rowid DESC",
+                (member_id,),
+            ).fetchall()
+        return [_saved_plan(r) for r in rows]
+
+    def create_saved_plan(
+        self, viewer_id: str, member_id: str, name: str, items: list[dict[str, Any]]
+    ) -> dict[str, Any]:
+        now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        plan_id = "sp-" + secrets.token_hex(6)
+        with session(self.path) as conn:
+            self._target(conn, viewer_id, member_id)
+            conn.execute(
+                "INSERT INTO saved_plans (id, member_id, name, items_json, created_at, updated_at) "
+                "VALUES (?,?,?,?,?,?)",
+                (plan_id, member_id, name, json.dumps(items), now, now),
+            )
+            return _saved_plan(conn.execute("SELECT * FROM saved_plans WHERE id = ?", (plan_id,)).fetchone())
+
+    def update_saved_plan(
+        self, viewer_id: str, member_id: str, plan_id: str,
+        name: str | None = None, items: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        with session(self.path) as conn:
+            self._target(conn, viewer_id, member_id)
+            row = conn.execute(
+                "SELECT * FROM saved_plans WHERE id = ? AND member_id = ?", (plan_id, member_id)
+            ).fetchone()
+            if row is None:
+                raise NotFound(f"saved plan {plan_id}")
+            new_name = row["name"] if name is None else name
+            new_items = row["items_json"] if items is None else json.dumps(items)
+            now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+            conn.execute(
+                "UPDATE saved_plans SET name = ?, items_json = ?, updated_at = ? WHERE id = ?",
+                (new_name, new_items, now, plan_id),
+            )
+            return _saved_plan(conn.execute("SELECT * FROM saved_plans WHERE id = ?", (plan_id,)).fetchone())
+
+    def delete_saved_plan(self, viewer_id: str, member_id: str, plan_id: str) -> None:
+        with session(self.path) as conn:
+            self._target(conn, viewer_id, member_id)
+            cur = conn.execute(
+                "DELETE FROM saved_plans WHERE id = ? AND member_id = ?", (plan_id, member_id)
+            )
+            if cur.rowcount == 0:
+                raise NotFound(f"saved plan {plan_id}")
+
+
+def _saved_plan(r: sqlite3.Row) -> dict[str, Any]:
+    d = dict(r)
+    d["items"] = json.loads(d.pop("items_json"))
+    return d
 
 
 def _tier(r: dict[str, Any]) -> dict[str, Any]:

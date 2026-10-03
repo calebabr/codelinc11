@@ -21,7 +21,7 @@ function List({ items, empty }: { items: string[]; empty: string }) {
   )
 }
 
-/** "What the assistant knows" about the active member. refreshKey reloads it after a new question. */
+/** "What Your Assistant Knows" about the active member. refreshKey reloads it after a new question. */
 export function KnowsPanel({
   token,
   memberId,
@@ -33,8 +33,8 @@ export function KnowsPanel({
 }) {
   const { data, loading, error, retry } = useAssistantContext(token, memberId, refreshKey)
   return (
-    <aside className="portal-card" aria-label="What the assistant knows" data-testid="knows-panel">
-      <h2 className="portal-card-title">What the assistant knows</h2>
+    <aside className="portal-card" aria-label="What Your Assistant Knows" data-testid="knows-panel">
+      <h2 className="portal-card-title">What Your Assistant Knows</h2>
       {loading && !data && <p className="mt-3 text-sm text-[var(--muted)]">Loading…</p>}
       {error && (
         <div role="alert" className="note mt-3">

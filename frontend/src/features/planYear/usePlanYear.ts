@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
+import { draftKey, useDraft } from "@/features/planYear/draftStore"
 import {
   errorMessage,
   getMemberUsage,
@@ -62,9 +63,23 @@ function useRequest<T>(enabled: boolean, key: string, run: () => Promise<T>): Lo
   return state
 }
 
-export function usePlanYear(memberId: string, planId: string, token: string) {
-  const [items, setItems] = useState<TreatmentItem[]>([])
-  const [nextId, setNextId] = useState(1)
+function newId(items: TreatmentItem[]): string {
+  let max = 0
+  for (const i of items) {
+    const n = /^t(\d+)$/.exec(i.id)
+    if (n) max = Math.max(max, Number(n[1]))
+  }
+  return `t${max + 1}`
+}
+
+export function usePlanYear(memberId: string, planId: string, token: string, householdId = "") {
+  // One draft per person, kept outside the page so switching people or pages keeps it.
+  const [draft, setDraft] = useDraft(draftKey(householdId, memberId))
+  const { items, openPlanId } = draft
+  const setItems = useCallback(
+    (update: (prev: TreatmentItem[]) => TreatmentItem[]) => setDraft((d) => ({ ...d, items: update(d.items) })),
+    [setDraft],
+  )
 
   // Usage for the active member. Treatments are kept when switching; the schedule recomputes.
   const [memberUsage, setMemberUsage] = useState<Loadable<MemberUsage>>({ data: null, loading: true, error: null })
@@ -105,32 +120,43 @@ export function usePlanYear(memberId: string, planId: string, token: string) {
 
   const addItem = useCallback(
     (code: string) => {
-      setItems((prev) => [...prev, { id: `t${nextId}`, code, urgency: "flexible", after: null }])
-      setNextId((n) => n + 1)
+      setItems((prev) => [...prev, { id: newId(prev), code, urgency: "flexible", after: null }])
     },
-    [nextId],
+    [setItems],
   )
-  const removeItem = useCallback((id: string) => {
-    setItems((prev) => prev.filter((i) => i.id !== id).map((i) => (i.after === id ? { ...i, after: null } : i)))
-  }, [])
-  const setUrgency = useCallback((id: string, urgency: Urgency) => {
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, urgency } : i)))
-  }, [])
-  const setAfter = useCallback((id: string, after: string | null) => {
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, after } : i)))
-  }, [])
-  const loadDemo = useCallback(() => {
-    setItems(DEMO_ITEMS)
-    setNextId(DEMO_ITEMS.length + 1)
-  }, [])
-  const loadItems = useCallback((next: TreatmentItem[]) => {
-    setItems(next)
-    setNextId(next.length + 100)
-  }, [])
-  const clear = useCallback(() => setItems([]), [])
+  const removeItem = useCallback(
+    (id: string) => {
+      setItems((prev) => prev.filter((i) => i.id !== id).map((i) => (i.after === id ? { ...i, after: null } : i)))
+    },
+    [setItems],
+  )
+  const setUrgency = useCallback(
+    (id: string, urgency: Urgency) => {
+      setItems((prev) => prev.map((i) => (i.id === id ? { ...i, urgency } : i)))
+    },
+    [setItems],
+  )
+  const setAfter = useCallback(
+    (id: string, after: string | null) => {
+      setItems((prev) => prev.map((i) => (i.id === id ? { ...i, after } : i)))
+    },
+    [setItems],
+  )
+  /** Replaces the list. `openPlanId` marks which saved plan it came from (null for a fresh list). */
+  const loadItems = useCallback(
+    (next: TreatmentItem[], fromPlanId: string | null = null) => {
+      setDraft(() => ({ items: next, openPlanId: fromPlanId }))
+    },
+    [setDraft],
+  )
+  const loadDemo = useCallback(() => loadItems(DEMO_ITEMS), [loadItems])
+  const clear = useCallback(() => loadItems([]), [loadItems])
+  const setOpenPlanId = useCallback((id: string | null) => setDraft((d) => ({ ...d, openPlanId: id })), [setDraft])
 
   return {
     items,
+    openPlanId,
+    setOpenPlanId,
     addItem,
     removeItem,
     setUrgency,

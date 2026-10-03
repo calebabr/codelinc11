@@ -7,6 +7,9 @@ How to run and test the project on your own computer. Commands below are for Win
 - Node.js and npm (the frontend uses Vite 6; a current LTS version should work, exact version not verified)
 - Optional, for the chat assistant today: [Ollama](https://ollama.com) with the model `llama3.2:3b`
 
+## One-command run
+From the repo root: `scripts/dev.ps1` (PowerShell) or `scripts/dev.sh` (Git Bash, Mac, Linux). It creates the backend venv if missing, installs packages, builds the demo database if missing, and starts the backend on 8000 and the frontend on 5173. `scripts/reset-db.ps1` / `reset-db.sh` rebuild the demo database. CI (`.github/workflows/ci.yml`) runs the same lint, test and build checks on every pull request.
+
 ## Backend
 From `backend/`:
 

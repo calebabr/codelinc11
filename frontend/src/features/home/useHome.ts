@@ -15,7 +15,7 @@ interface State<T> {
 }
 
 /** Loads the overview and schedule for the active member. Reloads when the member changes. */
-export function useHomeData(token: string, memberId: string) {
+export function useHomeData(token: string, memberId: string, planTier?: string) {
   const [state, setState] = useState<State<HomeData>>({ data: null, loading: true, error: null })
   const [attempt, setAttempt] = useState(0)
   useEffect(() => {
@@ -32,7 +32,7 @@ export function useHomeData(token: string, memberId: string) {
     return () => {
       cancelled = true
     }
-  }, [token, memberId, attempt])
+  }, [token, memberId, planTier, attempt])
   return { ...state, retry: useCallback(() => setAttempt((n) => n + 1), []) }
 }
 

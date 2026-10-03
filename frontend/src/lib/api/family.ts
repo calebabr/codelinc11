@@ -49,3 +49,10 @@ export const postInvite = (householdId: string, email: string, memberId: string,
     method: "POST",
     body: JSON.stringify({ email, member_id: memberId }),
   })
+
+/** Switch the household's plan tier. Primary only. Returns the updated household. */
+export const putHouseholdPlan = (householdId: string, tierId: string, token: string) =>
+  call<FamilyHousehold>(`/households/${encodeURIComponent(householdId)}/plan`, token, {
+    method: "PUT",
+    body: JSON.stringify({ tier_id: tierId }),
+  })

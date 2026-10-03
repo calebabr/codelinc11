@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router"
 import { TestSessionProvider } from "@/test/session"
 import PlanYearPage from "./PlanYearPage"
+import { resetDraftStoreForTests, STORAGE_KEY } from "@/features/planYear/draftStore"
 
 const PROCS = [
   { code: "D3330", name: "Root canal, molar", category: "basic", description: "", synonyms: [], fee_p50: 1100, fee_p80: 1400 },
@@ -32,8 +33,20 @@ function schedule(total: number, baseline: number, savings: number) {
 interface Call { url: string; body: Record<string, unknown> | null }
 let calls: Call[]
 
-function mockApi(opts: { overviewFails?: boolean } = {}) {
+interface Rec { id: string; member_id: string; name: string; items: { id: string; code: string; urgency: string; after: string | null }[]; created_at: string; updated_at: string }
+const S2_ITEMS = [
+  { id: "t1", code: "D3330", urgency: "urgent", after: null },
+  { id: "t2", code: "D2740", urgency: "flexible", after: "t1" },
+  { id: "t3", code: "D2392", urgency: "flexible", after: null },
+  { id: "t4", code: "D2392", urgency: "flexible", after: null },
+]
+let saved: Rec[]
+let savedStatus: number
+
+function mockApi(opts: { overviewFails?: boolean; savedStatus?: number } = {}) {
   calls = []
+  savedStatus = opts.savedStatus ?? 200
+  saved = [{ id: "sp1", member_id: "m-alex", name: "Alex S2 case", items: S2_ITEMS, created_at: "2026-10-01T00:00:00Z", updated_at: "2026-10-01T00:00:00Z" }]
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: string, init?: RequestInit) => {
@@ -41,6 +54,24 @@ function mockApi(opts: { overviewFails?: boolean } = {}) {
       const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : null
       calls.push({ url, body })
       const ok = (data: unknown) => ({ ok: true, status: 200, json: async () => data })
+      if (url.includes("/saved-plans")) {
+        const method = init?.method ?? "GET"
+        const mid = url.split("/members/")[1].split("/")[0]
+        const pid = url.split("/saved-plans/")[1]
+        if (savedStatus !== 200) return { ok: false, status: savedStatus, json: async () => ({ detail: "Not Found" }) }
+        if (method === "GET") return ok(mid === "m-alex" ? saved : [])
+        if (method === "POST") {
+          const rec = { id: "sp-new", member_id: mid, name: String(body!.name), items: body!.items as Rec["items"], created_at: "2026-10-03T00:00:00Z", updated_at: "2026-10-03T00:00:00Z" }
+          saved = [rec, ...saved]
+          return { ok: true, status: 201, json: async () => rec }
+        }
+        if (method === "PUT") {
+          saved = saved.map((r) => (r.id === pid ? { ...r, ...(body as object) } : r))
+          return ok(saved.find((r) => r.id === pid))
+        }
+        saved = saved.filter((r) => r.id !== pid)
+        return { ok: true, status: 204, json: async () => { throw new Error("no body") } }
+      }
       if (url.includes("/members/")) {
         if (opts.overviewFails) return { ok: false, status: 404, json: async () => ({ detail: "nope" }) }
         const id = url.split("/members/")[1].split("/")[0]
@@ -73,7 +104,10 @@ function renderPage(initialMemberId = "m-alex") {
   )
 }
 
-beforeEach(() => mockApi())
+beforeEach(() => {
+  resetDraftStoreForTests()
+  mockApi()
+})
 afterEach(() => vi.restoreAllMocks())
 
 describe("Plan My Year page", () => {
@@ -157,7 +191,7 @@ describe("Plan My Year page", () => {
     vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("offline") }))
     renderPage()
     expect((await screen.findAllByRole("alert"))[0]).toHaveTextContent(/can't reach the server/i)
-    expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument()
+    expect(screen.getAllByRole("button", { name: "Try again" }).length).toBeGreaterThan(0)
   })
 
   it("shows a clear error, not made-up numbers, when the overview cannot be loaded", async () => {
@@ -165,5 +199,116 @@ describe("Plan My Year page", () => {
     renderPage("m-alex")
     expect(await screen.findByRole("alert")).toHaveTextContent("nope")
     expect(screen.queryByTestId("left-this-year")).toBeNull()
+  })
+
+  it("keeps each member draft when switching members and back", async () => {
+    const user = userEvent.setup()
+    const as = (id: string) => (
+      <TestSessionProvider activeId={id} key={id}>
+        <MemoryRouter>
+          <PlanYearPage />
+        </MemoryRouter>
+      </TestSessionProvider>
+    )
+    const { rerender } = render(as("m-alex"))
+    await user.click(await screen.findByRole("button", { name: "Add Crown" }))
+    expect(screen.getAllByTestId("treatment-row")).toHaveLength(1)
+    rerender(as("m-jordan"))
+    expect(screen.queryAllByTestId("treatment-row")).toHaveLength(0)
+    await user.click(await screen.findByRole("button", { name: "Add Root canal, molar" }))
+    rerender(as("m-alex"))
+    const rows = screen.getAllByTestId("treatment-row")
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toHaveTextContent(/Crown|D2740/)
+  })
+
+  it("keeps the draft after unmount and remount, and after a reload from localStorage", async () => {
+    const user = userEvent.setup()
+    const first = renderPage()
+    await user.click(await screen.findByRole("button", { name: "Add Crown" }))
+    await user.click(within(screen.getByTestId("treatment-row")).getByRole("button", { name: "Urgent" }))
+    first.unmount()
+    const second = renderPage()
+    expect(within(screen.getByTestId("treatment-row")).getByRole("button", { name: "Urgent" })).toHaveAttribute("aria-pressed", "true")
+    second.unmount()
+    resetDraftStoreForTests(false) // a reload: memory gone, localStorage stays
+    renderPage()
+    expect(screen.getByTestId("treatment-row")).toHaveTextContent(/Crown|D2740/)
+  })
+
+  it("ignores bad JSON in localStorage", () => {
+    localStorage.setItem(STORAGE_KEY, "{not json")
+    resetDraftStoreForTests(false)
+    renderPage()
+    expect(screen.getByText(/Add a treatment, or try the demo case/)).toBeInTheDocument()
+  })
+
+  it("keeps the treatments in a left column that is sticky on large screens", () => {
+    renderPage()
+    const col = screen.getByTestId("treatments-column")
+    expect(col.className).toContain("lg:sticky")
+    expect(within(col).getByRole("heading", { name: "Tap the treatments you need" })).toBeInTheDocument()
+    expect(within(col).getByRole("heading", { name: "Your treatments" })).toBeInTheDocument()
+  })
+
+  it("lists the saved plans and opens one, using the live schedule numbers", async () => {
+    const user = userEvent.setup()
+    renderPage()
+    const card = await screen.findByRole("listitem", { name: "Alex S2 case" })
+    expect(card).toHaveTextContent("4 treatments")
+    await user.click(within(card).getByRole("button", { name: "Open Alex S2 case" }))
+    expect(screen.getAllByTestId("treatment-row")).toHaveLength(4)
+    expect(within(card).getByText("Open now")).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByTestId("savings-total")).toHaveTextContent("$895"))
+  })
+
+  it("saves a plan with a default name, then shows unsaved changes and updates it", async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole("button", { name: "Add Crown" }))
+    const name = screen.getByLabelText("Plan name") as HTMLInputElement
+    expect(name.value).toMatch(/^Plan for Alex, /)
+    await user.clear(name)
+    await user.type(name, "My crown")
+    await user.click(screen.getByRole("button", { name: "Save this plan" }))
+    const card = await screen.findByRole("listitem", { name: "My crown" })
+    expect(within(card).getByText("Open now")).toBeInTheDocument()
+    expect(calls.find((c) => c.url.endsWith("/saved-plans") && c.body)!.body!.name).toBe("My crown")
+    expect(screen.queryByTestId("unsaved-changes")).toBeNull()
+
+    await user.click(screen.getByRole("button", { name: "Add Root canal, molar" }))
+    expect(screen.getByTestId("unsaved-changes")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Update saved plan" }))
+    await waitFor(() => expect(screen.queryByTestId("unsaved-changes")).toBeNull())
+    expect(calls.some((c) => c.url.includes("/saved-plans/sp-new") && (c.body?.items as unknown[] | undefined)?.length === 2)).toBe(true)
+  })
+
+  it("renames and deletes (after a confirm step) a saved plan", async () => {
+    const user = userEvent.setup()
+    renderPage()
+    const card = await screen.findByRole("listitem", { name: "Alex S2 case" })
+    await user.click(within(card).getByRole("button", { name: "Rename Alex S2 case" }))
+    const input = within(card).getByLabelText("New name for Alex S2 case")
+    await user.clear(input)
+    await user.type(input, "Renamed")
+    await user.click(within(card).getByRole("button", { name: "Save name" }))
+    const renamed = await screen.findByRole("listitem", { name: "Renamed" })
+
+    await user.click(within(renamed).getByRole("button", { name: "Delete Renamed" }))
+    await user.click(within(renamed).getByRole("button", { name: "Keep it" }))
+    expect(screen.getByRole("listitem", { name: "Renamed" })).toBeInTheDocument()
+    await user.click(within(renamed).getByRole("button", { name: "Delete Renamed" }))
+    await user.click(within(renamed).getByRole("button", { name: "Yes, delete" }))
+    await waitFor(() => expect(screen.queryByRole("listitem", { name: "Renamed" })).toBeNull())
+    expect(screen.getByText(/You have not saved a plan yet/)).toBeInTheDocument()
+  })
+
+  it("shows a friendly message and keeps working when saved plans return 404", async () => {
+    mockApi({ savedStatus: 404 })
+    const user = userEvent.setup()
+    renderPage()
+    expect((await screen.findAllByText(/Saved plans are not available right now/)).length).toBeGreaterThan(0)
+    await user.click(screen.getByRole("button", { name: "Try the demo case" }))
+    await waitFor(() => expect(screen.getByTestId("savings-total")).toHaveTextContent("$895"))
   })
 })

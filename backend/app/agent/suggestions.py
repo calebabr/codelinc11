@@ -21,12 +21,15 @@ def suggest_questions(mc: MemberContext) -> list[str]:
         out += [f"What does the plan cover for {first}'s checkups and cleanings?",
                 "Is orthodontia (braces) covered, and how much?",
                 f"When should {first} book the next cleaning?",
-                "What will a filling cost?"]
+                "What will a filling cost?",
+                "What should I ask the dentist?"]
     else:
         out.append("What do I have left this year?")
         if mc.usage.max_used > 0 or mc.current_month >= 9:
             out.append("What if I wait until January?")
         out.append("What will a crown cost me?")
+        out.append("How can I save on this?")
+        out.append("What should I ask my dentist?")
         if "D1110" not in mc.usage.history or mc.usage.history.count("D1110") < 2:
             out.append("Do I have a cleaning left this year?")
         if any("spread" in p.lower() for p in mc.preferences):

@@ -2,6 +2,7 @@
 // m-alex, m-noah, m-maya). No network calls. The token is `tok-<signed-in id>`.
 
 import { useCallback, useMemo, useState, type ReactNode } from "react"
+import { putHouseholdPlan } from "@/lib/api/family"
 import { SessionGateContext, toHousehold, type SessionGateState, type SessionState } from "@/state/SessionContext"
 import type { DemoAccount, FamilyHousehold, FamilyMember, PlanTierSummary } from "@/lib/types/family"
 
@@ -69,13 +70,16 @@ export function TestSessionProvider({
 }) {
   const [signed, setSigned] = useState(signedInId)
   const [active, setActive] = useState(activeId ?? signedInId)
+  const [fresh, setFresh] = useState<FamilyHousehold | null>(null)
   const signIn = useCallback(async (id: string) => {
     setSigned(id)
+    setFresh(null)
     setActive(id)
   }, [])
 
   const value = useMemo<SessionGateState>(() => {
-    const household = toHousehold(householdFor(signed, members))
+    const household = toHousehold(fresh ?? householdFor(signed, members))
+    const apply = async (h: FamilyHousehold) => setFresh(h)
     const user = members.find((m) => m.id === signed)!
     const acct = ACCOUNTS.find((a) => a.member_id === signed)
     const session: SessionState = {
@@ -90,9 +94,11 @@ export function TestSessionProvider({
       accounts: ACCOUNTS,
       signIn,
       signOut: () => undefined,
+      refreshHousehold: async () => undefined,
+      changePlan: async (tierId) => apply(await putHouseholdPlan(household.id, tierId, `tok-${signed}`)),
     }
     return { status: "ready", error: null, retry: () => undefined, accounts: ACCOUNTS, signIn, session }
-  }, [signed, active, signIn, members])
+  }, [signed, active, signIn, members, fresh])
 
   return <SessionGateContext.Provider value={value}>{children}</SessionGateContext.Provider>
 }

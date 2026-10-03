@@ -10,6 +10,9 @@ export function UtilityBar() {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-1.5 text-xs">
         <span className="truncate font-medium" data-testid="household-label">
           {household.name}
+          <span className="font-normal text-white/80" data-testid="plan-label">
+            {" "}· {household.plan_tier.name} plan
+          </span>
         </span>
         <div className="flex items-center gap-3">
           <MemberSwitcher />

@@ -103,7 +103,7 @@ What is on `main` today: Wrigley's Dashboard, Chatbot and Profiles pages inside 
 | Answers about costs, waiting, benefits left | Procedure cost, "what if I wait", what's left this year | Caleb, Wrigley, Sai | |
 | Answers about plan, coverage, who's covered, history | Plan details, eligibility and past claims | Wrigley, Sai | |
 | Personalized to the person | Answers use that person's plan, household and records | Wrigley, Sai | |
-| "What the assistant knows" panel | Shows the user the information the assistant is using about them | Wrigley | |
+| "What Your Assistant Knows" panel | Shows the user the information the assistant is using about them | Wrigley | |
 | Separate memory per person | Each profile has its own chat thread and remembered preferences | Wrigley | |
 | Offline mode | Chat still answers a few things without an AI model | Caleb, Sai | |
 | Local AI model | Chat runs on a local open-source model | Caleb | |

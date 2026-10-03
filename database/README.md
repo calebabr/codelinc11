@@ -36,6 +36,7 @@ Set `BENEFITS_DB_PATH` to use another file. `*.db` is git-ignored. Every schema 
 | `member_context` | Plan highlights text per member |
 | `member_preferences` | Preferences and must-haves per member |
 | `chat_memory` | The assistant's saved chat turns per member |
+| `saved_plans` | Saved Plan My Year plans per member: name, items (JSON: id, code, urgency, after; no dollar amounts), created and updated times. Alex has one seeded (the S2 case) |
 | `schema_migrations` | Which migrations have run |
 
 Not stored: pasted dentist quotes, uploaded documents.
@@ -51,6 +52,7 @@ Jordan Rivera (41, primary), Alex Rivera (39, spouse), Maya Rivera (9, managed, 
 | `list_demo_accounts()` | Accounts for the demo sign-in screen |
 | `get_account_member(account_id)` | Member for a demo login |
 | `get_household(viewer_id, household_id)` | Household, plan tier, and the members this viewer may see |
+| `set_household_plan(viewer_id, household_id, tier_id)` | Primary only switches the plan tier (others `AccessDenied`, unknown tier `NotFound`); returns the household |
 | `get_member(viewer_id, member_id)` | One member |
 | `can_access(viewer_id, member_id)` | True or False |
 | `get_member_usage(viewer_id, member_id, plan_year=None)` | Usage for one person and year (zeros if none) |
@@ -61,5 +63,9 @@ Jordan Rivera (41, primary), Alex Rivera (39, spouse), Maya Rivera (9, managed, 
 | `list_upcoming_schedule(viewer_id, member_id=None, today=None)` | Appointments and reminders from today on |
 | `create_invite(viewer_id, email, member_id=None)` | Primary only; adults 18+ only |
 | `list_invites(viewer_id)` / `accept_invite(token)` | Primary lists; accepting gives the adult profile a login |
+| `list_saved_plans(viewer_id, member_id)` | Saved Plan My Year plans, newest first |
+| `create_saved_plan(viewer_id, member_id, name, items)` | Saves a plan, returns it |
+| `update_saved_plan(viewer_id, member_id, plan_id, name=None, items=None)` | Renames or replaces items; unknown id raises `NotFound` |
+| `delete_saved_plan(viewer_id, member_id, plan_id)` | Deletes one plan; unknown id raises `NotFound` |
 
 Tests: `backend/tests/test_db.py` (temporary database).

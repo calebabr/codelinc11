@@ -24,6 +24,9 @@ export default function CostsPage() {
         <p className="mt-2 max-w-2xl text-lg text-muted-foreground">
           See what dental care could cost {first}, before the visit.
         </p>
+        <p className="mt-1 text-sm font-semibold text-burgundy" data-testid="costs-plan">
+          Using the {household.plan_tier.name} plan
+        </p>
       </header>
 
       <div role="group" aria-label="Choose a view" className="flex flex-wrap gap-2">

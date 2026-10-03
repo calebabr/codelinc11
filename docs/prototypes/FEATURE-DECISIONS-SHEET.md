@@ -101,7 +101,7 @@ These shape everything else. Mark one option in each.
 | Dedicated assistant page | Full-page chat with a side panel | Sai | | |
 | Chat answers: plan, coverage, who's covered, history | Plan details, eligibility and past claims | Sai | | |
 | Personalized to the person | Answers use that person's plan and records | Sai | | |
-| "What the assistant knows" panel | Shows the user the information the assistant uses | | | |
+| "What Your Assistant Knows" panel | Shows the user the information the assistant uses | | | |
 | Separate memory per person | Each profile has its own chat thread and remembered preferences | | | |
 | Orthodontia coverage | Braces coverage for children | Sai | | |
 

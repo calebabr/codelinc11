@@ -38,8 +38,8 @@ export function TreatmentBuilder({ procedures, loading, error, onRetry, items, o
   }, [procedures, query])
 
   return (
-    <div className="space-y-5">
-      <section aria-labelledby="py-pick" className="portal-card">
+    <div className="flex flex-col gap-5">
+      <section aria-labelledby="py-pick" className="portal-card order-2 lg:order-1">
         <h2 id="py-pick" className="portal-card-title">Tap the treatments you need</h2>
         <p className="text-sm text-muted-foreground">Tap one more than once if you need it more than once.</p>
         <label className="mt-3 block text-sm font-semibold" htmlFor="py-search">Search treatments</label>
@@ -61,7 +61,7 @@ export function TreatmentBuilder({ procedures, loading, error, onRetry, items, o
         {!loading && !error && shown.length === 0 && (
           <p className="mt-3 text-sm text-muted-foreground">No treatments match "{query}".</p>
         )}
-        <ul className="mt-3 grid gap-2 sm:grid-cols-2" aria-label="Treatments you can add">
+        <ul className="mt-3 grid max-h-72 gap-2 overflow-y-auto sm:grid-cols-2" aria-label="Treatments you can add">
           {shown.map((p) => (
             <li key={p.code}>
               <button
@@ -78,7 +78,7 @@ export function TreatmentBuilder({ procedures, loading, error, onRetry, items, o
         </ul>
       </section>
 
-      <section aria-labelledby="py-list" className="portal-card">
+      <section aria-labelledby="py-list" className="portal-card order-1 lg:order-2">
         <h2 id="py-list" className="portal-card-title">Your treatments</h2>
         {items.length === 0 ? (
           <p className="text-sm text-muted-foreground">Nothing added yet. Tap a treatment above, or try the demo case.</p>

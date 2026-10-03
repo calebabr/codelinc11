@@ -28,7 +28,16 @@ The correct answers for the demo plan are in `docs/FEATURES.md` section 2 (clean
 - Tests are repeatable: fixed seeds and no reliance on today's date unless it's passed in.
 - Check exact numbers and unhappy paths (server down, empty input, unknown ids, quotes with junk lines, one family member's data never showing up for another).
 
-## Commands (fill in as suites are added)
-- Backend: `cd backend && pytest -q`
+## Contract and demo tests (T13)
+These run with the normal backend and frontend commands (no extra setup, no servers, no model):
+
+| File | What it proves |
+|---|---|
+| `backend/tests/test_contract_api.py` | Every documented endpoint is in `/openapi.json`; response shapes for sign-in, household, overview, schedule, estimate, Plan My Year and annual cost; primary sees all, an adult only themself, Maya cannot sign in, bad tokens get 401; golden numbers G1-G6 and S2 ($2,300 to $1,405, saves $895) through HTTP |
+| `backend/tests/test_contract_demo.py` | Demo flow: sign in as Alex, $400 left, Plan My Year golden numbers, assistant (scripted fake model) says only tool-sourced dollar amounts; "model unavailable" path invents no numbers |
+| `frontend/src/routes.smoke.test.tsx` | The six routes render for a signed-in session with a mocked API and write nothing to `console.error` or `console.warn` |
+
+## Commands
+- Backend: `cd backend && .venv/Scripts/python -m pytest -q` and `ruff check .`
 - Frontend: `cd frontend && npm run test`
-- End-to-end: documented here when the suite exists
+- Browser end-to-end (`tests/e2e/`): not built yet. The demo flow is covered at the API level by `test_contract_demo.py`; a Playwright run of the same flow is the next step.

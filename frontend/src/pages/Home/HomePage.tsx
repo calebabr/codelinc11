@@ -82,7 +82,7 @@ const LINKS = [
 
 export default function HomePage() {
   const { household, activeMember, token } = useSession()
-  const { data, loading, error, retry } = useHomeData(token, activeMember.id)
+  const { data, loading, error, retry } = useHomeData(token, activeMember.id, household.planTier)
   const chips = useProcedureChips()
   const visit = useLogVisit(household.planTier, activeMember.id, data?.overview ?? null)
   const first = activeMember.name.split(" ")[0]
@@ -99,7 +99,7 @@ export default function HomePage() {
         <p className="eyebrow">Your dental benefits</p>
         <h1 className="mt-2 text-4xl font-bold text-white sm:text-5xl">Welcome back, {first}</h1>
         <p className="mt-3 text-lg text-white/85">
-          {overview ? `${overview.plan_tier.name} plan` : "Your plan"} ·{" "}
+          {`${household.plan_tier.name} plan`} ·{" "}
           {isSelf ? "Viewing your own benefits" : `Viewing ${activeMember.name} (${activeMember.relationship})`}
         </p>
       </section>

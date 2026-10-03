@@ -74,13 +74,33 @@ describe("Family page", () => {
     const { container } = renderPage()
     expect(await screen.findByTestId("node-m-jordan")).toBeInTheDocument()
     expect(screen.getAllByTestId(/^node-/)).toHaveLength(4)
-    expect(within(screen.getByTestId("node-m-alex")).getByText("Has login")).toBeInTheDocument()
+    expect(within(screen.getByTestId("node-m-alex")).getByText("Has their own account")).toBeInTheDocument()
     const maya = within(screen.getByTestId("node-m-maya"))
-    expect(maya.queryByText("Has login")).toBeNull()
-    expect(maya.getByText("Managed profile")).toBeInTheDocument()
-    expect(within(screen.getByTestId("node-m-noah")).getByText("Pending")).toBeInTheDocument()
+    expect(maya.queryByText("Has their own account")).toBeNull()
+    expect(maya.getByText("Managed by Jordan")).toBeInTheDocument()
+    expect(within(screen.getByTestId("node-m-noah")).getByText("Waiting for approval")).toBeInTheDocument()
+    expect(screen.getByTestId("tree-legend")).toHaveTextContent("Adults 18 and over can have their own account. Children's profiles are managed by a parent.")
     expect(container.querySelector("select")).toBeNull()
     expect(screen.getByText(/This is an estimate\. Your actual cost depends/)).toBeInTheDocument()
+  })
+
+  it("draws decorative connectors that do not change accessible names", async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByTestId("node-m-jordan")
+    const lines = screen.getAllByTestId("connector")
+    expect(lines.length).toBeGreaterThanOrEqual(5)
+    expect(lines.every((l) => l.getAttribute("aria-hidden") === "true")).toBe(true)
+    expect(screen.getByTestId("partner-link")).toHaveAttribute("aria-hidden", "true")
+    expect(screen.getByRole("button", { name: "Maya Rivera, child, age 9" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /^Noah Rivera, child, age 23, pending verification$/ })).toBeInTheDocument()
+    // Noah's drop is dashed (pending); nothing is highlighted for a child who is not selected
+    const noahDrop = within(screen.getByTestId("node-m-noah").parentElement!).getAllByTestId("connector")[0]
+    expect(noahDrop.className).toContain("border-dashed")
+    await user.click(screen.getByTestId("node-m-maya"))
+    const mayaLines = within(screen.getByTestId("node-m-maya").parentElement!).getAllByTestId("connector")
+    expect(mayaLines.some((l) => l.getAttribute("data-active") === "true")).toBe(true)
+    expect(screen.getAllByTestId("connector")[0]).toHaveAttribute("data-active", "true")
   })
 
   it("shows each person's own numbers, not a household total", async () => {

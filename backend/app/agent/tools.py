@@ -8,7 +8,16 @@ from ..data import load_catalog, resolve_plan
 from ..engine.estimate import estimate
 from ..engine.sequencer import best_schedule
 from ..engine.status import benefits_status
-from ..models import ChatRequest, Plan, ScheduleRequest, TreatmentItem, Usage
+from ..engine.tips import savings_tips
+from ..models import (
+    ChatRequest,
+    Plan,
+    SavingsTipsRequest,
+    ScheduleRequest,
+    TreatmentItem,
+    Usage,
+)
+from ..questions import build_questions
 from ..search import search_procedures
 
 
@@ -110,6 +119,62 @@ def get_household_coverage(ctx: ToolContext | None = None) -> dict:
                         for p in c.household]}
 
 
+def _codes(raw: Any) -> list[str]:
+    """Normalize a model-supplied code list (or single code); keep order, drop blanks and repeats."""
+    if isinstance(raw, str):
+        raw = [raw]
+    out: list[str] = []
+    for c in raw or []:
+        c = str(c).strip().upper()
+        if c and c not in out:
+            out.append(c)
+    return out
+
+
+def get_savings_tips(codes: Any = None, quoted_fees: Any = None, urgent_codes: Any = None,
+                     ctx: ToolContext | None = None) -> dict:
+    """The same tips as the Costs page ("Ways to save"), from the savings engine."""
+    c = _ctx(ctx)
+    catalog = load_catalog()
+    wanted = _codes(codes)
+    unknown = [x for x in wanted if x not in catalog]
+    if unknown:
+        return {"error": f"Unknown procedure code {', '.join(unknown)}. Use find_procedure first."}
+    urgent = set(_codes(urgent_codes))
+    fees: dict[str, float] = {}
+    for k, v in (quoted_fees if isinstance(quoted_fees, dict) else {}).items():
+        try:
+            fees[str(k).strip().upper()] = float(v)
+        except (TypeError, ValueError):
+            continue
+    items = [TreatmentItem(id=x, code=x, urgency="urgent" if x in urgent else "flexible")
+             for x in wanted]
+    req = SavingsTipsRequest(plan=c.plan, usage=c.usage, current_month=c.current_month,
+                             items=items, quoted_fees={k: v for k, v in fees.items() if k in wanted})
+    try:
+        res = savings_tips(req, c.plan, catalog)
+    except (KeyError, ValueError) as exc:
+        return {"error": f"Could not work out savings tips: {exc}"}
+    out = res.model_dump()
+    out["procedures"] = [catalog[x].name for x in wanted]
+    out["general"] = not wanted
+    return out
+
+
+def get_dentist_questions(codes: Any = None, ctx: ToolContext | None = None) -> dict:
+    """The same list as the Costs page ("Questions to ask your dentist")."""
+    c = _ctx(ctx)
+    catalog = load_catalog()
+    wanted = _codes(codes)
+    unknown = [x for x in wanted if x not in catalog]
+    if unknown:
+        return {"error": f"Unknown procedure code {', '.join(unknown)}. Use find_procedure first."}
+    out = build_questions(c.plan, c.usage, wanted, c.current_month, catalog).model_dump()
+    out["procedures"] = [catalog[x].name for x in wanted]
+    out["general"] = not wanted
+    return out
+
+
 TOOL_SCHEMAS: list[dict] = [
     {"type": "function", "function": {
         "name": "find_procedure",
@@ -145,6 +210,24 @@ TOOL_SCHEMAS: list[dict] = [
         "name": "get_household_coverage",
         "description": "Who is covered on the plan (only the people the signed-in person may see).",
         "parameters": {"type": "object", "properties": {}}}},
+    {"type": "function", "function": {
+        "name": "get_savings_tips",
+        "description": ("Ways to save money (the same 'Ways to save' as the Costs page), using the member's "
+                        "plan and usage. Pass the CDT codes being discussed if any; with none you get general tips."),
+        "parameters": {"type": "object", "properties": {
+            "codes": {"type": "array", "items": {"type": "string"},
+                      "description": "CDT codes, e.g. ['D2740']; use find_procedure first if unsure"},
+            "quoted_fees": {"type": "object", "additionalProperties": {"type": "number"},
+                            "description": "Fee on the dentist's quote per code, only if the person gave one"},
+            "urgent_codes": {"type": "array", "items": {"type": "string"},
+                             "description": "Codes that are urgent or painful, so they are never moved"}}}}},
+    {"type": "function", "function": {
+        "name": "get_dentist_questions",
+        "description": ("Questions to ask the dentist (the same list as the Costs page). Pass the CDT codes "
+                        "being discussed if any; with none you get general questions."),
+        "parameters": {"type": "object", "properties": {
+            "codes": {"type": "array", "items": {"type": "string"},
+                      "description": "CDT codes, e.g. ['D3330']"}}}}},
 ]
 
 
@@ -160,6 +243,11 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
             return plan_year_schedule(args.get("items", []), ctx)
         if name == "get_benefits_status":
             return get_benefits_status(ctx)
+        if name == "get_savings_tips":
+            return get_savings_tips(args.get("codes"), args.get("quoted_fees"),
+                                    args.get("urgent_codes"), ctx)
+        if name == "get_dentist_questions":
+            return get_dentist_questions(args.get("codes"), ctx)
         if name == "get_member_eligibility":
             return get_member_eligibility(ctx)
         if name == "get_household_coverage":
