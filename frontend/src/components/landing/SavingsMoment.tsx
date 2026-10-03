@@ -1,5 +1,6 @@
 import { motion } from 'motion/react'
 import Reveal from '@/components/landing/Reveal'
+import SplitHeading from '@/components/landing/SplitHeading'
 import { ease, rise } from '@/lib/motion'
 
 // Golden scenarios G3 and G4 (FEATURES.md §2): a $1,200 crown with $400 of the max left vs after the Jan 1 reset.
@@ -46,12 +47,10 @@ export default function SavingsMoment() {
     <section className="bg-blush">
       <div className="mx-auto grid max-w-[1200px] items-center gap-12 px-6 py-[72px] md:py-[120px] lg:grid-cols-2">
         <Reveal>
-          <motion.p variants={rise} className="eyebrow text-primary">
+          <motion.p variants={rise} className="text-lg font-semibold text-primary md:text-xl">
             Plan your year
           </motion.p>
-          <motion.h2 variants={rise} className="mt-3 text-[34px] leading-[1.05] md:text-[48px]">
-            Small timing, real savings.
-          </motion.h2>
+          <SplitHeading text="Small timing, *real* savings." className="mt-3 text-[40px] leading-[1] md:text-[64px]" />
           <motion.p variants={rise} className="mt-5 max-w-md text-lg leading-relaxed text-muted-foreground">
             Your annual max resets every year. If your crown can safely wait until it does, your plan pays more and you
             pay less.

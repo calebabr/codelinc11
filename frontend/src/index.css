@@ -3,12 +3,16 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/bricolage-grotesque/opsz.css";
 @import "@fontsource-variable/manrope";
+@import "@fontsource-variable/newsreader/opsz.css";
+@import "@fontsource-variable/newsreader/opsz-italic.css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
     --font-heading: 'Bricolage Grotesque Variable', 'Manrope Variable', system-ui, sans-serif;
     --font-sans: 'Manrope Variable', system-ui, sans-serif;
+    /* Editorial serif for big headlines and big numbers (Oscar-style) */
+    --font-display: 'Newsreader Variable', Georgia, 'Times New Roman', serif;
     --font-quote: Georgia, 'Times New Roman', serif;
     --color-savings: var(--savings);
     --color-savings-ink: var(--savings-ink);
@@ -143,19 +147,32 @@
   body {
     @apply bg-background text-foreground antialiased;
   }
-  h1, h2, h3 {
+  /* Big headlines: high-contrast serif, tight, with <em> for an italic accent word */
+  h1, h2 {
+    @apply font-display text-foreground;
+    font-weight: 400;
+    font-optical-sizing: auto;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+  h1 em, h2 em {
+    font-style: italic;
+    letter-spacing: -0.035em;
+  }
+  h3 {
     @apply font-heading text-foreground;
     font-weight: 700;
     letter-spacing: -0.04em;
   }
 }
 
-/* Big numbers: heading font, digits line up so they don't jiggle when they animate */
+/* Big numbers: display serif, digits line up so they don't jiggle when they animate */
 @utility money {
-  font-family: var(--font-heading);
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
   font-variant-numeric: tabular-nums lining-nums;
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  font-weight: 500;
+  letter-spacing: -0.02em;
   line-height: 1;
 }
 
