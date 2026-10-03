@@ -1,6 +1,6 @@
 # codeLinc 11: Path 1 vs Path 2, and Project Ideas
 
-Coding started at 1:30 PM Saturday and presentations are at 10:00 AM Sunday, so there are about 18 hours of build time.
+Coding started at 1:30 PM Saturday and presentations are at 10:00 AM Sunday, so there are about 18 hours of build time. This document is about **what to build and what to build it with** (frontend, backend, data, LLM). Which AI coding assistant you use is a separate decision. AWS and IBM tools are optional, and every stack below works with any LLM provider.
 
 ---
 
@@ -13,105 +13,162 @@ Coding started at 1:30 PM Saturday and presentations are at 10:00 AM Sunday, so 
 | **What it really is** | Data, rules and calculations, plus scheduling or optimization | Conversation design and UX, plus fairly simple finance math |
 | **Hardest part** | Insurance rules (coverage tiers like 100/80/50, deductibles, annual max, frequency limits, waiting periods), getting cost data, the sequencing logic | Tone, trust, making the reasoning clear, guiding the chat without it feeling like a form |
 | **Data** | Given: a reference site, an enrollment video, and FAIR Health cost estimates | Mostly user input. The formulas are standard (DIME method, income replacement) |
-| **Room to stand out** | **High.** Sequencing and plan comparison are real optimization problems, and there are three extras you can visibly check off | **Medium.** The core is easy to build, so most teams will look alike. You win on polish, visuals and explanation |
-| **Risk** | Too much scope. It's easy to get lost modeling plan rules | Ending up as "just a ChatGPT wrapper" |
+| **Room to stand out** | **High.** Sequencing and plan comparison are real optimization problems | **Medium.** The core is easy to build, so you win on polish, visuals and explanation |
+| **Risk** | Too much scope. It's easy to get lost modeling plan rules | Ending up as "just a chatbot wrapper" |
 | **Demo** | Before/after savings in dollars ("this saves you $640") is very convincing | An emotional, human story. Calm UX is easy to show |
 
-**Bottom line:** Path 1 rewards **engineering, data and math** skills. Path 2 rewards **UX, conversation design and communication** skills. Path 1's title also says "Benefits **Selection** Process", which suggests that helping people pick a plan at enrollment is in scope. Many teams will skip that, which makes it a good place to stand out.
+**Bottom line:** Path 1 rewards **engineering, data and math** skills. Path 2 rewards **UX, conversation design and communication** skills. Path 1's title also says "Benefits **Selection** Process", so helping people pick a plan at enrollment is in scope too.
 
 ---
 
-## 2. Matching paths to your team
+## 2. Project ideas (3 per path)
 
-Each person should quickly rate themselves on these. Wherever most of your strength sits is your path.
-
-| Skill | Points to |
-|---|---|
-| Stats, optimization, modeling (Monte Carlo, linear programming, expected value) | **Path 1** |
-| Parsing documents or PDFs, data wrangling, backend rule engines | **Path 1** |
-| Dashboards and data visualization | Both (slightly more Path 1) |
-| Frontend, UX, product design | **Path 2** |
-| Prompt engineering, conversation flows, LLM agents | **Path 2** |
-| Writing and storytelling, finance or insurance knowledge | **Path 2** |
-| Mobile development | Either (a mobile-first Path 2 chat works well) |
-
-### Roles for 5 people (either path)
-
-1. **Frontend/UX**
-2. **AI/agent** (prompts, tool calling, guardrails)
-3. **Calculation engine and data** (the math person; owns accuracy)
-4. **Integration and deployment** (AWS, API, glue code)
-5. **Product, research and pitch:** researches the plan rules and reference material, writes the demo script and README, and tests everything
-
----
-
-## 3. Project ideas
+Each idea is a complete product, not a single feature. Pick **one** and build it well.
 
 ### Path 1: Dental
 
-#### ① Coverage Explainer: "What will I owe?" *(core requirement, must build)*
-- **Features:** The user types something like "I need a crown on a back molar." The LLM matches that to a dental procedure code (CDT code) and its category (preventive, basic or major). A lookup gives the cost from FAIR Health. A **deterministic** calculator applies the deductible, coinsurance and remaining annual max, and returns "Plan pays $X, you pay $Y" with a plain-English explanation. Plan details can be entered in a form or pulled from an uploaded benefits summary (SBC) PDF.
-- **Stack:** React or Next.js with Tailwind, a FastAPI backend, Claude on Amazon Bedrock with tool calling (the LLM calls your `calculate_cost()` function), and a JSON table of about 20 common CDT codes with FAIR Health prices you look up by hand. Optional: Amazon Textract or `pdfplumber` to extract plan details from a PDF.
-- **Note:** FAIR Health is a consumer website, not an API. Seed a small table by hand rather than scraping it.
+#### Idea 1A: "What Will I Owe?" Dental Cost Copilot
+*The most direct answer to the challenge, and the easiest to finish.*
+- **Pitch:** Type "I need a crown on a back molar." The app explains in plain English what the plan covers and what you'll pay.
+- **Features:**
+  - Plan setup: a short form (deductible, annual max, coinsurance by category, network) or a picker of sample plans
+  - Plain-English procedure input. The LLM maps it to a procedure code (CDT code) and category (preventive, basic or major)
+  - A cost breakdown card: typical cost (from a hand-built FAIR Health table) → deductible → coinsurance → annual max cap → **"Plan pays $X, you pay $Y"**
+  - An "insurance jargon" translator: hover any term for a one-line definition
+  - **Extra:** in-network vs out-of-network shown side by side
+- **Stack:** Next.js (React + TypeScript) with Tailwind and shadcn/ui. The backend is Next.js API routes, so the whole app is one codebase in one language. Data is a JSON file of about 20 common procedures. The LLM is called through the Vercel AI SDK, which works with any provider.
+- **Best fit:** Teams comfortable with JavaScript/TypeScript and web development.
 
-#### ② Plan-Year Care Sequencer *(core requirement and your strongest differentiator)*
-- **Features:** Take a treatment plan (for example: 2 fillings, 1 crown, 1 root canal, cleanings) and schedule it around the annual maximum and the January reset, respecting waiting periods and frequency limits (such as 2 cleanings per year). Show a timeline and a "you save $X vs doing everything now" number.
-- **Stack:** Greedy scheduling, or a small integer program with `PuLP` or `OR-Tools`, and a timeline chart in Recharts or Plotly.
-- **Best for:** A math or stats person. Use deterministic code; don't let the LLM do the math.
+#### Idea 1B: Plan-Year Care Planner
+*The strongest differentiator. Shows real optimization, not just a chatbot.*
+- **Pitch:** "Your dentist recommends 4 procedures. Here's when to do each one so your plan pays the most."
+- **Features:**
+  - Enter a treatment plan (for example: 2 fillings, 1 crown, 1 root canal, cleanings)
+  - An optimizer schedules care around the annual max and the January reset, respecting waiting periods, frequency limits and urgency (some care can't wait)
+  - A timeline view with a **"you save $X vs doing everything now"** banner
+  - **Extras:** an annual-max tracker gauge and end-of-year reminders (download a calendar file, `.ics`)
+  - The LLM explains the schedule ("We moved the crown to January because...")
+- **Stack:** React (Vite) with Tailwind and Recharts for the frontend. Python FastAPI for the backend, with `PuLP` or `OR-Tools` for the optimizer (or a simple greedy rule if time is short). SQLite to save plans. The LLM is called through the provider's Python SDK.
+- **Best fit:** Teams with a math, stats or optimization person plus someone comfortable in Python.
 
-#### ③ Plan Chooser at Enrollment *(ties directly to "Selection Process")*
-- **Features:** Compare plan options (for example, a low and a high PPO, or an HMO-style DHMO) based on expected care, family size and risk tolerance. A Monte Carlo simulation gives the expected yearly cost plus a worst case for each plan. Output reads like "Plan B saves you about $210 on average."
-- **Stack:** NumPy simulation and a distribution chart.
-- **Best for:** A stats-heavy team.
-
-#### ④ Benefits Wallet with Reminders *(covers extras 1 and 3)*
-- **Features:** A gauge for annual max used vs remaining and progress toward the deductible. Log a visit or upload an Explanation of Benefits (EOB) to update it. In October or November, a nudge like "You have $1,100 unused, so book your cleaning before Dec 31."
-- **Stack:** DynamoDB or SQLite, plus EventBridge Scheduler and SNS for email or text, or simply a downloadable `.ics` calendar reminder (the cheapest option to demo).
-
-#### ⑤ In-Network vs Out-of-Network Comparator *(covers extra 2)*
-- **Features:** Compare the negotiated (in-network) rate with out-of-network charges, including the extra amount an out-of-network dentist can bill you, side by side for the same procedure. Optionally add a dentist map using mock data.
-
-**Recommended Path 1 scope:** Build ① and ② as the core. Add ④'s tracker gauge and reminder as a quick win. Add ③ or ⑤ only if you're ahead of schedule by about 3 AM.
+#### Idea 1C: Enrollment Plan Picker
+*Targets the "Selection Process" wording that many teams will ignore.*
+- **Pitch:** "Low PPO, high PPO or HMO? Tell us about your family and we'll show which plan costs you the least."
+- **Features:**
+  - Upload or select 2–3 plan summaries. Optionally extract plan details from a PDF
+  - Short questionnaire: family size, expected care, dental history, risk tolerance
+  - A Monte Carlo simulation of a year of dental costs for each plan, giving expected cost, best case and worst case
+  - A distribution chart plus the verdict: "Plan B saves you about $210 on average"
+  - The LLM translates each plan's fine print into plain English
+- **Stack (fastest):** Streamlit, all in Python, with NumPy and Plotly, and `pdfplumber` for PDFs. **Stack (more polished):** React with a FastAPI backend that serves the simulation.
+- **Best fit:** Python/stats-heavy teams with less frontend experience.
 
 ### Path 2: Life Insurance
 
-#### ⑥ Guided Conversational Needs Analyzer *(core requirement, must build)*
-- **Features:** A chat that fills in a structured profile as it goes (dependents and their ages, income, mortgage and debts, education goals, employer coverage, budget). Show a side panel with "what I know so far" that the user can edit. A deterministic DIME or income-replacement calculation produces the coverage gap. The result is shown as a **waterfall chart** (needs minus existing coverage equals the gap), with a short reason for each step.
-- **Stack:** Next.js with the Vercel AI SDK or a FastAPI backend, Claude on Bedrock using structured output or tool calls to fill the profile, a Python or TypeScript calculation module, and Recharts.
-- **Anxiety guardrails:** A system prompt that sets a calm tone. Avoid death-focused wording ("protecting your family's plans"). Show a **range**, not one scary number. Add a "why we ask" tooltip on every question.
+#### Idea 2A: Coverage Coach (chat with a live profile panel)
+*The most direct answer to the challenge.*
+- **Pitch:** A calm, guided conversation that builds your picture as you talk, then shows how much coverage you need and why.
+- **Features:**
+  - Split screen: chat on the left, a **"What I know so far"** panel on the right that fills in live (dependents, income, mortgage, debts, education goals, existing coverage, budget) and that the user can edit
+  - A deterministic needs calculation (DIME or income replacement) gives a **range**, not one scary number
+  - A **waterfall chart**: total need minus existing coverage equals the gap, with a short reason for each step
+  - Calm-tone rules: no death-focused wording, and a "why we ask" note on every question
+  - **Extra:** a term vs whole life explanation using the user's own numbers
+- **Stack:** Next.js with Tailwind and shadcn/ui. The Vercel AI SDK handles chat streaming and **structured output** (a Zod schema the LLM fills as the user talks). The calculation is a TypeScript module. Charts use Recharts. No database is needed, since everything stays in the session.
+- **Best fit:** Teams strong in frontend/UX and comfortable with prompt design.
 
-#### ⑦ Coverage-Over-Time Visualizer *(covers the term vs whole life extra in a visual way)*
-- **Features:** A chart of need over time, which falls as the mortgage is paid down and the kids grow up, with a term policy as a flat line that ends and a permanent policy as a line that keeps going. It shows the tradeoff for the user's own numbers. Add what-if sliders ("what if you pay off the mortgage early?"). Recommend a term length (for example, until the youngest child turns 22 or the mortgage ends).
-- **Best for:** Teams strong in data visualization. This is the most impressive thing you can show in a Path 2 demo.
+#### Idea 2B: Coverage Timeline Studio
+*The best visual demo. Makes term vs permanent obvious at a glance.*
+- **Pitch:** "Your need for coverage changes over time. Here's what that looks like for you."
+- **Features:**
+  - A short guided intake (chat or a 5-step wizard)
+  - A **coverage-over-time chart**: need falls as the mortgage is paid down and the kids grow up. A term policy is a flat line that ends; a permanent policy is a line that keeps going
+  - What-if sliders ("pay off the mortgage early", "add a second child", "raise in 3 years") that update the chart live
+  - A recommended term length (for example, until the youngest turns 22 or the mortgage ends)
+  - The LLM writes a personalized summary of the tradeoffs
+- **Stack:** React (Vite) with Tailwind, and Recharts or D3 for the timeline. The calculation runs in TypeScript in the browser, so sliders update instantly. A small FastAPI or Express backend only forwards LLM calls, which keeps the API key off the client.
+- **Best fit:** Teams strong in data visualization. Comfortable with math, but want a polished UI.
 
-#### ⑧ Voice-First and Multilingual Version
-- **Features:** Talk instead of type, with Spanish support, aimed at underserved users.
-- **Stack:** The browser's built-in Web Speech API (free and fast), or Amazon Transcribe and Polly.
-
-#### ⑨ Life-Event Check-ins
-- **Features:** "I just had a baby" or "I bought a house" reopens the analysis and shows how the coverage gap changed. This fits Lincoln's workplace benefits business well (adjusting employer coverage during the year).
-
-#### ⑩ Advisor Handoff Summary
-- **Features:** A one-click PDF summary of the user's situation, needs and questions to bring to an agent.
-- **Stack:** `react-pdf` or WeasyPrint.
-
-**Recommended Path 2 scope:** Build ⑥ and ⑦ as the core and add ⑩ as polish. Add ⑧ only if someone on the team has done speech work before.
+#### Idea 2C: Mobile, Voice-First Life Coach
+*Stands out on accessibility and reach.*
+- **Pitch:** Talk to it like a person, in English or Spanish, on your phone. It ends with a summary you can take to an advisor.
+- **Features:**
+  - A mobile chat with voice input and spoken replies
+  - English and Spanish
+  - The same needs calculation and result card as 2A, adapted for a small screen
+  - **Life-event check-ins:** "I just had a baby" reopens the analysis and shows how the gap changed
+  - A one-tap **advisor handoff PDF** summarizing the situation, needs and open questions
+- **Stack:** React Native with Expo (or Flutter). Speech via `expo-speech` plus a speech-to-text API (for example, Whisper), or test it as a web app using the browser's Web Speech API. A FastAPI or Express backend for LLM calls and PDF generation (WeasyPrint or `pdfkit`).
+- **Best fit:** Teams with mobile experience. The highest risk of the three: voice adds failure points during a live demo.
 
 ---
 
-## 4. Shared stack and tips
+## 3. Feature comparison
 
-- **LLM:** **Claude on Amazon Bedrock.** AWS is a sponsor and gave a talk, so it fits the event. Build the agent with **Strands Agents** or LangGraph and optionally deploy it on **AgentCore Runtime**.
-- **AWS costs:** There are **no event-provided AWS credits**. Create your own account (new accounts get $100 in free credits), set a $0 budget alert, and shut resources down after the demo. If AWS setup slows you down, use any LLM API and run locally.
-- **Fastest frontend option:** If your team is mostly Python, use **Streamlit**. You'll have a working UI in an hour, but it will look less polished than React.
-- **AI coding tools:** Kiro is free for students for a year (kiro.dev/students). Its spec-driven mode produces requirements, design and task files, and the slides point out these **double as judging documentation**. IBM Bob also has a trial.
-- **The most important design rule:** **The LLM never does the math.** Use the LLM to understand input and explain results, and keep all calculations in tested code. The judges work in insurance and will check your numbers. Say this in your pitch.
-- **Compliance touches judges will notice:** an "estimate, not a guarantee" disclaimer, no storing of personal data (keep it in the session only), and showing every assumption.
-- **Timeline:** Settle scope by 2:30 PM. Get a working end-to-end demo by about 10 PM. Add features overnight. Freeze code around 7 AM. Rehearse the demo and finish the README before 10 AM.
+| | **1A Cost Copilot** | **1B Care Planner** | **1C Plan Picker** | **2A Coverage Coach** | **2B Timeline Studio** | **2C Mobile Voice Coach** |
+|---|---|---|---|---|---|---|
+| Core requirements covered | All 3 (sequencing is light) | All 3 | 2 of 3 (sequencing is light) | All 3 | All 3 | All 3 |
+| Extras covered | In-network vs out-of-network | Max tracker, reminders | none directly | Term vs whole life | Term vs whole life plus tradeoffs | Term vs whole life |
+| Conversational AI | Medium | Low | Low | **High** | Medium | **High** |
+| Math / modeling depth | Low | **High** | **High** | Low–Medium | Medium | Low–Medium |
+| Visual "wow" | Medium | High (timeline + $ saved) | High (distributions) | Medium–High (waterfall) | **Highest** | Medium |
+| Difficulty | **Easiest** | Hard | Medium | Easy–Medium | Medium | Hardest |
+| Demo risk | Low | Medium | Low | Low | Low | **High** (voice, device) |
+
+## 4. Stack comparison
+
+| | **Frontend** | **Backend** | **Data / storage** | **Key libraries** | **Languages** |
+|---|---|---|---|---|---|
+| **1A** | Next.js + Tailwind + shadcn/ui | Next.js API routes | JSON procedure-cost table | Vercel AI SDK | TypeScript only |
+| **1B** | React (Vite) + Tailwind + Recharts | FastAPI | SQLite | PuLP / OR-Tools | TypeScript + Python |
+| **1C** | Streamlit (or React) | Python (Streamlit) or FastAPI | JSON plan files, uploaded PDFs | NumPy, Plotly, pdfplumber | Python only (fast path) |
+| **2A** | Next.js + Tailwind + shadcn/ui | Next.js API routes | None (session only) | Vercel AI SDK, Zod, Recharts | TypeScript only |
+| **2B** | React (Vite) + Tailwind + Recharts/D3 | Thin FastAPI or Express proxy | None (session only) | Recharts or D3 | TypeScript (+ a little Python) |
+| **2C** | React Native (Expo) or Flutter | FastAPI or Express | None, or SQLite for check-ins | expo-speech, speech-to-text API, WeasyPrint | TypeScript or Dart + Python |
+
+### How to choose a stack
+
+- **All-TypeScript (Next.js):** One codebase, one language, fast deployment to Vercel. Best when most of the team knows JavaScript.
+- **React + FastAPI:** Splits cleanly into frontend and backend work for 5 people. Best when you need Python for math (optimization, simulation).
+- **Streamlit:** A working UI in under an hour, but limited design control. Best when the team is mostly Python/data people.
+- **React Native / Flutter:** Only if someone has shipped a mobile app before. Otherwise build a mobile-friendly web app instead.
+- **LLM provider:** Any of them works (Claude, OpenAI, Gemini, or a local model through Ollama). Use whichever your team already has a key for. Pick a provider that supports **structured output / tool calling**, since every idea relies on it.
+
+### Rules that apply to every idea
+
+- **The LLM never does the math.** Use it to understand input and explain results. Keep calculations in tested code. The judges work in insurance and will check your numbers.
+- **Show your assumptions** and add an "estimate, not a guarantee" disclaimer.
+- **Don't store personal data.** Keep everything in the session.
+- **FAIR Health is a website, not an API.** Look up about 20 common procedures by hand and save them as JSON.
 
 ---
 
-## 5. Recommendation
+## 5. Matching ideas to your team
 
-- **If you have at least one strong math or stats person and one solid backend developer, choose Path 1 (① + ② + ④).** It offers the most ways to stand out, the sequencing and plan-choice ideas are real technical work, and a "$ saved" number makes a strong demo.
-- **If your team is strongest in frontend, design and communication, choose Path 2 (⑥ + ⑦).** The calm conversation plus the coverage-over-time chart can beat a technically stronger team whose demo is less clear.
+| If your team's strength is... | Choose |
+|---|---|
+| Web development (JavaScript/TypeScript), want the safest finish | **1A** or **2A** |
+| Math, stats or optimization plus Python | **1B** or **1C** |
+| Data visualization and polished UI | **2B** |
+| Conversation design, writing, UX | **2A** |
+| Mobile development | **2C** |
+
+### Roles for 5 people
+
+1. **Frontend/UX:** screens, components, overall look
+2. **AI/LLM:** prompts, structured output, tone guardrails
+3. **Calculation engine and data:** the math, the cost/plan data, tests that prove the numbers are right
+4. **Backend and integration:** API, connecting frontend to backend, deployment
+5. **Product, research and pitch:** learns the insurance rules, writes the demo script and README, tests everything as a user
+
+### Timeline
+
+Settle scope by 2:30 PM. Get a working end-to-end demo by about 10 PM. Add features overnight. Freeze code around 7 AM. Rehearse the demo and finish the README before 10 AM.
+
+---
+
+## 6. Recommendation
+
+- **Strong in math/stats and Python → Idea 1B (Care Planner).** It's the hardest to copy, and a "$ saved" number makes a strong demo. If the optimizer falls behind schedule, fall back to a simple greedy rule.
+- **Strong in web development and UX → Idea 2B (Timeline Studio),** with 2A's chat as the intake. The coverage-over-time chart explains term vs permanent better than any paragraph.
+- **Want the safest finish → Idea 1A or 2A.** All TypeScript, fewest moving parts, and enough time left to polish.
