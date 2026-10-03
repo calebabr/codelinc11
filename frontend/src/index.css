@@ -77,6 +77,14 @@
 
 :root {
     /* bitewise brand. Orange is ONLY for savings moments. */
+    /* Brand base tokens used by the app screens' utilities (text-ok, bg-ink, etc.) */
+    --burgundy: #6b0f2a;
+    --orange: #ff4f17;
+    --ink: #1c0a12;
+    --ok: #1a7f4b;
+    --warn: #b26a00;
+    --soft: #faf6f7;
+    --line: #e6e1e3;
     --background: #ffffff;
     --foreground: #1c0a12;
     --card: #ffffff;
@@ -218,25 +226,6 @@
   }
 }
 
-/* Big numbers: display serif, digits line up so they don't jiggle when they animate */
-@utility money {
-  font-family: var(--font-display);
-  font-optical-sizing: auto;
-  body {
-    @apply bg-background text-foreground antialiased;
-  }
-  html {
-    @apply font-sans;
-  }
-  h1, h2, h3 {
-    @apply font-heading tracking-tight text-foreground;
-    font-optical-sizing: auto;
-  }
-  ::selection {
-    @apply bg-primary text-primary-foreground;
-  }
-}
-
 /* Big dollar figures: serif, digits line up in columns. Usage: <span className="money text-6xl">$800</span> */
 @utility money {
   font-family: var(--font-heading);
@@ -246,10 +235,6 @@
   line-height: 1;
 }
 
-/* Small uppercase label */
-@utility eyebrow {
-  font-size: 0.75rem;
-  font-weight: 700;
 /* Small uppercase label above a number, like a printed statement */
 @utility eyebrow {
   font-size: 0.75rem;
