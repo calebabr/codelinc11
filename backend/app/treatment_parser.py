@@ -27,6 +27,22 @@ _ANY_NUM_RE = re.compile(r"\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?")
 _PHASE_RE = re.compile(r"\b(phase|priority|stage)\s*(\d)\b", re.IGNORECASE)
 _TOTAL_RE = re.compile(r"\b(sub\s*-?total|grand total|total|balance due|patient portion|insurance est)", re.IGNORECASE)
 
+_MONTHS = r"(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*"
+_DATE_RE = re.compile(
+    r"\b\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}\b"
+    r"|\b\d{4}[/.-]\d{1,2}[/.-]\d{1,2}\b"
+    rf"|\b{_MONTHS}\.?\s+\d{{1,2}}(?:st|nd|rd|th)?,?(?:\s+\d{{4}})?\b"
+    r"|\b\d{3}[-.\s)]\s*\d{3}[-.\s]\d{4}\b",  # phone numbers
+    re.IGNORECASE,
+)
+_LABEL_RE = re.compile(
+    r"^(patient|name|dob|date|exam date|provider|dentist|doctor|dr\.?|insurance|estimate|estimated|"
+    r"subtotal|sub-total|total|member|phone|address|account|policy|id)\b"
+    r"|\b(exam date|date of birth|dob)\b",
+    re.IGNORECASE,
+)
+_YEAR_RE = re.compile(r"(19|20)\d{2}")
+
 _URGENT_WORDS = ("urgent", "asap", "pain", "infection", "emergency")
 _SOON_WORDS = ("soon", "recommended")
 _FLEX_WORDS = ("elective", "cosmetic", "when convenient", "monitor")
@@ -69,13 +85,18 @@ def _to_float(s: str) -> float:
     return float(s.replace(",", ""))
 
 
-def _fee(text: str) -> float | None:
+def _fee(text: str, allow_bare: bool = True) -> float | None:
     m = _DOLLAR_RE.search(text)
     if m:
         return _to_float(m.group(1))
+    if not allow_bare:
+        return None
     stripped = _CODE_RE.sub(" ", _TOOTH_RE.sub(" ", text))
     stripped = _PHASE_RE.sub(" ", stripped)
-    nums = _BARE_NUM_RE.findall(stripped)
+    nums = [
+        n for n in _BARE_NUM_RE.findall(stripped)
+        if "." in n or "," in n or not _YEAR_RE.fullmatch(n)  # a bare 19xx/20xx is a year, not a fee
+    ]
     return _to_float(nums[-1]) if nums else None
 
 
@@ -136,12 +157,14 @@ def _parse_rows(text: str, catalog: dict[str, Procedure]) -> list[_Row]:
         line = raw.strip().lstrip("-*•· \t")
         if not line:
             continue
+        if _TOTAL_RE.search(line) or _LABEL_RE.search(line):
+            continue
+        if _DATE_RE.search(line):
+            line = re.sub(r"\s+", " ", _DATE_RE.sub(" ", line)).strip()
         code_m = _CODE_RE.search(line)
         tooth = _tooth(line)
-        fee = _fee(line)
+        fee = _fee(line, allow_bare=bool(code_m or tooth))
         has_signal = bool(code_m or tooth or fee is not None)
-        if _TOTAL_RE.search(line):
-            continue
         if _PHASE_RE.search(line) and not has_signal:
             ctx_phase = _phase_text(line)
             ctx_urgency = _urgency_from_text(line)
@@ -154,7 +177,7 @@ def _parse_rows(text: str, catalog: dict[str, Procedure]) -> list[_Row]:
             if c in catalog:
                 code, confidence = c, 1.0
         if code is None:
-            nm = _name_match(line, catalog, has_signal)
+            nm = _name_match(line, catalog, has_signal) if has_signal else None
             if nm:
                 code, confidence = nm
         if code is None and not has_signal:

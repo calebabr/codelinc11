@@ -197,3 +197,55 @@ def test_ollama_not_called_without_unmatched(monkeypatch):
 
     monkeypatch.setattr(treatment_parser, "OllamaClient", explode)
     assert parse(SAMPLE)["mode"] == "rules"
+
+
+REALISTIC = (
+    "SMILE FIRST FAMILY DENTISTRY\nPatient: Alex Rivera     Exam date: 10/02/2026\n\nTREATMENT PLAN\n"
+    "Phase 1 (urgent: pain, lower left)\n  #19   D3330   Root canal, molar    $1,100.00\n\nPhase 2\n"
+    "  #19   D2740   Crown, porcelain/ceramic    $1,600.00\n"
+    "  #14   D2392   Filling, 2 surfaces (composite)    $200.00\n"
+    "  #15   D2392   Filling, 2 surfaces (composite)    $200.00\n\nPhase 3 (when convenient)\n"
+    "        D1110   Cleaning (adult)    $120.00\n  #8    Zirconia veneer    $950.00\n\n"
+    "Total estimate: $4,170.00\n"
+)
+
+
+def test_realistic_office_quote():
+    data = parse(REALISTIC)
+    items = data["items"]
+    assert [i["id"] for i in items] == ["q1", "q2", "q3", "q4", "q5"]
+    assert [i["code"] for i in items] == ["D3330", "D2740", "D2392", "D2392", "D1110"]
+    assert items[1]["after"] == "q1"
+    assert items[1]["quoted_fee"] == 1600 and items[1]["typical_fee"] == 1200
+    assert items[0]["urgency"] == "urgent" and items[4]["urgency"] == "flexible"
+    assert len(data["unmatched_lines"]) == 1 and "veneer" in data["unmatched_lines"][0]
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "Patient: Alex Rivera     Exam date: 10/02/2026",
+        "Exam 2026",
+        "Exam date: 2026-10-02",
+        "Periodic exam Oct 2, 2026",
+        "DOB 03/14/1988",
+        "Provider: Dr. Lee 555-123-4567",
+        "Subtotal: $1,000",
+        "Total estimate: $4,170.00",
+        "Insurance estimate $500",
+        "Crown",
+        "Cleaning",
+    ],
+)
+def test_header_date_total_and_nameonly_lines_make_no_items(line):
+    data = parse(line)
+    assert data["items"] == []
+
+
+def test_year_not_a_fee_and_date_stripped():
+    (item,) = parse("D0120 tooth 2 on 10/02/2026")["items"]
+    assert item["quoted_fee"] is None
+    (item,) = parse("D0120 2026")["items"]
+    assert item["quoted_fee"] is None
+    (item,) = parse("D2740 #3 1,600")["items"]
+    assert item["quoted_fee"] == 1600
