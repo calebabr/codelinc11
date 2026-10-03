@@ -75,7 +75,7 @@ function Shell() {
       )}
 
       {chatOpen && (
-        <div className="fixed inset-0 z-40 flex justify-end bg-black/30" onClick={() => setChatOpen(false)}>
+        <div className="fixed inset-0 z-40 flex justify-end bg-ink/30" onClick={() => setChatOpen(false)}>
           <div
             className="h-full w-full max-w-md p-3 sm:p-4"
             onClick={(e) => e.stopPropagation()}

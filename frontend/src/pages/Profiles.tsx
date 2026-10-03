@@ -30,10 +30,10 @@ import {
 } from "lucide-react"
 
 const CATEGORY_COLOR: Record<Category, string> = {
-  preventive: "bg-emerald-100 text-emerald-800",
-  basic: "bg-blue-100 text-blue-800",
-  major: "bg-amber-100 text-amber-800",
-  ortho: "bg-violet-100 text-violet-800",
+  preventive: "bg-ok/15 text-ok",
+  basic: "bg-primary/10 text-primary",
+  major: "bg-warn/15 text-warn",
+  ortho: "bg-accent/15 text-accent",
 }
 
 export function Profiles() {
