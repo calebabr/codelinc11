@@ -1,28 +1,50 @@
-# FRONTEND.md: Frontend Lead (CS3) and UI Agent (Claude Code)
+# FRONTEND.md: FE (React), DES (Figma designer) and the UI Agent
 
 Read [FEATURES.md](FEATURES.md) first. That file says **what** to build; this one says **how** the frontend gets built and who does what.
+
+The frontend team is two people with different jobs: **DES designs, FE builds (through the UI agent).** They hand work back and forth through Figma frames and written polish tickets.
 
 ---
 
 ## 1. Roles
 
-### CS3: Frontend lead (human)
-- **Owns:** everything in `frontend/`. Decides how screens look and behave.
-- **CS3 writes little code. The UI agent writes the code and tests; CS3 directs and checks.**
+### DES: Frontend designer (human, Figma)
+- **Owns:** the look and feel. The Figma file is the visual source of truth.
+- **Delivers, in order:**
+  1. **Style tile (by 3:30 PM):** colors, type scale, spacing, card/button/input styles, chart colors, category colors. FE's agent turns this into Tailwind theme values on day one, so everything built afterward already matches.
+  2. **Mockups of the 3 demo screens (by 6:00 PM):** Estimate, Plan My Year, My Benefits, at desktop and 375 px, with the "You pay" breakdown, the timeline and the savings banner designed carefully. Rough is fine for everything else.
+  3. **Later frames as needed:** chat drawer, empty/loading/error states, the glossary tooltip.
+- **Reviews the build:** at each checkpoint, compares the running app (or Playwright screenshots) with the frames and files **polish tickets** (below). Does not edit frontend code directly, so FE's agent and DES never touch the same files.
+- **Also owns the pitch:** demo script, slides, backup video, README framing (with Bob's help, see §9). A designer is well placed to make the demo tell a clear story.
+- **Exports** frames to `docs/design/` as PNGs (and keeps the Figma link in `docs/design/README.md`), so any agent can read them even without the Figma connection.
+
+**Polish ticket format** (keeps feedback precise enough for an agent to act on; post in `#frontend` or add to `TASKS.md`):
+
+```
+Screen: Estimate · Viewport: 375px
+Problem: "You pay" number wraps onto two lines
+Expected: single line, 40px, maroon (see frame "Estimate / mobile")
+Priority: P1
+```
+
+### FE: Frontend developer (human, React)
+- **Owns:** everything in `frontend/`. Decides how screens behave, and signs off that the build matches DES's frames.
+- **FE writes little code. The UI agent writes the code and tests; FE directs and checks.**
 - **Directs:**
-  - Sketches each screen (paper, Excalidraw or Figma, 5 minutes) **before** asking the agent to build it. The agent builds much better UI from a sketch or a clear description than from "make it look nice."
-  - Gives specific feedback ("make the You pay number 48px and maroon", "the timeline chips overlap at 375px").
+  - Gives the agent each screen's Figma frame (via the Figma connection or a PNG) plus the feature's acceptance line from FEATURES.md.
+  - Works through DES's polish tickets by giving them to the agent.
+  - Gives specific feedback ("the timeline chips overlap at 375px").
 - **Checks before approving every PR:**
-  - The screen in the browser at desktop and 375 px. Does it match the sketch or Figma frame?
+  - The screen in the browser at desktop and 375 px. Does it match the Figma frame?
   - Every dollar figure matches FEATURES.md §2 and comes from the API, never computed in the frontend.
   - Loading, error and empty states exist. The disclaimer is shown.
   - The agent's report says typecheck, build and tests passed.
-- **Coordinates:** with CS1 about the API contract, with CS4 about demo wording.
+- **Coordinates:** with BE about the API contract, with DES about what's feasible in the time left.
 
-### UI agent (Claude Code, run by CS3)
+### UI agent (Claude Code, run by FE)
 - **Job:** builds screens, components, charts and the chat drawer inside `frontend/`, against the generated API types.
-- **Allowed:** create and edit files in `frontend/`, `docs/FRONTEND.md` and `docs/design/`; run `npm` scripts; read (not edit) `backend/app/models.py` and the other `docs/`.
-- **Not allowed:** edit anything outside `frontend/`; add money calculations in TypeScript; change generated API types by hand; add large new dependencies without asking CS3.
+- **Allowed:** create and edit files in `frontend/` and `docs/FRONTEND.md`; read (not edit) `docs/design/`; run `npm` scripts; read (not edit) `backend/app/models.py` and the other `docs/`.
+- **Not allowed:** edit anything outside `frontend/`; add money calculations in TypeScript; change generated API types by hand; add large new dependencies without asking FE.
 - **Definition of done for any task:** `npm run typecheck && npm run build` passes, the page works in the browser against the running backend (or the stub endpoints), and it works at phone width (375 px).
 
 ---
@@ -45,7 +67,7 @@ Then:
 npx openapi-typescript http://localhost:8000/openapi.json -o src/lib/api-types.ts
 ```
 
-  Add it as an `npm run gen:api` script and rerun it whenever CS1 announces a contract change in `#contract`.
+  Add it as an `npm run gen:api` script and rerun it whenever BE announces a contract change in `#contract`.
 - **Environment:** `VITE_API_URL=http://localhost:8000` in `frontend/.env`.
 - **Scripts in `package.json`:** `dev`, `build`, `typecheck` (`tsc --noEmit`), `lint`, `gen:api`.
 
@@ -101,7 +123,7 @@ frontend/src/
 | 5 | **Chat drawer (F5)** | `/chat` (SSE) | Floating button bottom-right on every page. Show tool status chips as events arrive. Stream text token by token. |
 | 6 | **Stretch (F6 or F7)** | — | Only after the 2:00 AM stand-up decision. |
 
-### Chat streaming events (agreed with CS2 and CS1)
+### Chat streaming events (agreed with FLEX and BE)
 
 `/chat` sends these SSE event types: `tool_start` `{name}`, `tool_end` `{name}`, `token` `{text}`, `done` `{}`, `error` `{message}`. Use `@microsoft/fetch-event-source`, because the browser's built-in `EventSource` can't send a POST body.
 
@@ -118,7 +140,7 @@ frontend/src/
 
 ---
 
-## 6. How CS3 works with the UI agent
+## 6. How FE works with the UI agent
 
 **Put this in `frontend/CLAUDE.md`:**
 
@@ -140,32 +162,32 @@ frontend/src/
 2. Use **plan mode**: "Read docs/FEATURES.md F2 and docs/FRONTEND.md. Plan the Estimate page. Here's my sketch: [describe or attach image]." Review the plan and correct it.
 3. Let it build. Ask it to **run the dev server and check the page** in the browser.
 4. Check it yourself in the browser. Fix with short, specific follow-ups ("make the You pay number 48px and maroon").
-5. Commit, open a PR, and post the PR in `#frontend`. CS1 merges.
+5. Commit, open a PR (see [GIT-WORKFLOW.md](GIT-WORKFLOW.md)), and post the PR in `#frontend`. FE merges own-folder PRs after checking; BE merges anything that touches shared files.
 
 **Example starting prompts:**
 - *Setup:* "Set up the Vite React TS app in frontend/ per docs/FRONTEND.md sections 2–3: Tailwind, shadcn/ui with the listed components, TanStack Query, the folder structure, PlanContext saved to localStorage, and a tab layout. Stop after typecheck and build pass."
 - *Estimate:* "Build pages/Estimate.tsx for feature F2 using the stub /estimate endpoint. Components: ProcedureSearch, BreakdownCard, CostWaterfall (from the trace array), MathTrace, NetworkToggle. Follow the design rules in section 5. All numbers come from the API response."
 - *Chat:* "Build ChatDrawer.tsx: a shadcn Sheet opened from a floating button, POST /chat with fetch-event-source, handling the tool_start/tool_end/token/done/error events in FRONTEND.md section 4, with streaming text and tool status chips."
 
-**Running two things in parallel:** if CS3 wants the agent to build one screen while another session fixes something else, use a separate git worktree for each so they don't overwrite each other's files.
+**Running two things in parallel:** if FE wants the agent to build one screen while another session fixes something else, use a separate git worktree for each so they don't overwrite each other's files.
 
 ---
 
 ## 7. The UI agent's sub-agent team
 
-The main Claude Code session acts as the **orchestrator**: it plans, hands focused tasks to sub-agents, and reviews their work before CS3 sees it. Keep the team small (2–4 sub-agents) so it stays easy to review.
+The main Claude Code session acts as the **orchestrator**: it plans, hands focused tasks to sub-agents, and reviews their work before FE sees it. Keep the team small (2–4 sub-agents) so it stays easy to review.
 
 | Sub-agent | Job | Works in | When |
 |---|---|---|---|
 | **Screen builder** | Builds one page and its components from the plan | `src/pages/<Page>.tsx`, that page's components | Each feature slot |
 | **Test writer** | Writes component tests and the end-to-end test for the finished screen | `src/**/*.test.tsx`, `e2e/` | Right after each screen is built |
 | **Docs writer** | Updates `frontend/README.md` and the component table in this file | `frontend/README.md`, `docs/FRONTEND.md` §3 | At each checkpoint |
-| **Design polisher** | Applies the Figma design / design rules, checks screenshots at desktop and 375 px | styles and components only, no logic | Polish phase (2–5 AM) |
+| **Design polisher** | Works through DES's polish tickets; checks screenshots at desktop and 375 px against the Figma frames | styles and components only, no logic | Polish phase (2–5 AM) |
 
 **Rules for parallel sub-agents:**
 - Two sub-agents running at once must **never edit the same files**. Give each a clear file list in its task. If they must overlap, run them one after the other.
 - For bigger parallel tasks, give each its own **git worktree** and merge the results.
-- The orchestrator runs `typecheck`, `build` and tests after sub-agents finish, then CS3 reviews in the browser.
+- The orchestrator runs `typecheck`, `build` and tests after sub-agents finish, then FE reviews in the browser.
 - Watch usage limits: sub-agents use up a seat's allowance quickly. Use them for clearly separate chunks of work, not tiny edits.
 
 **Example orchestrator prompt:**
@@ -179,8 +201,8 @@ The main Claude Code session acts as the **orchestrator**: it plans, hands focus
 |---|---|---|---|
 | **Component** | Vitest + React Testing Library | Each component renders the API values it's given (for example, BreakdownCard shows "$800" for the G3 response); loading, empty and error states | Test-writer sub-agent |
 | **API mocking** | MSW (Mock Service Worker) | Component and page tests use fixture responses copied from `backend/fixtures/`, so they match the stubs exactly | Test-writer sub-agent |
-| **End-to-end** | Playwright | The three demo flows against the real backend: (1) G3 estimate shows "$800", (2) S2 shows "save $895", (3) chat answer includes "$625" | Test-writer sub-agent; CS3 checks |
-| **Visual** | Playwright screenshots | Each page at 1280 px and 375 px, saved for the design polisher to compare | Design polisher |
+| **End-to-end** | Playwright | The three demo flows against the real backend: (1) G3 estimate shows "$800", (2) S2 shows "save $895", (3) chat answer includes "$625" | Test-writer sub-agent; FE checks |
+| **Visual** | Playwright screenshots | Each page at 1280 px and 375 px, saved so DES and the polish sub-agent can compare them with the Figma frames | Design polisher; DES reviews |
 
 ```bash
 npm install -D vitest @testing-library/react @testing-library/jest-dom jsdom msw @playwright/test
@@ -188,23 +210,29 @@ npm install -D vitest @testing-library/react @testing-library/jest-dom jsdom msw
 
 Add `test` (`vitest run`) and `e2e` (`playwright test`) scripts. CI runs `typecheck`, `build` and `test`. The end-to-end tests run locally before each checkpoint and before the code freeze, because they need the backend running.
 
-**The rule for tests:** the end-to-end tests check the **golden numbers from FEATURES.md**. If an end-to-end test fails on a dollar amount, the bug is in the engine or the API, not in the test. Tell M or CS1.
+**The rule for tests:** the end-to-end tests check the **golden numbers from FEATURES.md**. If an end-to-end test fails on a dollar amount, the bug is in the engine or the API, not in the test. Tell M or BE.
 
 ---
 
-## 9. Design polish with Figma
+## 9. Design and polish with Figma (DES + FE)
 
-The plan is to **build on shadcn defaults first, then polish from a design**, so a pretty design never blocks working features.
+**The plan:** DES designs in parallel while FE's agent builds on shadcn defaults, so a pretty design never blocks working features. The Figma style tile is converted into theme values early, so the later polish pass is small.
 
 | When | Who | What |
 |---|---|---|
-| **2:30–6:00 PM** | CS3 (or CS4 when the data is done) | In Figma, make a **style tile** (colors, type scale, card style, button style, chart colors) plus quick mockups of the **3 demo screens**: Estimate, Plan My Year, My Benefits. Keep it rough. This is about 1–2 hours. |
-| **6:00 PM–2:00 AM** | UI agent | Builds features with the style tile's colors and fonts already set as Tailwind theme values, so later polish is small. |
-| **2:00–5:00 AM** | Design polisher sub-agent | Polish pass: matches the Figma mockups, spacing, empty states, small animations, phone layout. Compares Playwright screenshots against the mockups. |
+| **1:30–3:30 PM** | DES | **Style tile** in Figma (colors, type, spacing, component styles). First thing out, because FE's agent needs it. Until then the agent uses Lincoln maroon `#6b0f2a` and orange `#f5591f` from §5. |
+| **3:30 PM** | DES → FE | Handoff #1: DES exports the tile to `docs/design/` and posts the Figma link. FE's agent sets Tailwind theme colors, fonts and radii from it. |
+| **3:30–6:00 PM** | DES | Mockups of the **3 demo screens** at desktop and 375 px. |
+| **6:00 PM** | DES → FE | Handoff #2: frames for Estimate, Plan My Year, My Benefits. FE gives each frame to the UI agent when building that screen. |
+| **6:00 PM–2:00 AM** | FE's agent builds; DES reviews | At each checkpoint DES compares the running app with the frames and files polish tickets (§1). FE's agent works through them, P0/P1 first. DES also designs the chat drawer and the empty/error states. |
+| **2:00–5:00 AM** | FE's agent (polish sub-agent) | Polish pass: spacing, empty states, small animations, phone layout, working from DES's ticket list and the Playwright screenshots. DES is the reviewer of every change. |
+| **5:00 AM onward** | DES | Pitch and slides; final visual review of the deployed app. |
 
-**Connecting Figma to Claude Code:** Figma's Dev Mode MCP server lets Claude Code read frames directly (layout, colors, spacing) instead of working from screenshots. Set it up in the afternoon so it's ready by the polish phase. If setup gives you trouble, **export the frames as PNGs** into `docs/design/` and point the agent at them. That works almost as well.
+**Connecting Figma to Claude Code:** Figma's Dev Mode MCP server lets Claude Code read frames directly (layout, colors, spacing). FE sets it up in the afternoon with DES's account so it's ready by the first handoff. If it gives trouble, **DES exports the frames as PNGs** into `docs/design/` and the agent works from those. That works almost as well.
 
-**Faster alternatives if nobody wants to use Figma:** generate mockups with an AI UI tool (Figma Make, v0, or Claude itself) and use them as the reference, or skip mockups and polish against the design rules in section 5 plus screenshot reviews.
+**If DES finishes early:** DES writes the copy for every screen (plain-language labels, the glossary definitions, the disclaimer), which FE's agent drops in. This is real work that improves the demo.
+
+**Faster alternatives if Figma falls behind:** generate rough mockups with Figma Make or v0 and refine them, or work from the design rules in §5 plus screenshot reviews.
 
 **Polish priorities (in order):** 1) the "You pay" number and savings banner look great; 2) the timeline animation is smooth; 3) loading and error states; 4) phone layout; 5) everything else.
 
@@ -213,14 +241,14 @@ The plan is to **build on shadcn defaults first, then polish from a design**, so
 ## 10. Checklist
 
 - [ ] App set up, tabs, PlanContext, generated API types, Vitest + Playwright set up (by 3:00 PM)
-- [ ] Figma style tile + 3 mockups (by 6:00 PM); theme values in Tailwind config
+- [ ] DES: Figma style tile (3:30 PM) and 3 mockups (6:00 PM), exported to `docs/design/`; theme values in Tailwind config
 - [ ] Setup page (F1)
 - [ ] Estimate page against stubs → against real engine (F2) + tests **by 6:30 PM**
 - [ ] Plan My Year with timeline and savings banner (F3) + tests **by 10:00 PM**
 - [ ] My Benefits + .ics download (F4) + tests
 - [ ] Chat drawer with streaming (F5) **by 2:00 AM**
 - [ ] Stretch (F6 or F7)
-- [ ] Polish pass from Figma; phone-width pass; loading/error states; disclaimer everywhere (2–5 AM)
+- [ ] Polish pass from DES's tickets; phone-width pass; loading/error states; disclaimer everywhere (2–5 AM)
 - [ ] All 3 end-to-end demo flows pass against the real backend
 - [ ] `frontend/README.md` up to date (setup, scripts, structure)
 - [ ] Production build deployed (Vercel or Netlify) **by 7:00 AM**
