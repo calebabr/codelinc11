@@ -1,12 +1,30 @@
+/* Layer order: Clerk's CSS sits below Tailwind utilities, so our classes can restyle Clerk components */
+@layer theme, base, clerk, components, utilities;
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "@fontsource-variable/bricolage-grotesque/opsz.css";
+@import "@fontsource-variable/manrope";
+@import "@fontsource-variable/newsreader/opsz.css";
+@import "@fontsource-variable/newsreader/opsz-italic.css";
+@import "@clerk/ui/themes/shadcn.css";
 @import "@fontsource-variable/geist";
 @import "@fontsource-variable/fraunces/opsz.css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+    --font-heading: 'Bricolage Grotesque Variable', 'Manrope Variable', system-ui, sans-serif;
+    --font-sans: 'Manrope Variable', system-ui, sans-serif;
+    /* Editorial serif for big headlines and big numbers (Oscar-style) */
+    --font-display: 'Newsreader Variable', Georgia, 'Times New Roman', serif;
+    --font-quote: Georgia, 'Times New Roman', serif;
+    --color-savings: var(--savings);
+    --color-savings-ink: var(--savings-ink);
+    --color-blush: var(--blush);
+    --color-peach: var(--peach);
+    --color-mint: var(--mint);
+    --color-mint-ink: var(--mint-ink);
     --font-heading: 'Fraunces Variable', Georgia, serif;
     --font-sans: 'Geist Variable', sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
@@ -58,6 +76,44 @@
 }
 
 :root {
+    /* bitewise brand. Orange is ONLY for savings moments. */
+    --background: #ffffff;
+    --foreground: #1c0a12;
+    --card: #ffffff;
+    --card-foreground: #1c0a12;
+    --popover: #ffffff;
+    --popover-foreground: #1c0a12;
+    --primary: #6b0f2a;
+    --primary-foreground: #ffffff;
+    --secondary: #fbeff2;
+    --secondary-foreground: #6b0f2a;
+    --muted: #f4f2f3;
+    --muted-foreground: #4b5563;
+    --accent: #fbeff2;
+    --accent-foreground: #6b0f2a;
+    --destructive: #b42318;
+    --border: #ece6e8;
+    --input: #ddd5d8;
+    --ring: #6b0f2a;
+    --blush: #fbeff2;
+    --peach: #fff1ea;
+    --mint: #e6f6ef;
+    --mint-ink: #146c43;
+    --savings: #ff4f17;
+    --savings-ink: #c2410c; /* orange text at small sizes (contrast) */
+    --chart-1: #6b0f2a;
+    --chart-2: #ff4f17;
+    --chart-3: #d1d5db;
+    --chart-4: #a3485e;
+    --chart-5: #9ca3af;
+    --radius: 1.25rem;
+    --sidebar: #fbeff2;
+    --sidebar-foreground: #1c0a12;
+    --sidebar-primary: #6b0f2a;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #fbeff2;
+    --sidebar-accent-foreground: #6b0f2a;
+    --sidebar-border: #ece6e8;
     /* "Editorial finance": warm paper, ink text, Lincoln maroon, orange only for savings */
     --paper: #faf7f2;
     --background: #faf7f2;
@@ -136,6 +192,36 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    @apply font-sans;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  /* Big headlines: high-contrast serif, tight, with <em> for an italic accent word */
+  h1, h2 {
+    @apply font-display text-foreground;
+    font-weight: 400;
+    font-optical-sizing: auto;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+  h1 em, h2 em {
+    font-style: italic;
+    letter-spacing: -0.035em;
+  }
+  h3 {
+    @apply font-heading text-foreground;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+  }
+}
+
+/* Big numbers: display serif, digits line up so they don't jiggle when they animate */
+@utility money {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
   body {
     @apply bg-background text-foreground antialiased;
   }
@@ -160,6 +246,10 @@
   line-height: 1;
 }
 
+/* Small uppercase label */
+@utility eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
 /* Small uppercase label above a number, like a printed statement */
 @utility eyebrow {
   font-size: 0.75rem;
