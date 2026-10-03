@@ -492,25 +492,25 @@ TOOLS = [
 
 Exact folder and file ownership is in **[docs/FEATURES.md §1](docs/FEATURES.md)**; the summary below is for orientation.
 
-| Person | Role | Main area | AI tool | Why this pairing |
+| Person | Who | Main area | AI tool | Why this pairing |
 |---|---|---|---|---|
-| **M: Applied math** | Math lead | Math engine + golden tests | **Kiro (spec mode)** | Spec-driven development fits the engine: requirements (the plan rules) → design (formulas) → tasks → code + tests. M checks the math, the agent writes the Python. The specs also serve as judging documentation. |
-| **CS1** | Backend + integration, **merge captain** | API routes, contract, fixtures, CI, deployment | **Claude Code** | The most cross-cutting coding work: routes, schemas, PDF extraction, connecting everything |
-| **CS2** | LLM/RAG agent | AI agent loop, RAG, evaluations | **Claude Code** | Tool loop, retrieval, prompts and the number guard: lots of iterative code |
-| **CS3** | Frontend | The React app | **Claude Code** | The largest amount of code: 5 screens, charts, chat drawer |
-| **CS4** | Data, QA + pitch; second pair of hands on the engine | Seed data, README, pitch and demo script | **IBM Bob** (Ask + Agent modes) | Ask mode to research insurance rules, Agent mode to write seed-data scripts and extra tests, review PRs, write the README. Pairs with M on the engine when the data is done. |
+| **M** | Applied math, backend | Math engine, golden numbers, seed data | **Kiro (spec mode)** | Spec-driven development fits the engine: requirements (the plan rules) → design (formulas) → tasks → code + tests. M checks the math, the agent writes the Python. The specs also serve as judging documentation. |
+| **BE** | CS, backend (FastAPI), **merge captain** | API routes, contract, fixtures, CI, deployment | **Claude Code** | The most cross-cutting coding work: routes, schemas, PDF extraction, connecting everything |
+| **FLEX** | CS, flex | LLM/RAG agent, evaluations; fills gaps | **Claude Code** | Tool loop, retrieval, prompts and the number guard: lots of iterative code |
+| **FE** | CS, frontend (React) | The React app | **Claude Code** | The largest amount of code: 5 screens, charts, chat drawer |
+| **DES** | Frontend design (Figma) | Figma design, polish tickets, pitch, README | **Figma**, plus **IBM Bob** (optional) for README/pitch drafts and PR reviews | The designer needs no coding agent for the design itself. Bob drafts the written material. |
 
-If you only get one Kiro/Bob seat, give it to **M** (Kiro). CS4 then works without an agent, or shares a Claude Code seat during off-shifts.
+If Kiro credits run short, FLEX's Claude Code seat takes over engine tasks from the saved specs (M still reviews). If you only get one of Kiro or Bob, keep **Kiro** for M.
 
 **Credit tip:** Kiro's free tier is 50 credits, and the student tier is 1,000/month after verification. Have M verify their student status at kiro.dev/students **right away**. Bob's trial has 50 coins. Use these tools for planning, specs and reviews, not for long autonomous runs.
 
-### 8.2 Ground rules that keep 5 humans and 5 agents from colliding
+### 8.2 Ground rules that keep 5 humans and their agents from colliding
 
 1. **One repo, folder ownership.** Each person and their agent edits **only their own folders** (table above). Changes outside them go through the owner. This prevents nearly all merge conflicts.
-2. **The API contract is shared and protected.** `backend/app/models.py` (Pydantic) is the single source of truth. Generate TypeScript types from FastAPI's OpenAPI schema with `openapi-typescript` into `frontend/src/lib/api-types.ts`. Only **CS1** changes the contract, after posting the change in Discord.
+2. **The API contract is shared and protected.** `backend/app/models.py` (Pydantic) is the single source of truth. Generate TypeScript types from FastAPI's OpenAPI schema with `openapi-typescript` into `frontend/src/lib/api-types.ts`. Only **BE** changes the contract, after posting the change in Discord.
 3. **Golden numbers come from M, first.** M sets them; the engine agent writes `backend/tests/test_engine.py` from them; it's the contract between the math and everyone else. **No agent may change a golden expected value** without M's approval. Put this rule in every agent's instruction file.
-4. **Stubs first.** By 2:30 PM, CS1 ships every endpoint returning fixture JSON from `backend/fixtures/`. CS2 and CS3 build against the stubs and are never blocked waiting on the engine.
-5. **Small PRs, often.** Merge to `main` every 60–90 minutes. **`main` must always run and be demoable.** CS1 merges. GitHub Actions runs `pytest`, `tsc --noEmit` and lint on every PR.
+4. **Stubs first.** By 2:30 PM, BE ships every endpoint returning fixture JSON from `backend/fixtures/`. FLEX and FE build against the stubs and are never blocked waiting on the engine.
+5. **Small PRs, often.** Merge to `main` every 60–90 minutes. **`main` must always run and be demoable.** Authors merge their own-folder PRs after checking; BE merges anything touching shared files. The full Git guide is [docs/GIT-WORKFLOW.md](docs/GIT-WORKFLOW.md). GitHub Actions runs `pytest`, `tsc --noEmit` and lint on every PR.
 6. **One set of conventions for all agents.** Write `docs/CONVENTIONS.md` once (stack, folder ownership, "never compute dollar amounts in the LLM", "don't edit golden tests", code style, how to run tests). Then point every tool at it:
    - **Claude Code:** root `CLAUDE.md` containing `@docs/CONVENTIONS.md`, plus a short `frontend/CLAUDE.md` and `backend/CLAUDE.md` for area-specific commands.
    - **Kiro:** a steering file in `.kiro/steering/` that references the same doc.
@@ -519,7 +519,7 @@ If you only get one Kiro/Bob seat, give it to **M** (Kiro). CS4 then works witho
 
 ### 8.3 How each person works with their agent
 
-**Claude Code (CS1, CS2, CS3)**
+**Claude Code (BE, FLEX, FE)**
 - Start each feature in **plan mode**: have Claude read the relevant files and propose a plan, review it, then let it implement. Five minutes of planning saves an hour of wrong code.
 - **One task per session.** Start a fresh session for each new feature so context stays focused. If you want two tasks running in parallel, use a separate **git worktree** for each so they don't overwrite each other.
 - Ask Claude to **run the tests and the app itself** before you open a PR. Run a code review on your diff before merging.
@@ -530,27 +530,27 @@ If you only get one Kiro/Bob seat, give it to **M** (Kiro). CS4 then works witho
 - Use vibe mode only for quick experiments (for example, "plot the Monte Carlo distribution").
 - Keep the spec updated. It becomes the "how did you build this?" slide.
 
-**Bob (CS4)**
-- **Ask mode:** learn the plan rules and the CDT codes, and sanity-check FAIR Health numbers.
-- **Agent mode:** scripts that turn the collected data into `cdt_codes.json` and `fees_27401.json`, extra (non-golden) tests, and the README.
-- **Reviewer:** ask Bob to review open PRs for bugs. A second AI looking at another AI's code catches different mistakes.
+**Bob (DES, optional)**
+- **Ask mode:** summarize the docs into pitch language and README sections.
+- **Agent mode:** drafts `README.md`, the demo script and slide text from the docs in `docs/`. DES edits and designs.
+- **Reviewer:** ask Bob to review a few important PRs for bugs. A second AI looking at another AI's code catches different mistakes.
 
 ### 8.4 Coordination
 
 - **Task board:** GitHub Projects or a `TASKS.md` with columns Todo / Doing / Done. Each card names its owner. Agents can read `TASKS.md` for context.
 - **Discord:** one channel per area (`#engine`, `#backend`, `#agent`, `#frontend`, `#data`) and `#contract` for API changes.
 - **Stand-ups + integration checkpoints:** at 2:30 PM, 6:30 PM, 10:00 PM, 2:00 AM, 5:00 AM and 7:00 AM (same times as [docs/FEATURES.md §4](docs/FEATURES.md)). Everyone pulls `main`, clicks through the app together for 10 minutes, then each person says what's done, what's next, and what's blocking them.
-- **Sleep shifts (optional):** Shift A sleeps 1–4 AM, Shift B sleeps 4–7 AM. Never have M and CS1 asleep at the same time. Leave a handoff note in `TASKS.md` before sleeping.
+- **Sleep shifts (optional):** Shift A sleeps 1–4 AM, Shift B sleeps 4–7 AM. Never have M and BE asleep at the same time. Leave a handoff note in `TASKS.md` before sleeping.
 
 ### 8.5 First 3 hours (1:30–4:30 PM)
 
 | Person | First 3 hours |
 |---|---|
-| **M** | Golden test cases on paper → Kiro spec for `estimate.py` → `estimate.py` + tests passing |
-| **CS1** | Repo, folder structure, `CONVENTIONS.md` + `CLAUDE.md`, CI, Pydantic models, all endpoints returning stub JSON |
-| **CS2** | LLM provider set up, procedure index + `find_procedure` working from the command line |
-| **CS3** | Vite + Tailwind + shadcn set up, generated API types, Estimate page against stub JSON |
-| **CS4** | Collect ~30 codes + FAIR Health fees + 2–3 plans from the reference material → seed JSON. Then start the pitch outline |
+| **M** | Golden numbers on paper → Kiro spec for `estimate.py` → engine + golden tests passing. Then start collecting the real plan values and FAIR Health fees |
+| **BE** | Repo, folder structure, `CONVENTIONS.md` + `CLAUDE.md`, CI, Pydantic models, all endpoints returning stub JSON |
+| **FLEX** | LLM provider set up, procedure index + `find_procedure` working from the command line |
+| **FE** | Vite + Tailwind + shadcn set up, generated API types, Estimate page against stub JSON |
+| **DES** | Figma style tile (by 3:30 PM) and mockups of the 3 demo screens (by 6:00 PM) |
 
 ### Schedule
 

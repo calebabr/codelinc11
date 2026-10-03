@@ -14,14 +14,17 @@ Every agent instruction file points here: `CLAUDE.md` (Claude Code), `.kiro/stee
 ## Hard rules
 1. **All money math lives in `backend/app/engine/`.** The LLM and the frontend never compute dollar amounts.
 2. **Never change the golden numbers** (FEATURES.md §2 and the expected values in `backend/tests/test_engine.py`) to make code pass. Only the engine agent edits that test file, with M's approval.
-3. **`backend/app/models.py` is the API contract.** Only CS1's workstream changes it; announce changes in `#contract`; the frontend regenerates types with `npm run gen:api`.
+3. **`backend/app/models.py` is the API contract.** Only BE's workstream changes it; announce changes in `#contract`; the frontend regenerates types with `npm run gen:api`.
 4. **No secrets in code, commits or chats.** Use `.env`; commit `.env.example`.
 5. **Every change comes with tests**, and tests pass before a task is called done.
 6. **Update docs** when behavior changes.
 
-## Git
+## Git (full guide: [GIT-WORKFLOW.md](GIT-WORKFLOW.md))
 - Branch names: `fe/<thing>`, `api/<thing>`, `engine/<thing>`, `ai/<thing>`, `data/<thing>`.
-- Small commits with clear messages. PR to `main` every 60–90 minutes. CS1 merges. `main` must always run.
+- Small commits with clear messages. One task = one branch = one PR; merge to `main` every 60–90 minutes with "Squash and merge". `main` must always run.
+- Own-folder PR with green CI that the human has checked: the author merges. Anything touching `models.py`, `requirements.txt`, `package.json`, `.github/`, shared docs or other people's folders: BE merges (backup: FLEX).
+- Before opening a PR: merge `origin/main` into your branch, run the tests, and check `git diff --stat origin/main` shows only your folders.
+- **Never** commit to `main`, force-push, run `git reset --hard` without asking, or commit `.env`.
 - Parallel agents on one machine: use a separate git worktree for each.
 
 ## Commands
