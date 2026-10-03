@@ -1,0 +1,22 @@
+{
+  "id": "demo_ppo",
+  "name": "Demo PPO",
+  "description": "Typical employer dental PPO. Preventive 100%, basic 80%, major 50%. $1,500 yearly maximum.",
+  "monthly_premium": 28.0,
+  "deductible": 50,
+  "deductible_waived_for": [
+    "preventive"
+  ],
+  "annual_max": 1500,
+  "coinsurance": {
+    "preventive": 1.0,
+    "basic": 0.8,
+    "major": 0.5
+  },
+  "frequency": {
+    "D1110": 2,
+    "D0120": 2
+  },
+  "plan_year_start_month": 1,
+  "alternate_benefit": true
+}

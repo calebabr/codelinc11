@@ -1,0 +1,22 @@
+{
+  "id": "basic_ppo",
+  "name": "Basic PPO",
+  "description": "Lower premium, lower yearly maximum. Preventive 100%, basic 70%, major 40%. $1,000 yearly maximum.",
+  "monthly_premium": 16.0,
+  "deductible": 50,
+  "deductible_waived_for": [
+    "preventive"
+  ],
+  "annual_max": 1000,
+  "coinsurance": {
+    "preventive": 1.0,
+    "basic": 0.7,
+    "major": 0.4
+  },
+  "frequency": {
+    "D1110": 2,
+    "D0120": 2
+  },
+  "plan_year_start_month": 1,
+  "alternate_benefit": false
+}

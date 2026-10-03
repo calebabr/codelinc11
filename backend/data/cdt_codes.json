@@ -1,0 +1,247 @@
+[
+  {
+    "code": "D0120",
+    "name": "Periodic exam",
+    "category": "preventive",
+    "description": "Routine checkup exam.",
+    "synonyms": [
+      "checkup",
+      "exam",
+      "dental exam",
+      "check up",
+      "routine exam"
+    ],
+    "fee_p50": 60,
+    "fee_p80": 80,
+    "alternative_codes": []
+  },
+  {
+    "code": "D0274",
+    "name": "Bitewing X-rays (4 images)",
+    "category": "preventive",
+    "description": "Routine X-rays of back teeth.",
+    "synonyms": [
+      "x-ray",
+      "xray",
+      "x rays",
+      "bitewings",
+      "dental x-rays"
+    ],
+    "fee_p50": 85,
+    "fee_p80": 110,
+    "alternative_codes": []
+  },
+  {
+    "code": "D1110",
+    "name": "Cleaning (adult)",
+    "category": "preventive",
+    "description": "Routine teeth cleaning.",
+    "synonyms": [
+      "cleaning",
+      "teeth cleaning",
+      "prophy",
+      "prophylaxis",
+      "dental cleaning",
+      "clean my teeth"
+    ],
+    "fee_p50": 120,
+    "fee_p80": 160,
+    "alternative_codes": []
+  },
+  {
+    "code": "D1206",
+    "name": "Fluoride treatment",
+    "category": "preventive",
+    "description": "Topical fluoride application.",
+    "synonyms": [
+      "fluoride",
+      "fluoride treatment"
+    ],
+    "fee_p50": 45,
+    "fee_p80": 65,
+    "alternative_codes": []
+  },
+  {
+    "code": "D1351",
+    "name": "Sealant (per tooth)",
+    "category": "preventive",
+    "description": "Protective coating on a back tooth.",
+    "synonyms": [
+      "sealant",
+      "sealants"
+    ],
+    "fee_p50": 65,
+    "fee_p80": 90,
+    "alternative_codes": []
+  },
+  {
+    "code": "D2140",
+    "name": "Filling, 1 surface (amalgam)",
+    "category": "basic",
+    "description": "Metal-colored filling for a small cavity.",
+    "synonyms": [
+      "filling",
+      "cavity",
+      "silver filling",
+      "small filling"
+    ],
+    "fee_p50": 150,
+    "fee_p80": 200,
+    "alternative_codes": []
+  },
+  {
+    "code": "D2391",
+    "name": "Filling, 1 surface (composite)",
+    "category": "basic",
+    "description": "Tooth-colored filling on a back tooth, one surface.",
+    "synonyms": [
+      "white filling",
+      "composite filling",
+      "tooth colored filling"
+    ],
+    "fee_p50": 170,
+    "fee_p80": 230,
+    "alternative_codes": [
+      "D2140"
+    ]
+  },
+  {
+    "code": "D2392",
+    "name": "Filling, 2 surfaces (composite)",
+    "category": "basic",
+    "description": "Tooth-colored filling on a back tooth, two surfaces.",
+    "synonyms": [
+      "cavity filling",
+      "two surface filling",
+      "back tooth filling",
+      "composite"
+    ],
+    "fee_p50": 200,
+    "fee_p80": 260,
+    "alternative_codes": [
+      "D2150"
+    ]
+  },
+  {
+    "code": "D3330",
+    "name": "Root canal, molar",
+    "category": "basic",
+    "description": "Root canal treatment on a back tooth.",
+    "synonyms": [
+      "root canal",
+      "root canal treatment",
+      "endodontic",
+      "infected tooth",
+      "molar root canal"
+    ],
+    "fee_p50": 1100,
+    "fee_p80": 1400,
+    "alternative_codes": []
+  },
+  {
+    "code": "D4341",
+    "name": "Deep cleaning (scaling, per quadrant)",
+    "category": "basic",
+    "description": "Deep cleaning for gum disease, one quarter of the mouth.",
+    "synonyms": [
+      "deep cleaning",
+      "scaling",
+      "root planing",
+      "gum disease cleaning",
+      "periodontal cleaning"
+    ],
+    "fee_p50": 280,
+    "fee_p80": 370,
+    "alternative_codes": []
+  },
+  {
+    "code": "D7140",
+    "name": "Tooth extraction (simple)",
+    "category": "basic",
+    "description": "Removal of a tooth that is visible above the gumline.",
+    "synonyms": [
+      "extraction",
+      "pull a tooth",
+      "pulled tooth",
+      "tooth removal",
+      "remove tooth"
+    ],
+    "fee_p50": 190,
+    "fee_p80": 250,
+    "alternative_codes": []
+  },
+  {
+    "code": "D2740",
+    "name": "Crown, porcelain/ceramic",
+    "category": "major",
+    "description": "A cap that covers and protects a damaged tooth.",
+    "synonyms": [
+      "crown",
+      "cap",
+      "tooth cap",
+      "dental crown",
+      "porcelain crown",
+      "cap on my back tooth"
+    ],
+    "fee_p50": 1200,
+    "fee_p80": 1500,
+    "alternative_codes": []
+  },
+  {
+    "code": "D6240",
+    "name": "Bridge, one replacement tooth (porcelain)",
+    "category": "major",
+    "description": "Fixed bridge replacing one missing tooth.",
+    "synonyms": [
+      "bridge",
+      "dental bridge",
+      "missing tooth bridge"
+    ],
+    "fee_p50": 1300,
+    "fee_p80": 1700,
+    "alternative_codes": []
+  },
+  {
+    "code": "D5110",
+    "name": "Complete upper denture",
+    "category": "major",
+    "description": "Full set of upper false teeth.",
+    "synonyms": [
+      "denture",
+      "dentures",
+      "false teeth",
+      "full denture"
+    ],
+    "fee_p50": 1700,
+    "fee_p80": 2200,
+    "alternative_codes": []
+  },
+  {
+    "code": "D6010",
+    "name": "Dental implant (surgical placement)",
+    "category": "major",
+    "description": "Titanium post placed in the jaw to hold a replacement tooth.",
+    "synonyms": [
+      "implant",
+      "dental implant",
+      "tooth implant"
+    ],
+    "fee_p50": 2100,
+    "fee_p80": 2800,
+    "alternative_codes": []
+  },
+  {
+    "code": "D2150",
+    "name": "Filling, 2 surfaces (amalgam)",
+    "category": "basic",
+    "description": "Metal-colored filling for a larger cavity on a back tooth, two surfaces.",
+    "synonyms": [
+      "silver filling",
+      "amalgam filling",
+      "two surface silver filling"
+    ],
+    "fee_p50": 180,
+    "fee_p80": 235,
+    "alternative_codes": []
+  }
+]
