@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dental & Vision Benefits | Hackathon Prototype</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="util"><div class="wrap"><a href="#">Find an advisor</a><a href="#">Help</a><a href="#">Sign in</a></div></div>
+<header class="nav"><div class="wrap">
+  <a class="brand" href="/"><span class="mark"></span><span>Benefits Portal<small>HACKATHON PROTOTYPE</small></span></a>
+  <nav class="links">
+    <a class="on" href="#plans">Plans</a><a href="#family">Family</a><a href="#calculator">Calculator</a><a href="assistant.html">AI Assistant</a>
+  </nav>
+  <a class="btn orange" href="assistant.html">Ask the assistant</a>
+</div></header>
+
+<div class="hero"><div class="wrap">
+  <div>
+    <div class="eyebrow">Dental &amp; Vision Coverage</div>
+    <h1>Understand your benefits, your family, and your next appointment.</h1>
+    <p>Compare plans, see exactly who in your household is eligible, and get plain-English answers about your coverage and dental records.</p>
+    <div class="cta"><a class="btn orange" href="#plans">Compare plans</a><a class="btn ghost" href="assistant.html">Chat with the assistant</a></div>
+  </div>
+  <div class="summary" id="summary"></div>
+</div></div>
+
+<section id="plans"><div class="wrap">
+  <div class="eyebrow">Compare plans</div>
+  <h2 class="title">Choose the coverage that fits your family</h2>
+  <p class="lede">Select a tier to see how much each type of care is covered.</p>
+  <div class="tiers" id="tiers"></div>
+  <div class="panel" style="margin-top:24px">
+    <div class="bars" id="bars"></div>
+    <table id="table"></table>
+  </div>
+</div></section>
+
+<section id="family" class="alt"><div class="wrap">
+  <div class="eyebrow">Dependents</div>
+  <h2 class="title">Who is covered, and for what</h2>
+  <p class="lede">Select a family member to see their eligibility for each benefit.</p>
+  <div class="dep-grid">
+    <div class="panel"><svg class="tree" id="tree" viewBox="0 0 560 330"></svg></div>
+    <div class="panel" id="depDetail"></div>
+  </div>
+</div></section>
+
+<section id="calculator"><div class="wrap">
+  <div class="eyebrow">Plan calculator</div>
+  <h2 class="title">Estimate your annual cost</h2>
+  <p class="lede">Premiums plus your share of expected care.</p>
+  <div class="panel calc">
+    <div>
+      <label for="cTier">Plan tier</label><select id="cTier"></select>
+      <label for="cDeps">Covered people: <b id="cDepsV"></b></label><input id="cDeps" type="range" min="1" max="6" value="4">
+      <label for="cVisits">Dental visits per person per year: <b id="cVisitsV"></b></label><input id="cVisits" type="range" min="0" max="6" value="2">
+      <label for="cMajor">Major work this year: <b id="cMajorV"></b></label><input id="cMajor" type="range" min="0" max="5000" step="100" value="1200">
+    </div>
+    <div class="result" id="result"></div>
+  </div>
+</div></section>
+
+<section class="alt"><div class="wrap">
+  <div class="ai">
+    <div>
+      <div class="eyebrow">AI Benefits Assistant</div>
+      <h2>Your benefits, explained.</h2>
+      <p>Upload an EOB or dental record PDF and get a plain-English breakdown. Ask what a crown will cost, how much of your annual maximum is left, or why a dependent is pending.</p>
+      <a class="btn orange" href="assistant.html" style="margin-top:12px">Open the assistant</a>
+    </div>
+    <div>
+      <div class="bubble me">What will a crown cost me on my plan?</div>
+      <div class="bubble">Preferred covers major work at 50% after your $75 deductible, up to your $1,500 annual maximum.</div>
+    </div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <div>Hackathon prototype. Not an official site. Illustrative plan data only.</div>
+  <div>Colors inspired by Lincoln Financial's brand palette.</div>
+</div></footer>
+<script src="app.js"></script>
+</body>
+</html>

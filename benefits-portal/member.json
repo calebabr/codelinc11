@@ -1,0 +1,41 @@
+{
+  "member": {
+    "name": "Jordan Rivera",
+    "memberId": "LF-4821-0093",
+    "plan": "Preferred",
+    "effective": "2026-01-01",
+    "deductible": 75,
+    "annualMax": 1500,
+    "usedThisYear": 310
+  },
+  "dependents": [
+    { "name": "Jordan Rivera", "relation": "Self", "age": 41, "status": "active" },
+    { "name": "Alex Rivera", "relation": "Spouse", "age": 39, "status": "active" },
+    { "name": "Maya Rivera", "relation": "Child", "age": 9, "status": "active" },
+    { "name": "Noah Rivera", "relation": "Child", "age": 23, "status": "pending", "note": "Over age 19. Eligible to age 26 only as a full-time student; enrollment verification needed." }
+  ],
+  "services": [
+    { "key": "preventive", "label": "Preventive (cleanings, exams, x-rays)", "basic": 100, "preferred": 100, "premium": 100 },
+    { "key": "basic", "label": "Basic (fillings, extractions)", "basic": 50, "preferred": 80, "premium": 90 },
+    { "key": "major", "label": "Major (crowns, bridges, dentures)", "basic": 0, "preferred": 50, "premium": 70 },
+    { "key": "ortho", "label": "Orthodontia (children)", "basic": 0, "preferred": 50, "premium": 60 },
+    { "key": "vision", "label": "Vision (exam, lenses, frames)", "basic": 50, "preferred": 70, "premium": 80 }
+  ],
+  "tiers": [
+    { "id": "basic", "name": "Basic", "monthly": 28, "annualMax": 1000, "deductible": 100 },
+    { "id": "preferred", "name": "Preferred", "monthly": 44, "annualMax": 1500, "deductible": 75 },
+    { "id": "premium", "name": "Premium", "monthly": 61, "annualMax": 2500, "deductible": 50 }
+  ],
+  "eligibility": {
+    "preventive": ["Self", "Spouse", "Child"],
+    "basic": ["Self", "Spouse", "Child"],
+    "major": ["Self", "Spouse", "Child"],
+    "ortho": ["Child"],
+    "vision": ["Self", "Spouse", "Child"]
+  },
+  "records": [
+    { "date": "2026-02-14", "who": "Jordan", "procedure": "Cleaning + exam", "billed": 210, "paid": 210, "patient": 0 },
+    { "date": "2026-02-14", "who": "Maya", "procedure": "Cleaning + sealants", "billed": 260, "paid": 260, "patient": 0 },
+    { "date": "2026-06-03", "who": "Alex", "procedure": "Filling (2 surfaces)", "billed": 340, "paid": 220, "patient": 120 }
+  ]
+}
