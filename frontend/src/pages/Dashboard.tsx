@@ -17,9 +17,9 @@ import {
 import type { ScheduleEvent } from "@/lib/types"
 
 const KIND_STYLE: Record<ScheduleEvent["kind"], string> = {
-  cleaning: "bg-emerald-100 text-emerald-800",
-  procedure: "bg-blue-100 text-blue-800",
-  reminder: "bg-amber-100 text-amber-800",
+  cleaning: "bg-ok/15 text-ok",
+  procedure: "bg-primary/10 text-primary",
+  reminder: "bg-warn/15 text-warn",
 }
 
 const PDFS = [
@@ -100,7 +100,7 @@ export function Dashboard({ onOpenChat }: { onOpenChat: () => void }) {
 
       {/* Unused benefit reminder */}
       {status.unusedPreventiveValue > 0 && (
-        <div className="mt-4 flex items-start gap-3 rounded-xl bg-amber-50 p-4 text-amber-900 ring-1 ring-amber-200">
+        <div className="mt-4 flex items-start gap-3 rounded-xl bg-warn/10 p-4 text-warn ring-1 ring-warn/25">
           <AlertTriangle className="mt-0.5 size-5 shrink-0" />
           <div>
             <p className="font-medium">

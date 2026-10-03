@@ -79,7 +79,7 @@ export function Chatbot() {
                     <td className="py-2 pr-3">
                       <span
                         className={`inline-flex items-center gap-1 ${
-                          m.eligible ? "text-emerald-700" : "text-destructive"
+                          m.eligible ? "text-ok" : "text-destructive"
                         }`}
                       >
                         {m.eligible ? (
@@ -99,7 +99,7 @@ export function Chatbot() {
                     </td>
                     <td className="py-2">
                       {m.hadMajorWorkThisYear ? (
-                        <span className="text-amber-700">{m.majorWorkThisYear.join(", ")}</span>
+                        <span className="text-warn">{m.majorWorkThisYear.join(", ")}</span>
                       ) : (
                         <span className="text-muted-foreground">None</span>
                       )}

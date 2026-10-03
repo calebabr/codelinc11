@@ -180,7 +180,7 @@ function ProfileCard({
         {profile.isFullTimeStudent ? " · student" : ""}
       </p>
       {profile.relationship === "child" && (
-        <p className={`mt-2 text-xs ${nearLimit ? "text-amber-700" : "text-muted-foreground"}`}>
+        <p className={`mt-2 text-xs ${nearLimit ? "text-warn" : "text-muted-foreground"}`}>
           Covered as dependent up to age {limit}
           {nearLimit ? " — approaching limit" : ""}
         </p>
