@@ -85,7 +85,8 @@ frontend/src/
     └── Disclaimer.tsx         # "This is an estimate..." footer
 ```
 
-**State:** the selected plan and usage live in `PlanContext` (React context, saved to `localStorage`) and are sent with every request. No login, no global state library.
+**State:** the selected plan and usage live in `PlanContext` (React context, saved to `localStorage`) and are sent with every request. No global state library.
+**Sign-in (Clerk):** `src/state/AuthProvider.tsx` wraps the app in `ClerkProvider` (key: `VITE_CLERK_PUBLISHABLE_KEY` in `frontend/.env.local`; never the secret key). `/login` and `/signup` render Clerk's `<SignIn />` / `<SignUp />` inside our `AuthLayout`, styled in `components/auth/clerk-appearance.ts`. `/app` is behind `RequireAuth`. The nav shows Log in / Get started or Open bitewise + `<UserButton />`. Pages only: the API doesn't check sign-in yet (that needs the backend to verify Clerk tokens).
 **Server data:** TanStack Query for every API call (`useQuery` for reads, `useMutation` for estimate/schedule).
 
 ---

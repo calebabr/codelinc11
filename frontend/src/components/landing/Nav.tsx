@@ -4,6 +4,7 @@ import { Menu } from 'lucide-react'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import Logo from '@/components/Logo'
 import { cn } from '@/lib/utils'
+import { Show, UserButton } from '@clerk/react'
 
 // Sticky top bar. Transparent at the top of the page, white blur once you scroll.
 export default function Nav() {
@@ -32,15 +33,26 @@ export default function Nav() {
           <a href="#how-it-works" className="text-[15px] font-semibold text-muted-foreground hover:text-foreground">
             How it works
           </a>
-          <Link to="/login" className="text-[15px] font-semibold text-foreground hover:text-primary">
-            Log in
-          </Link>
-          <Link
-            to="/signup"
-            className="inline-flex h-11 items-center rounded-full bg-primary px-6 text-[15px] font-bold text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Get started
-          </Link>
+          <Show when="signed-out">
+            <Link to="/login" className="text-[15px] font-semibold text-foreground hover:text-primary">
+              Log in
+            </Link>
+            <Link
+              to="/signup"
+              className="inline-flex h-11 items-center rounded-full bg-primary px-6 text-[15px] font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Get started
+            </Link>
+          </Show>
+          <Show when="signed-in">
+            <Link
+              to="/app"
+              className="inline-flex h-11 items-center rounded-full bg-primary px-6 text-[15px] font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Open bitewise
+            </Link>
+            <UserButton />
+          </Show>
         </div>
 
         {/* Small screens: links in a slide-out panel */}
@@ -58,15 +70,25 @@ export default function Nav() {
               <a href="#how-it-works" className="rounded-xl px-3 py-3 text-base font-semibold hover:bg-accent">
                 How it works
               </a>
-              <Link to="/login" className="rounded-xl px-3 py-3 text-base font-semibold hover:bg-accent">
-                Log in
-              </Link>
-              <Link
-                to="/signup"
-                className="mt-2 inline-flex h-12 items-center justify-center rounded-full bg-primary text-base font-bold text-primary-foreground"
-              >
-                Get started
-              </Link>
+              <Show when="signed-out">
+                <Link to="/login" className="rounded-xl px-3 py-3 text-base font-semibold hover:bg-accent">
+                  Log in
+                </Link>
+                <Link
+                  to="/signup"
+                  className="mt-2 inline-flex h-12 items-center justify-center rounded-full bg-primary text-base font-bold text-primary-foreground"
+                >
+                  Get started
+                </Link>
+              </Show>
+              <Show when="signed-in">
+                <Link
+                  to="/app"
+                  className="mt-2 inline-flex h-12 items-center justify-center rounded-full bg-primary text-base font-bold text-primary-foreground"
+                >
+                  Open bitewise
+                </Link>
+              </Show>
             </div>
           </SheetContent>
         </Sheet>
