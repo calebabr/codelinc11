@@ -1,3 +1,4 @@
+import { Link } from "react-router"
 import { useSession } from "@/state/SessionContext"
 import { MemberSwitcher } from "./MemberSwitcher"
 
@@ -17,9 +18,9 @@ export function UtilityBar() {
               Sign out
             </button>
           ) : (
-            <a href="/login" className="underline-offset-2 hover:underline">
+            <Link to="/login" className="underline-offset-2 hover:underline">
               Sign in
-            </a>
+            </Link>
           )}
         </div>
       </div>

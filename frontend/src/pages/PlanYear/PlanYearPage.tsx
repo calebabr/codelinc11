@@ -36,8 +36,8 @@ function useProcedures() {
 }
 
 export default function PlanYearPage() {
-  const { activeMember, household } = useSession()
-  const py = usePlanYear(activeMember.id, household.planTier)
+  const { activeMember, household, token } = useSession()
+  const py = usePlanYear(activeMember.id, household.planTier, token)
   const location = useLocation()
   const handoff = (location.state as QuoteHandoff | null)?.treatments
   const { loadItems } = py
@@ -59,9 +59,6 @@ export default function PlanYearPage() {
           <p className="mt-2 text-sm" data-testid="left-this-year">
             <span className="chip chip-ok">{money(benefits.data.max_remaining)} left this year</span>
           </p>
-        )}
-        {memberUsage.data?.fromFallback && (
-          <p className="mt-2 text-xs text-muted-foreground">Using demo usage numbers for {first}.</p>
         )}
       </header>
 

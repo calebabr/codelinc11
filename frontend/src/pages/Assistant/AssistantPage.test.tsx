@@ -1,24 +1,24 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { SessionProvider } from "@/state/SessionContext"
+import { TestSessionProvider } from "@/test/session"
 import { resetThreads } from "@/features/assistant/threads"
 import { parseSse } from "@/lib/api/assistant"
 import AssistantPage from "./AssistantPage"
 
 const SUGG: Record<string, string[]> = {
-  m_alex: ["What will a crown cost me?", "What if I wait until January?"],
-  m_jordan: ["Who's covered on my plan?"],
+  "m-alex": ["What will a crown cost me?", "What if I wait until January?"],
+  "m-jordan": ["Who's covered on my plan?"],
 }
 const CONTEXT: Record<string, object> = {
-  m_alex: {
-    member_id: "m_alex", name: "Alex Rivera", age: 39, relationship: "spouse", status: "active", plan: "Preferred",
+  "m-alex": {
+    member_id: "m-alex", name: "Alex Rivera", age: 39, relationship: "spouse", status: "active", plan: "Preferred",
     plan_highlights: "Alex plan: $1,500 yearly max.", history: ["2026-03-02: Cleaning (you paid $0.00)"],
     preferences: ["Prefers morning visits."], must_haves: ["Crown covered"], chat_memory: [],
     shared_with_assistant: ["Plan tier and yearly numbers"],
   },
-  m_jordan: {
-    member_id: "m_jordan", name: "Jordan Rivera", age: 41, relationship: "self", status: "active", plan: "Preferred",
+  "m-jordan": {
+    member_id: "m-jordan", name: "Jordan Rivera", age: 41, relationship: "self", status: "active", plan: "Preferred",
     plan_highlights: "Jordan highlights here.", history: [], preferences: [], must_haves: [],
     chat_memory: [{ role: "user", content: "Who is covered?" }], shared_with_assistant: ["Plan tier and yearly numbers"],
   },
@@ -40,10 +40,9 @@ function mockApi() {
       const headers = (init?.headers ?? {}) as Record<string, string>
       calls.push({ url, method: init?.method ?? "GET", headers, body: typeof init?.body === "string" ? init.body : null })
       const json = (d: unknown) => new Response(JSON.stringify(d), { status: 200 })
-      if (url.endsWith("/auth/demo-login")) return json({ token: "tok" })
-      let m = url.match(/\/chat\/suggestions\?member_id=(\w+)/)
+      let m = url.match(/\/chat\/suggestions\?member_id=([\w-]+)/)
       if (m) return json({ member_id: m[1], suggestions: SUGG[m[1]] })
-      m = url.match(/\/members\/(\w+)\/assistant-context/)
+      m = url.match(/\/members\/([\w-]+)\/assistant-context/)
       if (m) return json(CONTEXT[m[1]])
       if (url.includes("/chat/attachments"))
         return json({ attachment_id: "att-1", filename: "quote.pdf", size: 10, notice: "Demo only" })
@@ -53,11 +52,11 @@ function mockApi() {
   )
 }
 
-function renderPage(id = "m_alex") {
+function renderPage(id = "m-alex") {
   return render(
-    <SessionProvider initialMemberId={id}>
+    <TestSessionProvider activeId={id}>
       <AssistantPage />
-    </SessionProvider>,
+    </TestSessionProvider>,
   )
 }
 
@@ -101,9 +100,9 @@ describe("Assistant page", () => {
     expect(screen.getByText(/Done: Calculating your cost/)).toBeInTheDocument()
 
     const chat = calls.find((c) => c.url.endsWith("/chat"))!
-    expect(chat.headers.Authorization).toBe("Bearer tok")
+    expect(chat.headers.Authorization).toBe("Bearer tok-m-jordan")
     const body = JSON.parse(chat.body!)
-    expect(body.member_id).toBe("m_alex")
+    expect(body.member_id).toBe("m-alex")
     expect(body.messages).toEqual([{ role: "user", content: "What will a crown cost me?" }])
   })
 
@@ -166,7 +165,7 @@ describe("Assistant page", () => {
     const chip = await screen.findByTestId("attachment-chip")
     expect(chip).toHaveTextContent("quote.pdf")
     const up = calls.find((c) => c.url.includes("/chat/attachments"))!
-    expect(up.url).toContain("member_id=m_alex")
+    expect(up.url).toContain("member_id=m-alex")
     expect(up.headers["Content-Type"]).toBe("application/pdf")
 
     await user.click(screen.getByRole("button", { name: "Remove quote.pdf" }))

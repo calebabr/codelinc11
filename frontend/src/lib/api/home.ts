@@ -3,10 +3,6 @@ import type { BenefitsStatus, EstimateResponse, MemberOverview, ScheduleEntry, U
 
 export { errorMessage, remindersUrl } from "@/lib/api/planYear"
 
-// The session context does not hold a sign-in token yet, so this page signs in
-// as the household's primary member (who may see everyone) and keeps the token here.
-const tokens = new Map<string, Promise<string>>()
-
 async function json<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response
   try {
@@ -27,39 +23,15 @@ async function json<T>(path: string, init?: RequestInit): Promise<T> {
   return (await res.json()) as T
 }
 
-export function getToken(signInAs: string): Promise<string> {
-  let p = tokens.get(signInAs)
-  if (!p) {
-    p = json<{ token: string }>("/auth/demo-login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ member_id: signInAs }),
-    }).then((r) => r.token)
-    p.catch(() => tokens.delete(signInAs))
-    tokens.set(signInAs, p)
-  }
-  return p
+function authed<T>(token: string, path: string) {
+  return json<T>(path, { headers: { Authorization: `Bearer ${token}` } })
 }
 
-async function authed<T>(signInAs: string, path: string): Promise<T> {
-  const token = await getToken(signInAs)
-  try {
-    return await json<T>(path, { headers: { Authorization: `Bearer ${token}` } })
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 401) {
-      tokens.delete(signInAs)
-      const fresh = await getToken(signInAs)
-      return json<T>(path, { headers: { Authorization: `Bearer ${fresh}` } })
-    }
-    throw e
-  }
-}
+export const getOverview = (token: string, memberId: string) =>
+  authed<MemberOverview>(token, `/members/${encodeURIComponent(memberId)}/overview`)
 
-export const getOverview = (signInAs: string, memberId: string) =>
-  authed<MemberOverview>(signInAs, `/members/${encodeURIComponent(memberId)}/overview`)
-
-export const getSchedule = (signInAs: string, memberId: string) =>
-  authed<ScheduleEntry[]>(signInAs, `/members/${encodeURIComponent(memberId)}/schedule`)
+export const getSchedule = (token: string, memberId: string) =>
+  authed<ScheduleEntry[]>(token, `/members/${encodeURIComponent(memberId)}/schedule`)
 
 function post<T>(path: string, body: unknown) {
   return json<T>(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })

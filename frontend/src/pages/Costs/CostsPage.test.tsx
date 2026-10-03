@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter, Route, Routes, useLocation } from "react-router"
-import { SessionProvider } from "@/state/SessionContext"
+import { TestSessionProvider } from "@/test/session"
 import CostsPage from "./CostsPage"
 
 const PROCS = [
@@ -52,7 +52,10 @@ function mockApi() {
       const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : null
       calls.push({ url, body })
       const ok = (data: unknown) => ({ ok: true, status: 200, json: async () => data })
-      if (url.includes("/members/")) return { ok: false, status: 404, json: async () => ({}) }
+      if (url.includes("/members/")) {
+        const used = url.includes("/m-alex/") ? 1100 : 0
+        return ok({ usage: { plan_year: 2026, max_used: used, deductible_met: used ? 50 : 0, visits: 0, cleanings_used: 0 } })
+      }
       if (url.endsWith("/procedures")) return ok(PROCS)
       if (url.endsWith("/estimate")) return ok(estimateFor((body!.usage as { max_used: number }).max_used))
       if (url.endsWith("/savings-tips")) {
@@ -85,16 +88,16 @@ function Where() {
   return <p data-testid="where">{loc.pathname}:{JSON.stringify((loc.state as { treatments?: unknown[] } | null)?.treatments?.length ?? 0)}</p>
 }
 
-function renderPage(memberId = "m_jordan") {
+function renderPage(memberId = "m-jordan") {
   return render(
-    <SessionProvider initialMemberId={memberId}>
+    <TestSessionProvider activeId={memberId}>
       <MemoryRouter initialEntries={["/costs"]}>
         <Routes>
           <Route path="/costs" element={<CostsPage />} />
           <Route path="/plan-year" element={<Where />} />
         </Routes>
       </MemoryRouter>
-    </SessionProvider>,
+    </TestSessionProvider>,
   )
 }
 
@@ -104,7 +107,7 @@ afterEach(() => vi.restoreAllMocks())
 describe("Costs page: estimate", () => {
   it("shows $625 for a fresh year and the out-of-network numbers with balance billing", async () => {
     const user = userEvent.setup()
-    const { container } = renderPage("m_jordan")
+    const { container } = renderPage("m-jordan")
     expect(screen.getByText(/Your estimate will show up here/)).toBeInTheDocument()
     await user.click(await screen.findByRole("button", { name: "Crown" }))
     await waitFor(() => expect(screen.getByTestId("you-pay")).toHaveTextContent("$625"))
@@ -124,7 +127,7 @@ describe("Costs page: estimate", () => {
 
   it("shows $800 for Alex, who has used $1,100", async () => {
     const user = userEvent.setup()
-    renderPage("m_alex")
+    renderPage("m-alex")
     await user.click(await screen.findByRole("button", { name: "Crown" }))
     await waitFor(() => expect(screen.getByTestId("you-pay")).toHaveTextContent("$800"))
     const est = calls.find((c) => c.url.endsWith("/estimate"))!.body!

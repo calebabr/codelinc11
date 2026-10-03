@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router"
-import { SessionProvider } from "@/state/SessionContext"
+import { TestSessionProvider } from "@/test/session"
 import PlanYearPage from "./PlanYearPage"
 
 const PROCS = [
@@ -44,7 +44,7 @@ function mockApi(opts: { overviewFails?: boolean } = {}) {
       if (url.includes("/members/")) {
         if (opts.overviewFails) return { ok: false, status: 404, json: async () => ({ detail: "nope" }) }
         const id = url.split("/members/")[1].split("/")[0]
-        const usage = id === "m_alex" ? { max_used: 1100, deductible_met: 50, history: [] } : { max_used: 0, deductible_met: 0, history: [] }
+        const usage = id === "m-alex" ? { plan_year: 2026, max_used: 1100, deductible_met: 50, visits: 3, cleanings_used: 0 } : { plan_year: 2026, max_used: 0, deductible_met: 0, visits: 0, cleanings_used: 0 }
         return ok({ usage })
       }
       if (url.endsWith("/procedures")) return ok(PROCS)
@@ -63,13 +63,13 @@ function mockApi(opts: { overviewFails?: boolean } = {}) {
   )
 }
 
-function renderPage(initialMemberId = "m_alex") {
+function renderPage(initialMemberId = "m-alex") {
   return render(
-    <SessionProvider initialMemberId={initialMemberId}>
+    <TestSessionProvider activeId={initialMemberId}>
       <MemoryRouter>
         <PlanYearPage />
       </MemoryRouter>
-    </SessionProvider>,
+    </TestSessionProvider>,
   )
 }
 
@@ -119,16 +119,16 @@ describe("Plan My Year page", () => {
 
   it("recomputes with the new member's usage when the member changes", async () => {
     const user = userEvent.setup()
-    const { rerender } = renderPage("m_alex")
+    const { rerender } = renderPage("m-alex")
     await user.click(screen.getByRole("button", { name: "Try the demo case" }))
     await waitFor(() => expect(screen.getByTestId("savings-total")).toHaveTextContent("$895"))
 
     rerender(
-      <SessionProvider initialMemberId="m_jordan" key="jordan">
+      <TestSessionProvider activeId="m-jordan" key="jordan">
         <MemoryRouter>
           <PlanYearPage />
         </MemoryRouter>
-      </SessionProvider>,
+      </TestSessionProvider>,
     )
     await user.click(screen.getByRole("button", { name: "Try the demo case" }))
     await waitFor(() => expect(screen.getByTestId("savings-total")).toHaveTextContent("$100"))
@@ -156,13 +156,14 @@ describe("Plan My Year page", () => {
   it("shows an error with a retry when the server is down", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("offline") }))
     renderPage()
-    expect(await screen.findByRole("alert")).toHaveTextContent(/can't reach the server/i)
+    expect((await screen.findAllByRole("alert"))[0]).toHaveTextContent(/can't reach the server/i)
     expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument()
   })
 
-  it("falls back to demo usage when the overview endpoint is missing", async () => {
+  it("shows a clear error, not made-up numbers, when the overview cannot be loaded", async () => {
     mockApi({ overviewFails: true })
-    renderPage("m_alex")
-    expect(await screen.findByText(/Using demo usage numbers for Alex/)).toBeInTheDocument()
+    renderPage("m-alex")
+    expect(await screen.findByRole("alert")).toHaveTextContent("nope")
+    expect(screen.queryByTestId("left-this-year")).toBeNull()
   })
 })

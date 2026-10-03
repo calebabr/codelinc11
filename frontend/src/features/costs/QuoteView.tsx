@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router"
 import { money } from "@/lib/format"
+import { useSession } from "@/state/SessionContext"
 import { errorMessage, getMemberUsage } from "@/lib/api/planYear"
 import { postParseQuote, postSavingsTipsWithQuotes } from "@/lib/api/costs"
 import type { SavingsTip, TreatmentItem, Usage } from "@/lib/types/planYear"
@@ -71,6 +72,7 @@ interface Props {
 }
 
 export function QuoteView({ memberId, planId }: Props) {
+  const { token } = useSession()
   const navigate = useNavigate()
   const [text, setText] = useState("")
   const [reading, setReading] = useState(false)
@@ -80,13 +82,16 @@ export function QuoteView({ memberId, planId }: Props) {
   const [usage, setUsage] = useState<Usage | null>(null)
   useEffect(() => {
     let cancelled = false
-    getMemberUsage(memberId).then((u) => {
-      if (!cancelled) setUsage(u.usage)
-    })
+    getMemberUsage(memberId, token).then(
+      (u) => {
+        if (!cancelled) setUsage(u.usage)
+      },
+      () => undefined,
+    )
     return () => {
       cancelled = true
     }
-  }, [memberId])
+  }, [memberId, token])
 
   async function read() {
     setReading(true)

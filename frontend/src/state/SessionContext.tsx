@@ -1,30 +1,23 @@
-// Session state for the portal shell: who is signed in, their household, and
-// which family member the app is currently showing ("active member").
+// Session state for the portal: who is signed in, their bearer token, their
+// household (from the backend) and which family member the app is showing
+// ("active member").
 //
-// Until the household API lands (T05) this is backed by a small fictional mock.
-// Pages must read the active member from here and never hard-code a person.
+// Sign-in is the demo flow: POST /auth/demo-login (no password). On first load we
+// sign in as the household's primary member (Jordan) unless the person picked
+// someone else earlier in this browser tab (remembered in sessionStorage only).
+// The token stays in memory. Pages read everything from useSession() and never
+// hard-code a person or fetch their own token.
 
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react"
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
+import { demoLogin, getDemoAccounts, getHousehold } from "@/lib/api/family"
+import { errorMessage } from "@/lib/api/planYear"
+import type { DemoAccount, FamilyHousehold, FamilyMember } from "@/lib/types/family"
 
-export type Relationship = "self" | "spouse" | "child"
-export type MemberRole = "primary" | "adult" | "managed"
-export type MemberStatus = "active" | "pending"
-export type PlanTier = "basic" | "preferred" | "premium"
-
-export interface Member {
-  id: string
-  name: string
-  relationship: Relationship
-  age: number
-  role: MemberRole
-  status: MemberStatus
-}
-
-export interface Household {
-  id: string
-  name: string
-  planTier: PlanTier
-  members: Member[]
+export type Member = FamilyMember
+export type MemberRole = FamilyMember["role"]
+export type Household = FamilyHousehold & {
+  /** The plan tier id ("basic", "preferred", "premium"). It is the plan id the API expects. */
+  planTier: string
 }
 
 export interface Account {
@@ -34,63 +27,171 @@ export interface Account {
 }
 
 export interface SessionState {
+  /** The demo account that is signed in (name and email). */
   account: Account | null
+  /** The signed-in person. */
+  user: Member
   household: Household
+  /** The person the pages are showing. Starts as the signed-in person. */
   activeMember: Member
   setActiveMemberId: (id: string) => void
+  /** Bearer token for API calls. */
+  token: string
+  /** Demo accounts, for the sign-in cards and the account switcher. */
+  accounts: DemoAccount[]
+  signIn: (memberId: string) => Promise<void>
   signOut: () => void
 }
 
-// Fictional demo household (see agents/tasks/PLAN.md, "Demo household").
-export const MOCK_HOUSEHOLD: Household = {
-  id: "hh_rivera",
-  name: "Rivera household",
-  planTier: "preferred",
-  members: [
-    { id: "m_jordan", name: "Jordan Rivera", relationship: "self", age: 41, role: "primary", status: "active" },
-    { id: "m_alex", name: "Alex Rivera", relationship: "spouse", age: 39, role: "adult", status: "active" },
-    { id: "m_maya", name: "Maya Rivera", relationship: "child", age: 9, role: "managed", status: "active" },
-    { id: "m_noah", name: "Noah Rivera", relationship: "child", age: 23, role: "adult", status: "pending" },
-  ],
+export type SessionStatus = "loading" | "ready" | "error" | "signed-out"
+
+export interface SessionGateState {
+  status: SessionStatus
+  error: string | null
+  retry: () => void
+  accounts: DemoAccount[]
+  signIn: (memberId: string) => Promise<void>
+  /** Set when status is "ready". */
+  session: SessionState | null
 }
 
-const MOCK_ACCOUNT: Account = { id: "acct_jordan", name: "Jordan Rivera", email: "jordan@example.com" }
+const STORAGE_KEY = "dental.signedInMemberId"
 
-const Ctx = createContext<SessionState | null>(null)
+function remembered(): string | null {
+  try {
+    return sessionStorage.getItem(STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+function remember(id: string | null) {
+  try {
+    if (id) sessionStorage.setItem(STORAGE_KEY, id)
+    else sessionStorage.removeItem(STORAGE_KEY)
+  } catch {
+    /* storage may be blocked; the session still works */
+  }
+}
 
-export function SessionProvider({
-  children,
-  household = MOCK_HOUSEHOLD,
-  account = MOCK_ACCOUNT,
-  initialMemberId,
-}: {
-  children: ReactNode
-  household?: Household
-  account?: Account | null
-  initialMemberId?: string
-}) {
-  const [activeId, setActiveId] = useState(initialMemberId ?? household.members[0].id)
-  const [signedInAccount, setAccount] = useState<Account | null>(account)
+export function toHousehold(h: FamilyHousehold): Household {
+  return { ...h, planTier: h.plan_tier.id }
+}
 
-  const setActiveMemberId = useCallback(
-    (id: string) => {
-      if (household.members.some((m) => m.id === id)) setActiveId(id)
+const Ctx = createContext<SessionGateState | null>(null)
+
+/** Used by tests and previews to supply a fixed session without calling the API. */
+export const SessionGateContext = Ctx
+
+interface Signed {
+  token: string
+  user: Member
+  household: Household
+}
+
+export function SessionProvider({ children, initialMemberId }: { children: ReactNode; initialMemberId?: string }) {
+  const [accounts, setAccounts] = useState<DemoAccount[]>([])
+  const [signed, setSigned] = useState<Signed | null>(null)
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const [status, setStatus] = useState<SessionStatus>("loading")
+  const [error, setError] = useState<string | null>(null)
+  const [attempt, setAttempt] = useState(0)
+
+  const doSignIn = useCallback(async (memberId: string) => {
+    const login = await demoLogin(memberId)
+    // Reload the household with the new token so the member list is the server's current view.
+    let household = login.household
+    try {
+      household = await getHousehold(login.household.id, login.token)
+    } catch {
+      /* the login response already carries the household */
+    }
+    remember(memberId)
+    setSigned({ token: login.token, user: login.member, household: toHousehold(household) })
+    setActiveId(login.member.id)
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    setStatus("loading")
+    setError(null)
+    const run = async () => {
+      try {
+        const list = await getDemoAccounts()
+        if (cancelled) return
+        setAccounts(list)
+        const wanted = initialMemberId ?? remembered()
+        const pick =
+          list.find((a) => a.member_id === wanted) ?? list.find((a) => a.role === "primary") ?? list[0]
+        if (!pick) throw new Error("No demo accounts are available.")
+        await doSignIn(pick.member_id)
+        if (!cancelled) setStatus("ready")
+      } catch (e) {
+        if (!cancelled) {
+          setError(errorMessage(e))
+          setStatus("error")
+        }
+      }
+    }
+    void run()
+    return () => {
+      cancelled = true
+    }
+    // initialMemberId is only a first guess; it is not tracked after the first sign-in.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attempt, doSignIn])
+
+  const signIn = useCallback(
+    async (memberId: string) => {
+      await doSignIn(memberId)
+      setStatus("ready")
     },
-    [household],
+    [doSignIn],
   )
-  const signOut = useCallback(() => setAccount(null), [])
+  const signOut = useCallback(() => {
+    remember(null)
+    setSigned(null)
+    setActiveId(null)
+    setStatus("signed-out")
+  }, [])
+  const retry = useCallback(() => setAttempt((n) => n + 1), [])
 
-  const value = useMemo<SessionState>(() => {
-    const activeMember = household.members.find((m) => m.id === activeId) ?? household.members[0]
-    return { account: signedInAccount, household, activeMember, setActiveMemberId, signOut }
-  }, [signedInAccount, household, activeId, setActiveMemberId, signOut])
+  const value = useMemo<SessionGateState>(() => {
+    let session: SessionState | null = null
+    if (signed && status === "ready") {
+      const acct = accounts.find((a) => a.member_id === signed.user.id)
+      const activeMember = signed.household.members.find((m) => m.id === activeId) ?? signed.user
+      session = {
+        account: acct ? { id: acct.account_id, name: acct.display_name, email: acct.email } : null,
+        user: signed.user,
+        household: signed.household,
+        activeMember,
+        setActiveMemberId: (id: string) => {
+          if (signed.household.members.some((m) => m.id === id)) setActiveId(id)
+        },
+        token: signed.token,
+        accounts,
+        signIn,
+        signOut,
+      }
+    }
+    return { status, error, retry, accounts, signIn, session }
+  }, [signed, status, error, retry, accounts, activeId, signIn, signOut])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
 
+/** For the shell and the login page: loading, error and signed-out states. */
+// eslint-disable-next-line react-refresh/only-export-components
+export function useSessionGate(): SessionGateState {
+  const ctx = useContext(Ctx)
+  if (!ctx) throw new Error("useSessionGate must be used inside <SessionProvider>")
+  return ctx
+}
+
+/** For pages: the signed-in session. Pages are only shown once the session is ready. */
 // eslint-disable-next-line react-refresh/only-export-components
 export function useSession(): SessionState {
-  const ctx = useContext(Ctx)
-  if (!ctx) throw new Error("useSession must be used inside <SessionProvider>")
-  return ctx
+  const { session } = useSessionGate()
+  if (!session) throw new Error("useSession needs a signed-in session. Render pages inside the app shell.")
+  return session
 }

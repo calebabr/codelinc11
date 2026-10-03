@@ -36,11 +36,11 @@ function useLoaded<T>(load: () => Promise<T>, key: string): Loaded<T> & { retry:
   return { ...state, retry: () => setAttempt((n) => n + 1) }
 }
 
-export const useSuggestions = (signInAs: string, memberId: string) =>
-  useLoaded(() => getSuggestions(signInAs, memberId), `${signInAs}|${memberId}`)
+export const useSuggestions = (token: string, memberId: string) =>
+  useLoaded(() => getSuggestions(token, memberId), `${token}|${memberId}`)
 
-export const useAssistantContext = (signInAs: string, memberId: string, refreshKey = 0) =>
-  useLoaded<AssistantContext>(() => getAssistantContext(signInAs, memberId), `${signInAs}|${memberId}|${refreshKey}`)
+export const useAssistantContext = (token: string, memberId: string, refreshKey = 0) =>
+  useLoaded<AssistantContext>(() => getAssistantContext(token, memberId), `${token}|${memberId}|${refreshKey}`)
 
 function turnsOf(thread: Message[]): ChatTurn[] {
   return thread
@@ -49,7 +49,7 @@ function turnsOf(thread: Message[]): ChatTurn[] {
 }
 
 /** Chat state for one member. Switching the member shows that person's own thread. */
-export function useChat(signInAs: string, memberId: string) {
+export function useChat(token: string, memberId: string) {
   const thread = useThread(memberId)
   const [attachments, setAttachments] = useState<AttachmentInfo[]>([])
   const [uploading, setUploading] = useState(false)
@@ -86,7 +86,7 @@ export function useChat(signInAs: string, memberId: string) {
         else if (e.event === "error") failed = true
       }
       try {
-        await streamChat(signInAs, memberId, history, ids, onEvent)
+        await streamChat(token, memberId, history, ids, onEvent)
         if (unavailable) patch((m) => ({ ...m, status: "unavailable", note: UNAVAILABLE }))
         else if (failed)
           patch((m) => ({ ...m, status: "error", note: "Something went wrong while answering. Please try again." }))
@@ -95,7 +95,7 @@ export function useChat(signInAs: string, memberId: string) {
         patch((m) => ({ ...m, status: "error", note: errorMessage(e) }))
       }
     },
-    [signInAs, memberId],
+    [token, memberId],
   )
 
   const send = useCallback(
@@ -133,7 +133,7 @@ export function useChat(signInAs: string, memberId: string) {
       }
       setUploading(true)
       try {
-        const info = await uploadAttachment(signInAs, memberId, file)
+        const info = await uploadAttachment(token, memberId, file)
         setAttachments((a) => [...a, info])
       } catch (e) {
         setAttachError(errorMessage(e))
@@ -141,7 +141,7 @@ export function useChat(signInAs: string, memberId: string) {
         setUploading(false)
       }
     },
-    [signInAs, memberId],
+    [token, memberId],
   )
 
   const removeAttachment = useCallback(

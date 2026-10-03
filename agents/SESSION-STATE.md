@@ -51,3 +51,11 @@ Interactive visuals over dropdowns; likes the savings tips and questions-to-ask-
 - [ ] Stage 0 agents (T01–T04) started and verified.
 - [ ] `integration/main-product` pushed for Ulisses (needs Caleb's go-ahead).
 - [ ] Stage 1, Stage 2.
+
+## Progress log (2026-10-03 night)
+- Stage 0 (T01-T04) and Stage 1 (T05-T12) done and verified (backend 199 tests, frontend 45 tests, build passes). Live assistant (Anthropic, key in backend/.env) answers Alex crown $800 now / $625 in January.
+- Docs agent (T15) and cleanup agent (T18) ran; docs live in docs/, audit in docs/reviews/cleanup-audit.md.
+- Committed and pushed `integration/main-product` under Caleb's identity (no Claude trailer). User wants periodic pushes so teammates can work. Push after each verified stage; never to main.
+- Running: T19 (real session from backend, shared token, login stub, delete legacy pages). Ulisses owns the visual login design (frontend/src/pages/Login/LoginPage.tsx).
+- Next: verify T19 in browser; Stage 2: write T13 (e2e/contract tests), T14 (review), T16 (CI), rerun T15 docs; push; final click-through of demo moments.
+- Servers: backend 8000 without --reload (reload leaves orphan workers on Windows; kill python children by parent), vite 5173.

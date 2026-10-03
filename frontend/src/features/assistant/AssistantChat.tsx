@@ -73,21 +73,21 @@ function Bubble({ m, onRetry }: { m: Message; onRetry: () => void }) {
 
 /** The chat itself: recommended questions, the conversation and the input. Used by the page and the floating panel. */
 export function AssistantChat({
-  signInAs,
+  token,
   memberId,
   memberName,
   onSent,
 }: {
-  signInAs: string
+  token: string
   memberId: string
   memberName: string
   onSent?: () => void
 }) {
   const { thread, busy, send, retry, attach, removeAttachment, attachments, uploading, attachError } = useChat(
-    signInAs,
+    token,
     memberId,
   )
-  const sugg = useSuggestions(signInAs, memberId)
+  const sugg = useSuggestions(token, memberId)
   const [text, setText] = useState("")
   const fileRef = useRef<HTMLInputElement>(null)
   const endRef = useRef<HTMLLIElement>(null)

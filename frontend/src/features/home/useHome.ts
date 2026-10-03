@@ -15,13 +15,13 @@ interface State<T> {
 }
 
 /** Loads the overview and schedule for the active member. Reloads when the member changes. */
-export function useHomeData(signInAs: string, memberId: string) {
+export function useHomeData(token: string, memberId: string) {
   const [state, setState] = useState<State<HomeData>>({ data: null, loading: true, error: null })
   const [attempt, setAttempt] = useState(0)
   useEffect(() => {
     let cancelled = false
     setState({ data: null, loading: true, error: null })
-    Promise.all([getOverview(signInAs, memberId), getSchedule(signInAs, memberId)]).then(
+    Promise.all([getOverview(token, memberId), getSchedule(token, memberId)]).then(
       ([overview, schedule]) => {
         if (!cancelled) setState({ data: { overview, schedule }, loading: false, error: null })
       },
@@ -32,7 +32,7 @@ export function useHomeData(signInAs: string, memberId: string) {
     return () => {
       cancelled = true
     }
-  }, [signInAs, memberId, attempt])
+  }, [token, memberId, attempt])
   return { ...state, retry: useCallback(() => setAttempt((n) => n + 1), []) }
 }
 

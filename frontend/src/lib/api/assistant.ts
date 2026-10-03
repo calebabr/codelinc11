@@ -1,5 +1,4 @@
 import { API_URL, ApiError, DEMO_MONTH } from "@/lib/api/planYear"
-import { getToken } from "@/lib/api/home"
 import type { AssistantContext, AttachmentInfo, ChatTurn, StreamEvent, SuggestionsResponse } from "@/lib/types/assistant"
 
 export { errorMessage } from "@/lib/api/planYear"
@@ -7,31 +6,16 @@ export { errorMessage } from "@/lib/api/planYear"
 export const MAX_PDF_BYTES = 5 * 1024 * 1024
 export const UNREACHABLE = "We can't reach the server right now. Please try again in a moment."
 
-async function authedFetch(signInAs: string, path: string, init: RequestInit = {}): Promise<Response> {
-  const send = async (token: string) => {
-    try {
-      return await fetch(`${API_URL}${path}`, {
-        ...init,
-        headers: { ...(init.headers as Record<string, string> | undefined), Authorization: `Bearer ${token}` },
-      })
-    } catch (e) {
-      if (e instanceof DOMException && e.name === "AbortError") throw e
-      throw new ApiError(UNREACHABLE)
-    }
-  }
-  let res: Response
+async function authedFetch(token: string, path: string, init: RequestInit = {}): Promise<Response> {
   try {
-    res = await send(await getToken(signInAs))
+    return await fetch(`${API_URL}${path}`, {
+      ...init,
+      headers: { ...(init.headers as Record<string, string> | undefined), Authorization: `Bearer ${token}` },
+    })
   } catch (e) {
-    if (e instanceof ApiError) throw e
     if (e instanceof DOMException && e.name === "AbortError") throw e
     throw new ApiError(UNREACHABLE)
   }
-  if (res.status === 401) {
-    // The cached token may have expired; getToken() keeps one per person, so retry once.
-    res = await send(await getToken(signInAs))
-  }
-  return res
 }
 
 async function failure(res: Response): Promise<ApiError> {
@@ -45,21 +29,21 @@ async function failure(res: Response): Promise<ApiError> {
   return new ApiError(detail || `The server returned an error (${res.status}).`, res.status)
 }
 
-export async function getSuggestions(signInAs: string, memberId: string): Promise<string[]> {
-  const res = await authedFetch(signInAs, `/chat/suggestions?member_id=${encodeURIComponent(memberId)}`)
+export async function getSuggestions(token: string, memberId: string): Promise<string[]> {
+  const res = await authedFetch(token, `/chat/suggestions?member_id=${encodeURIComponent(memberId)}`)
   if (!res.ok) throw await failure(res)
   return ((await res.json()) as SuggestionsResponse).suggestions
 }
 
-export async function getAssistantContext(signInAs: string, memberId: string): Promise<AssistantContext> {
-  const res = await authedFetch(signInAs, `/members/${encodeURIComponent(memberId)}/assistant-context`)
+export async function getAssistantContext(token: string, memberId: string): Promise<AssistantContext> {
+  const res = await authedFetch(token, `/members/${encodeURIComponent(memberId)}/assistant-context`)
   if (!res.ok) throw await failure(res)
   return (await res.json()) as AssistantContext
 }
 
-export async function uploadAttachment(signInAs: string, memberId: string, file: File): Promise<AttachmentInfo> {
+export async function uploadAttachment(token: string, memberId: string, file: File): Promise<AttachmentInfo> {
   const q = new URLSearchParams({ member_id: memberId, filename: file.name })
-  const res = await authedFetch(signInAs, `/chat/attachments?${q.toString()}`, {
+  const res = await authedFetch(token, `/chat/attachments?${q.toString()}`, {
     method: "POST",
     headers: { "Content-Type": "application/pdf" },
     body: file,
@@ -92,14 +76,14 @@ export function parseSse(buffer: string): { events: StreamEvent[]; rest: string 
 
 /** Send a chat message and call onEvent for every streamed event. Throws ApiError if the request fails. */
 export async function streamChat(
-  signInAs: string,
+  token: string,
   memberId: string,
   messages: ChatTurn[],
   attachmentIds: string[],
   onEvent: (e: StreamEvent) => void,
   signal?: AbortSignal,
 ): Promise<void> {
-  const res = await authedFetch(signInAs, "/chat", {
+  const res = await authedFetch(token, "/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ messages, member_id: memberId, attachment_ids: attachmentIds, current_month: DEMO_MONTH }),

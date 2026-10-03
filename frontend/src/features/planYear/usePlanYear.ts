@@ -62,7 +62,7 @@ function useRequest<T>(enabled: boolean, key: string, run: () => Promise<T>): Lo
   return state
 }
 
-export function usePlanYear(memberId: string, planId: string) {
+export function usePlanYear(memberId: string, planId: string, token: string) {
   const [items, setItems] = useState<TreatmentItem[]>([])
   const [nextId, setNextId] = useState(1)
 
@@ -71,7 +71,7 @@ export function usePlanYear(memberId: string, planId: string) {
   useEffect(() => {
     let cancelled = false
     setMemberUsage({ data: null, loading: true, error: null })
-    getMemberUsage(memberId).then(
+    getMemberUsage(memberId, token).then(
       (data) => {
         if (!cancelled) setMemberUsage({ data, loading: false, error: null })
       },
@@ -82,7 +82,7 @@ export function usePlanYear(memberId: string, planId: string) {
     return () => {
       cancelled = true
     }
-  }, [memberId])
+  }, [memberId, token])
 
   const usage = memberUsage.data?.usage ?? null
   const plan = { plan_id: planId }

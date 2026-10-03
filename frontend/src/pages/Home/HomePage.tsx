@@ -81,9 +81,8 @@ const LINKS = [
 ]
 
 export default function HomePage() {
-  const { household, activeMember } = useSession()
-  const primary = household.members.find((m) => m.role === "primary") ?? household.members[0]
-  const { data, loading, error, retry } = useHomeData(primary.id, activeMember.id)
+  const { household, activeMember, token } = useSession()
+  const { data, loading, error, retry } = useHomeData(token, activeMember.id)
   const chips = useProcedureChips()
   const visit = useLogVisit(household.planTier, activeMember.id, data?.overview ?? null)
   const first = activeMember.name.split(" ")[0]

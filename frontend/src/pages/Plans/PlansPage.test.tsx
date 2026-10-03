@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { SessionProvider } from "@/state/SessionContext"
+import { TestSessionProvider } from "@/test/session"
 import PlansPage from "./PlansPage"
 
 const base = { deductible_waived_for: ["preventive"], frequency: { D1110: 2, D0120: 2 }, plan_year_start_month: 1, alternate_benefit: true }
@@ -13,9 +13,9 @@ const PLANS = [
 
 function renderPage() {
   return render(
-    <SessionProvider>
+    <TestSessionProvider>
       <PlansPage />
-    </SessionProvider>,
+    </TestSessionProvider>,
   )
 }
 

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router"
-import { SessionProvider } from "@/state/SessionContext"
+import { TestSessionProvider } from "@/test/session"
 import HomePage from "./HomePage"
 
 function benefits(used: number, remaining: number, dedMet: number, cleanings: number, reminder: string | null) {
@@ -21,7 +21,7 @@ function benefits(used: number, remaining: number, dedMet: number, cleanings: nu
   }
 }
 function overview(id: string) {
-  const alex = id === "m_alex"
+  const alex = id === "m-alex"
   return {
     member: { id },
     plan_tier: { id: "preferred", name: "Preferred" },
@@ -46,7 +46,6 @@ function mockApi(fail = false, emptySchedule = false) {
       calls.push({ url, auth: headers.Authorization ?? null, body: init?.body ? JSON.parse(String(init.body)) : null })
       const ok = (d: unknown) => ({ ok: true, status: 200, json: async () => d })
       if (fail) throw new Error("offline")
-      if (url.endsWith("/auth/demo-login")) return ok({ token: "tok" })
       const m = url.match(/\/members\/([^/]+)\/(overview|schedule)/)
       if (m?.[2] === "overview") return ok(overview(m[1]))
       if (m?.[2] === "schedule")
@@ -70,13 +69,13 @@ function mockApi(fail = false, emptySchedule = false) {
   )
 }
 
-function renderPage(id = "m_alex") {
+function renderPage(id = "m-alex") {
   return render(
-    <SessionProvider initialMemberId={id}>
+    <TestSessionProvider activeId={id}>
       <MemoryRouter>
         <HomePage />
       </MemoryRouter>
-    </SessionProvider>,
+    </TestSessionProvider>,
   )
 }
 
@@ -85,7 +84,7 @@ afterEach(() => vi.restoreAllMocks())
 
 describe("Home page", () => {
   it("shows Alex's numbers, the reminder and upcoming events", async () => {
-    const { container } = renderPage("m_alex")
+    const { container } = renderPage("m-alex")
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Welcome back, Alex")
     expect(await within(await screen.findByTestId("card-max")).findByText("$400")).toBeInTheDocument()
     expect(screen.getByTestId("card-max")).toHaveTextContent("left of $1,500")
@@ -97,16 +96,16 @@ describe("Home page", () => {
       expect.stringContaining("max_remaining=400"),
     )
     expect(screen.getAllByTestId("upcoming-item")).toHaveLength(2)
-    expect(screen.getByText("Checkup for m_alex")).toBeInTheDocument()
+    expect(screen.getByText("Checkup for m-alex")).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /Plan My Year/ })).toHaveAttribute("href", "/plan-year")
     expect(screen.getByText(/This is an estimate\. Your actual cost depends/)).toBeInTheDocument()
     expect(container.querySelector("select")).toBeNull()
-    expect(calls.find((c) => c.url.includes("/overview"))!.auth).toBe("Bearer tok")
-    expect(calls.find((c) => c.url.endsWith("/auth/demo-login"))!.body).toEqual({ member_id: "m_jordan" })
+    expect(calls.find((c) => c.url.includes("/overview"))!.auth).toBe("Bearer tok-m-jordan")
+    expect(calls.some((c) => c.url.endsWith("/auth/demo-login"))).toBe(false)
   })
 
   it("shows different numbers for Jordan and no reminder", async () => {
-    renderPage("m_jordan")
+    renderPage("m-jordan")
     expect(await within(await screen.findByTestId("card-max")).findByText("$1,300")).toBeInTheDocument()
     expect(screen.getByTestId("card-deductible")).toHaveTextContent("$50")
     expect(screen.getByTestId("card-cleanings")).toHaveTextContent("0 of 2")
@@ -115,7 +114,7 @@ describe("Home page", () => {
 
   it("logs a visit using the engine result and updates the numbers", async () => {
     const user = userEvent.setup()
-    renderPage("m_alex")
+    renderPage("m-alex")
     await user.click(await screen.findByRole("button", { name: "Log Cleaning (adult)" }))
     await waitFor(() => expect(screen.getByTestId("visit-result")).toHaveTextContent("You pay $0"))
     expect(screen.getByTestId("card-max")).toHaveTextContent("$280")

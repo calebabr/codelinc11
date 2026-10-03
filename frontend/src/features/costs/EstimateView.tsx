@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
 import { money } from "@/lib/format"
+import { useSession } from "@/state/SessionContext"
 import { errorMessage, getMemberUsage, getProcedures, postQuestions, postSavingsTips } from "@/lib/api/planYear"
 import { postEstimate } from "@/lib/api/costs"
 import type { Procedure, QuestionsResponse, SavingsTipsResponse, Usage } from "@/lib/types/planYear"
@@ -87,6 +88,7 @@ interface Props {
 }
 
 export function EstimateView({ memberId, memberName, planId }: Props) {
+  const { token } = useSession()
   const [code, setCode] = useState<string | null>(null)
   const [inNetwork, setInNetwork] = useState(true)
   const [query, setQuery] = useState("")
@@ -118,13 +120,16 @@ export function EstimateView({ memberId, memberName, planId }: Props) {
   useEffect(() => {
     let cancelled = false
     setUsage(null)
-    getMemberUsage(memberId).then((u) => {
-      if (!cancelled) setUsage(u.usage)
-    })
+    getMemberUsage(memberId, token).then(
+      (u) => {
+        if (!cancelled) setUsage(u.usage)
+      },
+      () => undefined,
+    )
     return () => {
       cancelled = true
     }
-  }, [memberId])
+  }, [memberId, token])
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase()

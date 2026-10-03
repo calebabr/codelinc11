@@ -3,15 +3,15 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { AppRoutes } from '@/App'
-import { SessionProvider } from '@/state/SessionContext'
+import { TestSessionProvider } from '@/test/session'
 
 function renderAt(path: string) {
   return render(
-    <SessionProvider>
+    <TestSessionProvider>
       <MemoryRouter initialEntries={[path]}>
         <AppRoutes />
       </MemoryRouter>
-    </SessionProvider>,
+    </TestSessionProvider>,
   )
 }
 
@@ -55,7 +55,7 @@ describe('member switching', () => {
     renderAt('/family')
     expect(screen.getByTestId('active-member-label')).toHaveTextContent('Jordan Rivera')
 
-    await user.click(screen.getByRole('button', { name: /viewing/i }))
+    await user.click(screen.getByRole('button', { name: /^viewing(?! as)/i }))
     await user.click(
       within(screen.getByRole('group', { name: 'Choose a family member' })).getByRole('button', { name: /Alex Rivera/ }),
     )
@@ -67,7 +67,7 @@ describe('member switching', () => {
   it('marks the active member with aria-pressed and uses no native select', async () => {
     const user = userEvent.setup()
     const { container } = renderAt('/')
-    await user.click(screen.getByRole('button', { name: /viewing/i }))
+    await user.click(screen.getByRole('button', { name: /^viewing(?! as)/i }))
     const menu = within(screen.getByRole('group', { name: 'Choose a family member' }))
     expect(menu.getByRole('button', { name: /Jordan Rivera/ })).toHaveAttribute('aria-pressed', 'true')
     expect(menu.getByRole('button', { name: /Maya Rivera/ })).toHaveAttribute('aria-pressed', 'false')

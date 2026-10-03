@@ -8,8 +8,7 @@ import { useSession } from "@/state/SessionContext"
 // The panel holds the same chat as the Assistant page, for the active member (T10).
 export function AssistantButton() {
   const { pathname } = useLocation()
-  const { household, activeMember } = useSession()
-  const primary = household.members.find((m) => m.role === "primary") ?? household.members[0]
+  const { activeMember, token } = useSession()
   const [open, setOpen] = useState(false)
 
   if (pathname === "/assistant") return null
@@ -43,7 +42,7 @@ export function AssistantButton() {
             </div>
             <div className="min-h-0 flex-1">
               <AssistantChat
-                signInAs={primary.id}
+                token={token}
                 memberId={activeMember.id}
                 memberName={activeMember.name.split(" ")[0]}
               />

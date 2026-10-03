@@ -8,21 +8,15 @@ import FamilyPage from '@/pages/Family/FamilyPage'
 import CostsPage from '@/pages/Costs/CostsPage'
 import PlanYearPage from '@/pages/PlanYear/PlanYearPage'
 import AssistantPage from '@/pages/Assistant/AssistantPage'
+import LoginPage from '@/pages/Login/LoginPage'
 import StyleGuide from '@/pages/StyleGuide'
 
-// Routes: /, /plans, /family, /costs, /plan-year, /assistant. /login is reserved for the sign-in UI.
+// Routes: /, /plans, /family, /costs, /plan-year, /assistant. /login is the demo sign-in.
 // eslint-disable-next-line react-refresh/only-export-components
 export function AppRoutes() {
   return (
     <Routes>
-      <Route
-        path="/login"
-        element={
-          <div className="mx-auto max-w-md p-8">
-            <PlaceholderPage title="Sign in">Sign-in is coming soon.</PlaceholderPage>
-          </div>
-        }
-      />
+      <Route path="/login" element={<LoginPage />} />
       <Route element={<Shell />}>
         <Route index element={<HomePage />} />
         <Route path="plans" element={<PlansPage />} />

@@ -80,24 +80,19 @@ export function remindersUrl(planName: string, maxRemaining: number): string {
 
 // ---- Member usage ---------------------------------------------------------
 
-// Used only when GET /members/{id}/overview is not available (T05 not landed).
-// Alex is the golden demo member: $1,100 used, deductible met (docs/FEATURES.md section 2, S2).
-const FALLBACK_USAGE: Record<string, Usage> = {
-  m_alex: { max_used: 1100, deductible_met: 50, history: [] },
-}
-const NO_USAGE: Usage = { max_used: 0, deductible_met: 0, history: [] }
-
 export interface MemberUsage {
   usage: Usage
-  /** True when the numbers came from the built-in demo values, not the server. */
-  fromFallback: boolean
 }
 
 function num(v: unknown): number | null {
   return typeof v === "number" && Number.isFinite(v) ? v : null
 }
 
-/** Pull usage out of the overview response, whichever of the agreed shapes it uses. */
+/**
+ * Pull usage out of GET /members/{id}/overview (backend MemberOverview:
+ * `usage: {max_used, deductible_met, cleanings_used, ...}`). The engine wants a
+ * `history` of procedure codes, so cleanings already used are sent as D1110.
+ */
 export function usageFromOverview(o: unknown): Usage | null {
   if (!o || typeof o !== "object") return null
   const root = o as Record<string, unknown>
@@ -105,19 +100,23 @@ export function usageFromOverview(o: unknown): Usage | null {
   const used = num(src.max_used)
   const met = num(src.deductible_met)
   if (used === null || met === null) return null
-  const history = Array.isArray(src.history) ? (src.history.filter((h) => typeof h === "string") as string[]) : []
+  let history: string[] = []
+  if (Array.isArray(src.history)) history = src.history.filter((h) => typeof h === "string") as string[]
+  else {
+    const cleanings = num(src.cleanings_used)
+    if (cleanings && cleanings > 0) history = Array.from({ length: cleanings }, () => "D1110")
+  }
   return { max_used: used, deductible_met: met, history }
 }
 
-export async function getMemberUsage(memberId: string): Promise<MemberUsage> {
-  try {
-    const overview = await request<unknown>(`/members/${encodeURIComponent(memberId)}/overview`)
-    const usage = usageFromOverview(overview)
-    if (usage) return { usage, fromFallback: false }
-  } catch {
-    /* fall through to the demo values */
-  }
-  return { usage: FALLBACK_USAGE[memberId] ?? NO_USAGE, fromFallback: true }
+/** Loads the member's usage with the signed-in token. Throws if the server cannot be reached. */
+export async function getMemberUsage(memberId: string, token: string): Promise<MemberUsage> {
+  const overview = await request<unknown>(`/members/${encodeURIComponent(memberId)}/overview`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  const usage = usageFromOverview(overview)
+  if (!usage) throw new ApiError("We could not read this person's usage. Please try again.")
+  return { usage }
 }
 
 export function errorMessage(err: unknown): string {

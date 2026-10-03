@@ -4,9 +4,7 @@ import { useThread } from "@/features/assistant/threads"
 import { useSession } from "@/state/SessionContext"
 
 export default function AssistantPage() {
-  const { household, activeMember, setActiveMemberId } = useSession()
-  // The household's primary member signs in and may talk about everyone (see lib/api/home.ts).
-  const primary = household.members.find((m) => m.role === "primary") ?? household.members[0]
+  const { household, activeMember, setActiveMemberId, token } = useSession()
   const thread = useThread(activeMember.id)
   // Reload "what the assistant knows" after each finished answer (new chat memory).
   const answered = thread.filter((m) => m.role === "assistant" && m.status === "ok").length
@@ -45,9 +43,9 @@ export default function AssistantPage() {
           aria-label="Chat"
           className="portal-card flex h-[34rem] max-h-[80vh] flex-col overflow-hidden !p-0"
         >
-          <AssistantChat signInAs={primary.id} memberId={activeMember.id} memberName={activeMember.name.split(" ")[0]} />
+          <AssistantChat token={token} memberId={activeMember.id} memberName={activeMember.name.split(" ")[0]} />
         </section>
-        <KnowsPanel signInAs={primary.id} memberId={activeMember.id} refreshKey={answered} />
+        <KnowsPanel token={token} memberId={activeMember.id} refreshKey={answered} />
       </div>
     </div>
   )
