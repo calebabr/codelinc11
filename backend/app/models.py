@@ -6,6 +6,7 @@ All money values are floats in US dollars, rounded to 2 decimals by the engine.
 """
 from __future__ import annotations
 
+from datetime import date
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -175,11 +176,11 @@ class BenefitsStatus(BaseModel):
 
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
-    content: str
+    content: str = Field(max_length=4000)
 
 
 class ChatRequest(BaseModel):
-    messages: list[ChatMessage]
+    messages: list[ChatMessage] = Field(max_length=20)
     plan_id: str | None = None
     plan: Plan | None = None
     usage: Usage = Usage()
@@ -349,6 +350,18 @@ class MemberUsageDollars(BaseModel):
     deductible_met: float
     visits: int
     cleanings_used: int
+
+
+class VisitRequest(BaseModel):
+    code: str                                           # catalog procedure code
+    in_network: bool = True
+    visit_date: date | None = None                      # default: the demo "today"
+
+
+class VisitResponse(BaseModel):
+    estimate: EstimateResult                            # what the engine worked out for this visit
+    usage: MemberUsageDollars                           # this person's usage after the visit
+    benefits: BenefitsStatus                            # benefits status after the visit
 
 
 class MemberOverview(BaseModel):

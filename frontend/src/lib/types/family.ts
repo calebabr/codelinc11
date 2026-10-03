@@ -41,6 +41,8 @@ export interface DemoAccount {
   member_id: string
   role: FamilyRole
   household_id: string
+  /** Not sent by the API today; if it is, "pending" shows "Waiting for approval". */
+  status?: string
 }
 
 export interface DemoLoginResponse {

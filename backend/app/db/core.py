@@ -94,3 +94,35 @@ def reset(path: str | Path) -> None:
     p.parent.mkdir(parents=True, exist_ok=True)
     migrate(p)
     seed(p)
+
+
+def is_empty(path: str | Path) -> bool:
+    """True when there are no households (a migrated but unseeded database)."""
+    with session(path) as conn:
+        return conn.execute("SELECT COUNT(*) FROM households").fetchone()[0] == 0
+
+
+def seed_if_empty(path: str | Path) -> bool:
+    """Migrate, then load the demo household only if the households table is empty."""
+    migrate(path)
+    if is_empty(path):
+        seed(path)
+        return True
+    return False
+
+
+def reseed(path: str | Path) -> None:
+    """Put the data back to the original demo state, keeping the file (and open connections) valid.
+
+    Member ids come from the seed file, so signed-in sessions stay valid.
+    """
+    migrate(path)
+    with session(path) as conn:
+        conn.execute("PRAGMA foreign_keys = OFF")
+        names = [r["name"] for r in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' "
+            "AND name != 'schema_migrations'")]
+        for name in names:
+            conn.execute(f'DELETE FROM "{name}"')
+        conn.execute("PRAGMA foreign_keys = ON")
+    seed(path)

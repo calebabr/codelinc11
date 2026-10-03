@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
-import { errorMessage, getOverview, getSchedule, postBenefits, postEstimate } from "@/lib/api/home"
+import { errorMessage, getOverview, getSchedule, postDemoReset, postVisit, visitErrorMessage } from "@/lib/api/home"
 import { getProcedures } from "@/lib/api/planYear"
 import type { BenefitsStatus, MemberOverview, Procedure, ScheduleEntry, Usage, VisitEstimate } from "@/lib/types/home"
 
@@ -33,7 +33,16 @@ export function useHomeData(token: string, memberId: string, planTier?: string) 
       cancelled = true
     }
   }, [token, memberId, planTier, attempt])
-  return { ...state, retry: useCallback(() => setAttempt((n) => n + 1), []) }
+  /** Reload the numbers without blanking the page. */
+  const refresh = useCallback(async () => {
+    try {
+      const [overview, schedule] = await Promise.all([getOverview(token, memberId), getSchedule(token, memberId)])
+      setState({ data: { overview, schedule }, loading: false, error: null })
+    } catch (e) {
+      setState((s) => ({ ...s, error: errorMessage(e) }))
+    }
+  }, [token, memberId])
+  return { ...state, retry: useCallback(() => setAttempt((n) => n + 1), []), refresh }
 }
 
 export function useProcedureChips() {
@@ -51,14 +60,15 @@ export function useProcedureChips() {
   return list
 }
 
-/** Visits logged on this page for each member. Only the member shown is ever changed. */
+/** The result of the last visit saved for a member (from the backend, never added up here). */
 export interface LoggedVisit {
   usage: Usage
   benefits: BenefitsStatus
   last: VisitEstimate
 }
 
-export function useLogVisit(planId: string, memberId: string, overview: MemberOverview | null) {
+/** Saves a visit with POST /members/{id}/visits, then asks the page to reload the overview. */
+export function useLogVisit(token: string, memberId: string, onSaved: () => Promise<void> | void) {
   const [logged, setLogged] = useState<Record<string, LoggedVisit>>({})
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -67,31 +77,45 @@ export function useLogVisit(planId: string, memberId: string, overview: MemberOv
 
   const log = useCallback(
     async (code: string) => {
-      if (!overview) return
-      const base: Usage = logged[memberId]?.usage ?? {
-        max_used: overview.usage.max_used,
-        deductible_met: overview.usage.deductible_met,
-        history: Array.from({ length: overview.usage.cleanings_used }, () => "D1110"),
-      }
       setBusy(true)
       setError(null)
       try {
-        const est = (await postEstimate(planId, code, base)).in_network
-        // Carry the engine's results forward as the member's new usage.
-        const usage: Usage = {
-          max_used: est.max_used_after,
-          deductible_met: base.deductible_met + est.deductible_applied,
-          history: est.covered ? [...base.history, code] : base.history,
-        }
-        const benefits = await postBenefits(planId, usage)
-        setLogged((l) => ({ ...l, [memberId]: { usage, benefits, last: est } }))
+        const res = await postVisit(token, memberId, code)
+        const last = (res.estimate as { in_network?: VisitEstimate }).in_network ?? (res.estimate as VisitEstimate)
+        setLogged((l) => ({ ...l, [memberId]: { usage: res.usage, benefits: res.benefits, last } }))
+        await onSaved()
       } catch (e) {
-        setError(errorMessage(e))
+        setError(visitErrorMessage(e, "We could not save that visit."))
       } finally {
         setBusy(false)
       }
     },
-    [overview, logged, memberId, planId],
+    [token, memberId, onSaved],
   )
-  return { logged: logged[memberId] ?? null, log, busy, error }
+  const clear = useCallback(() => setLogged({}), [])
+  return { logged: logged[memberId] ?? null, log, busy, error, clear }
+}
+
+/** Primary only. Resets the demo data on the server, then lets the page reload. */
+export function useResetDemo(token: string, onDone: () => Promise<void> | void) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [done, setDone] = useState(false)
+  const reset = useCallback(async () => {
+    setBusy(true)
+    setError(null)
+    setDone(false)
+    try {
+      await postDemoReset(token)
+      await onDone()
+      setDone(true)
+      return true
+    } catch (e) {
+      setError(visitErrorMessage(e, "We could not reset the demo data."))
+      return false
+    } finally {
+      setBusy(false)
+    }
+  }, [token, onDone])
+  return { reset, busy, error, done }
 }

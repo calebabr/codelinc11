@@ -4,7 +4,8 @@ GET /members/{id}/assistant-context.
 With a `member_id` the chat is personal: it needs a signed-in session (Authorization: Bearer ...),
 the access layer decides whether the viewer may see that member (primary: anyone in the household,
 adult: only themself), and the assistant gets only that person's plan, usage and context. Each
-exchange is saved to that person's chat memory. Without a `member_id` the chat is stateless and
+exchange is saved to that person's chat memory. Chat needs a signed-in session unless ASSISTANT_ALLOW_ANONYMOUS=1 (default off).
+Without a `member_id` the chat is stateless and
 uses the plan and usage in the request (nothing is loaded or saved).
 
 Include in main.py:  app.include_router(chat_router.router)  and remove the old POST /chat there.
@@ -14,6 +15,7 @@ from __future__ import annotations
 import base64
 import contextlib
 import json
+import os
 import secrets
 from collections.abc import Iterator
 from dataclasses import dataclass
@@ -108,6 +110,8 @@ def _remember(store: Any, ctx: MemberContext, user_text: str, events: Iterator[d
 @router.post("/chat")
 def chat(req: MemberChatRequest, store: StoreDep, provider: ProviderDep,
          viewer: Annotated[str | None, Depends(optional_viewer)] = None) -> StreamingResponse:
+    if viewer is None and os.environ.get("ASSISTANT_ALLOW_ANONYMOUS") != "1":
+        raise HTTPException(status_code=401, detail="Please sign in to use the assistant.")
     headers = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
     client: Any = provider if provider is not None else _NoProvider()
     plain = ChatRequest(messages=req.messages, plan_id=req.plan_id, plan=req.plan,

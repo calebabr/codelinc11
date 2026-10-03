@@ -10,7 +10,7 @@ export default function AuthLayout({ title, subtitle, children }: { title: React
   return (
     <div className="landing grid min-h-screen bg-background lg:grid-cols-[1fr_1.1fr]">
       <div className="flex flex-col px-6 py-6 md:px-12">
-        <Link to="/" aria-label="bitewise home" className="self-start">
+        <Link to="/welcome" aria-label="bitewise home" className="self-start">
           <Logo />
         </Link>
 

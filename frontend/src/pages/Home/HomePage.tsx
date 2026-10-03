@@ -1,9 +1,10 @@
+import { useState } from "react"
 import { Link } from "react-router"
 import { CalendarDays, CalendarPlus, MessageCircle, Calculator, ArrowRight } from "lucide-react"
 import { useSession } from "@/state/SessionContext"
 import { money, formatDate } from "@/lib/format"
 import { remindersUrl } from "@/lib/api/home"
-import { useHomeData, useLogVisit, useProcedureChips } from "@/features/home/useHome"
+import { useHomeData, useLogVisit, useProcedureChips, useResetDemo } from "@/features/home/useHome"
 import type { BenefitsStatus } from "@/lib/types/home"
 
 // Layout ratio for bar widths only. Dollar figures are always shown as the API returned them.
@@ -81,16 +82,22 @@ const LINKS = [
 ]
 
 export default function HomePage() {
-  const { household, activeMember, token } = useSession()
-  const { data, loading, error, retry } = useHomeData(token, activeMember.id, household.planTier)
+  const { household, activeMember, token, user, refreshHousehold } = useSession()
+  const { data, loading, error, retry, refresh } = useHomeData(token, activeMember.id, household.planTier)
   const chips = useProcedureChips()
-  const visit = useLogVisit(household.planTier, activeMember.id, data?.overview ?? null)
+  const visit = useLogVisit(token, activeMember.id, refresh)
+  const reset = useResetDemo(token, async () => {
+    visit.clear()
+    await refreshHousehold()
+    await refresh()
+  })
+  const [confirmReset, setConfirmReset] = useState(false)
   const first = activeMember.name.split(" ")[0]
   const isSelf = activeMember.relationship === "self"
 
-  const benefits = visit.logged?.benefits ?? data?.overview.benefits ?? null
   const overview = data?.overview
-  const reminder = visit.logged ? visit.logged.benefits.reminder : overview?.reminder
+  const benefits = overview?.benefits ?? null
+  const reminder = overview?.reminder
   const upcoming = (data?.schedule ?? []).slice(0, 3)
 
   return (
@@ -167,7 +174,7 @@ export default function HomePage() {
               Log a visit for {first}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Tap a visit to see what it uses up. This only changes the numbers for {first}, on this page.
+              Tap a visit to save it for {first}. It uses up part of the yearly maximum, and every page shows the new numbers.
             </p>
             <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Choose a visit">
               {chips.slice(0, 8).map((p) => (
@@ -201,6 +208,39 @@ export default function HomePage() {
             </p>
           </section>
         </>
+      )}
+
+      {user.role === "primary" && (
+        <section aria-label="Demo tools" className="text-sm text-muted-foreground">
+          {!confirmReset ? (
+            <button type="button" className="btn btn-outline" onClick={() => setConfirmReset(true)}>
+              Reset demo data
+            </button>
+          ) : (
+            <div className="note" role="group" aria-label="Confirm reset">
+              <p>This puts all demo visits and plans back to how they started. Reset now?</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className="btn btn-orange"
+                  disabled={reset.busy}
+                  onClick={() => void reset.reset().then((ok) => ok && setConfirmReset(false))}
+                >
+                  {reset.busy ? "Resetting…" : "Yes, reset"}
+                </button>
+                <button type="button" className="btn btn-outline" disabled={reset.busy} onClick={() => setConfirmReset(false)}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+          {reset.error && (
+            <p role="alert" className="mt-2 text-burgundy">
+              {reset.error}
+            </p>
+          )}
+          {reset.done && !reset.error && <p role="status" className="mt-2">Demo data was reset.</p>}
+        </section>
       )}
 
       <section aria-labelledby="quick-links">

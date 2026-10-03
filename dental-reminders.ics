@@ -1,0 +1,22 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Dental Benefits Prototype//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:91c5bb02-1ae9-42bf-8f33-17758eb46d0a@dental-prototype
+DTSTAMP:20261003T234818Z
+DTSTART;VALUE=DATE:20261201
+DTEND;VALUE=DATE:20261202
+SUMMARY:Use your dental benefits before they reset
+DESCRIPTION:Preferred: you have about $1\,290 of your yearly maximum left (as of month 11). Unused benefits do not carry over\, so book your visits soon. This is an estimate\, not a guarantee.
+END:VEVENT
+BEGIN:VEVENT
+UID:208e7d74-3162-47fa-a694-3fd83b4609f4@dental-prototype
+DTSTAMP:20261003T234818Z
+DTSTART;VALUE=DATE:20261215
+DTEND;VALUE=DATE:20261216
+SUMMARY:Use your dental benefits before they reset
+DESCRIPTION:Preferred: you have about $1\,290 of your yearly maximum left (as of month 11). Unused benefits do not carry over\, so book your visits soon. This is an estimate\, not a guarantee.
+END:VEVENT
+END:VCALENDAR

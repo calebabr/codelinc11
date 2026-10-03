@@ -137,8 +137,8 @@ describe("Family page", () => {
     await user.click(await screen.findByTestId("node-m-noah"))
     await user.click(await screen.findByRole("button", { name: "Invite Noah" }))
     await user.type(screen.getByLabelText("Email address for Noah Rivera"), "noah@example.com")
-    await user.click(screen.getByRole("button", { name: "Send invite" }))
-    expect(await screen.findByRole("status")).toHaveTextContent("Invite pending for noah@example.com")
+    await user.click(screen.getByRole("button", { name: "Add invite (demo)" }))
+    expect(await screen.findByRole("status")).toHaveTextContent("Invite recorded as pending. No email is sent in this demo.")
     const sent = calls.find((c) => c.url.endsWith("/invites"))!
     expect(sent.method).toBe("POST")
     expect(sent.auth).toBe("Bearer tok-m-jordan")

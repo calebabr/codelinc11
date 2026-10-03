@@ -16,9 +16,11 @@ backend/app/db/   core.py (connect, migrate, seed, reset), store.py (access laye
 From `backend/`:
 
 ```
-python -m app.db            # creates database/benefits.db if missing, loads the seeds
+python -m app.db            # creates database/benefits.db if missing; seeds it whenever it has no households
 python -m app.db --reset    # deletes it and rebuilds from the seeds
 ```
+
+The API also seeds an empty database on startup. `POST /demo/reset` (primary only) puts the data back to the original demo state in place (`core.reseed`); member ids do not change, so signed-in sessions stay valid. The session signing secret is kept in `database/.session_secret` (git-ignored) unless `SESSION_SECRET` is set.
 
 Set `BENEFITS_DB_PATH` to use another file. `*.db` is git-ignored. Every schema change is a new `NNN_name.sql` file in `migrations/`; `Store(...)` applies any that are missing.
 

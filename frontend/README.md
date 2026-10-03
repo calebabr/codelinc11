@@ -22,14 +22,14 @@ The app is a portal-style shell: a slim burgundy utility bar (household name, me
 | `/costs` | `Costs/CostsPage.tsx` |
 | `/plan-year` | `PlanYear/PlanYearPage.tsx` |
 | `/assistant` | `Assistant/AssistantPage.tsx` |
-| `/login` | `Login/LoginPage.tsx` (demo sign-in cards from `GET /auth/demo-accounts`; one file so design can restyle it) |
+| `/login` | `Login/LoginPage.tsx` (one-click demo account cards from `GET /auth/demo-accounts`, built on `components/auth/AuthLayout.tsx`; one file so design can restyle it) |
 | `/style` | style guide (owned by the design task) |
 
 Routes live in `AppRoutes` in `src/App.tsx`; shell parts are in `src/components/shell/`.
 
 **Session (T19, `src/state/SessionContext.tsx`):** the real backend session.
 
-- On load, `SessionProvider` calls `GET /auth/demo-accounts`, then `POST /auth/demo-login` for the primary member (Jordan, `m-jordan`), or for whoever was chosen earlier in this tab (remembered in `sessionStorage` under `dental.signedInMemberId`, nothing else is stored). The bearer token is kept in memory. The household is then loaded with `GET /households/{id}`. Real ids: `hh-rivera`, `m-jordan`, `m-alex`, `m-noah`, `m-maya` (Maya has no login).
+- On load, `SessionProvider` calls `GET /auth/demo-accounts`. Nobody is signed in automatically: a signed-out visitor to any app route (including `/`) is redirected to `/login`, where one click on Jordan, Alex or Noah calls `POST /auth/demo-login` and goes to `/`. The choice is remembered in `sessionStorage` under `dental.signedInMemberId` (nothing else is stored), so a reload in the same tab stays signed in. `/welcome` is the public landing page; its "Log in" and "Get started" go to `/login`. The bearer token is kept in memory. The household is then loaded with `GET /households/{id}`. Real ids: `hh-rivera`, `m-jordan`, `m-alex`, `m-noah`, `m-maya` (Maya has no login).
 - `useSession()` (pages) returns `account`, `user` (the signed-in member), `household` (backend shape plus `planTier`, the plan id), `activeMember`, `setActiveMemberId(id)`, `token`, `accounts`, `signIn(memberId)` and `signOut()`. It throws if used outside a ready session, so pages render inside the `Shell`.
 - `useSessionGate()` (shell and login) adds `status` (`loading`, `ready`, `error`, `signed-out`), `error` and `retry`. The `Shell` shows a loading note, a clear error with "Try again" when the backend is down, or redirects to `/login` after sign-out.
 - Every API call takes the shared `token`. There are no per-page sign-ins. A non-primary person (Alex, Noah) sees only their own household member, as the backend returns.
@@ -58,7 +58,7 @@ Code: page `src/pages/PlanYear/PlanYearPage.tsx`, parts in `src/features/planYea
 
 ## Family (T08)
 
-`/family` shows the household as a clickable family tree. Each person is a node (initial, name, relationship, age) with a "Has their own account" chip, a "Managed by <primary first name>" chip for children (for example "Managed by Jordan"), or a dashed "Waiting for approval" chip (Noah); a line under the tree explains that adults 18 and over can have their own account and children's profiles are managed by a parent. Tap a person to see **that person's** numbers: yearly maximum left and used, deductible met, visits, cleanings, and a card for each service (preventive, basic, major, orthodontia) marked Available, Not available or Pending verification, with the age rule and the pending note. "View as this person" switches the active member (the primary, or the person themselves). The primary sees an "Invite" action on adults without a login (age 18 and over); the invite is demo only and shows as pending.
+`/family` shows the household as a clickable family tree. Each person is a node (initial, name, relationship, age) with a "Has their own account" chip, a "Managed by <primary first name>" chip for children (for example "Managed by Jordan"), or a dashed "Waiting for approval" chip (Noah); a line under the tree explains that adults 18 and over can have their own account and children's profiles are managed by a parent. Tap a person to see **that person's** numbers: yearly maximum left and used, deductible met, visits, cleanings, and a card for each service (preventive, basic, major, orthodontia) marked Available, Not available or Pending verification, with the age rule and the pending note. "View as this person" switches the active member (the primary, or the person themselves). The primary sees an "Invite" action on adults without a login (age 18 and over); its button reads "Add invite (demo)" and it records the invite as pending ("Invite recorded as pending. No email is sent in this demo.").
 
 The page uses the shared session (see above). A "Demo sign-in" card calls `signIn(memberId)` to switch accounts and check visibility: a non-primary adult sees only their own node.
 
@@ -66,7 +66,7 @@ Code: `src/pages/Family/FamilyPage.tsx`, parts in `src/features/family/`, API in
 
 ## Home (T07)
 
-The first page after sign-in (`/`). Top to bottom: a hero strip ("Welcome back, <first name>", plan tier, who is being viewed); three cards with one number each and a bar (**Maximum left**, **Deductible**, **Cleanings used**); the end-of-year reminder with an "Add reminders to my calendar" button (shown when the API returns a reminder); **Coming up** (next 3 schedule entries); **Log a visit** (tap a visit chip, see "You pay" from the engine, numbers update for that member only); quick links to Costs, Plan My Year and Assistant. Switching the member in the header reloads every number.
+The first page after sign-in (`/`). Top to bottom: a hero strip ("Welcome back, <first name>", plan tier, who is being viewed); three cards with one number each and a bar (**Maximum left**, **Deductible**, **Cleanings used**); the end-of-year reminder with an "Add reminders to my calendar" button (shown when the API returns a reminder); **Coming up** (next 3 schedule entries); **Log a visit** (tap a visit chip: `POST /members/{id}/visits` saves it, "You pay" comes from the response, and the overview reloads so other pages see it; a missing route shows a plain "not available yet" message); a primary-only "Reset demo data" button with an inline confirm calls `POST /demo/reset`; quick links to Costs, Plan My Year and Assistant. Switching the member in the header reloads every number.
 
 Code: page `src/pages/Home/HomePage.tsx`, data hooks `src/features/home/useHome.ts`, API calls `src/lib/api/home.ts`, types `src/lib/types/home.ts`, tests `HomePage.test.tsx`.
 
@@ -95,3 +95,6 @@ Tests: `src/pages/Costs/CostsPage.test.tsx` (mocked `fetch`; crown $625 / $800 /
 - **PDF:** the paperclip uploads to `POST /chat/attachments` (PDF only, 5 MB limit, demo-only notice); the file shows as a removable chip and its id is sent with the next question.
 - **Unavailable:** `done` with `mode: "unavailable"`, an `error` event or a network failure shows a plain message and "Try again"; the rest of the app is unaffected.
 - Tests: `src/pages/Assistant/AssistantPage.test.tsx` (mocked stream: chips and context per member, thread separation, unavailable and network states, attach and remove).
+
+
+The assistant side panel (`components/shell/AssistantButton.tsx`) is a modal dialog: `role="dialog"`, `aria-modal`, focus moves in on open and back to the button on close, Escape closes, Tab stays inside.

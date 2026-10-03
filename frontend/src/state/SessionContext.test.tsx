@@ -78,11 +78,23 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks())
 
 describe("SessionProvider", () => {
-  it("signs in as the primary (Jordan) by default and loads the household with the token", async () => {
-    renderApp()
-    expect(screen.getByRole("status")).toBeInTheDocument()
+  it("sends a signed-out visitor to the login page and offers the demo accounts", async () => {
+    renderApp("/plans")
+    expect(await screen.findByRole("heading", { name: "Welcome back" })).toBeInTheDocument()
+    expect(await screen.findByRole("button", { name: /Jordan Rivera/ })).toHaveTextContent("Account holder")
+    expect(screen.getByRole("button", { name: /Alex Rivera/ })).toHaveTextContent("Adult")
+    expect(screen.getByRole("button", { name: /Noah Rivera/ })).toHaveTextContent("Waiting for approval")
+    expect(screen.queryByRole("button", { name: /Maya/ })).toBeNull()
+    expect(calls.some((c) => c.url.endsWith("/auth/demo-login"))).toBe(false)
+  })
+
+  it("choosing Jordan on the login page signs in, loads the household with the token and goes home", async () => {
+    const user = userEvent.setup()
+    renderApp("/login")
+    await user.click(await screen.findByRole("button", { name: /Jordan Rivera/ }))
     expect(await screen.findByTestId("household-label")).toHaveTextContent("Rivera household")
     expect(screen.getByTestId("active-member-label")).toHaveTextContent("Jordan Rivera")
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Welcome back, Jordan")
     const login = calls.find((c) => c.url.endsWith("/auth/demo-login"))!
     expect(login.method).toBe("POST")
     expect(login.body).toEqual({ member_id: "m-jordan" })
@@ -101,6 +113,7 @@ describe("SessionProvider", () => {
   it("shows a clear error with a retry when the server is down, then recovers", async () => {
     const user = userEvent.setup()
     down = true
+    sessionStorage.setItem("dental.signedInMemberId", "m-jordan")
     renderApp()
     expect(await screen.findByRole("alert")).toHaveTextContent(/can't reach the server/i)
     down = false
@@ -110,9 +123,10 @@ describe("SessionProvider", () => {
 
   it("signs out to the login page, and the login cards sign in again", async () => {
     const user = userEvent.setup()
+    sessionStorage.setItem("dental.signedInMemberId", "m-jordan")
     renderApp("/plans")
     await user.click(await screen.findByRole("button", { name: "Sign out" }))
-    expect(await screen.findByRole("heading", { name: "Sign in" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Welcome back" })).toBeInTheDocument()
     expect(sessionStorage.getItem("dental.signedInMemberId")).toBeNull()
     await user.click(await screen.findByRole("button", { name: /Alex Rivera/ }))
     await waitFor(() => expect(screen.getByTestId("active-member-label")).toHaveTextContent("Alex Rivera"))
@@ -121,6 +135,7 @@ describe("SessionProvider", () => {
 
   it("changePlan updates the plan name in the utility bar without a reload", async () => {
     const user = userEvent.setup()
+    sessionStorage.setItem("dental.signedInMemberId", "m-jordan")
     renderApp("/plans")
     expect(await screen.findByTestId("plan-label")).toHaveTextContent("Preferred plan")
     await user.click(await screen.findByTestId("tier-premium"))

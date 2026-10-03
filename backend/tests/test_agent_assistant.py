@@ -250,7 +250,8 @@ def test_provider_that_fails_is_unavailable(client_for):
     assert ev[-1][1]["mode"] == "unavailable"
 
 
-def test_stateless_chat_uses_the_request_plan_and_saves_nothing(client_for, store):
+def test_stateless_chat_uses_the_request_plan_and_saves_nothing(client_for, store, monkeypatch):
+    monkeypatch.setenv("ASSISTANT_ALLOW_ANONYMOUS", "1")
     fake = FakeProvider([call("estimate_cost", code="D2740"), say("You pay $800. This is an estimate, not a guarantee.")])
     r = client_for(fake).post("/chat", json={"messages": [{"role": "user", "content": "crown?"}],
                                              "plan_id": "preferred", "usage": {"max_used": 1100}})

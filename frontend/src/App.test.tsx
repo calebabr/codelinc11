@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { AppRoutes } from '@/App'
@@ -46,6 +46,32 @@ describe('portal routes', () => {
     expect(screen.getByRole('dialog', { name: 'Assistant' })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Close assistant' }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('assistant panel is a modal dialog: focus goes in, Escape closes, focus returns to the button', async () => {
+    const user = userEvent.setup()
+    renderAt('/')
+    const opener = screen.getByRole('button', { name: 'Open assistant' })
+    await user.click(opener)
+    const dialog = screen.getByRole('dialog', { name: 'Assistant' })
+    expect(dialog).toHaveAttribute('aria-modal', 'true')
+    expect(dialog).toContainElement(document.activeElement as HTMLElement)
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Open assistant' })).toHaveFocus())
+  })
+
+  it('keeps Tab focus inside the open assistant panel', async () => {
+    const user = userEvent.setup()
+    renderAt('/')
+    await user.click(screen.getByRole('button', { name: 'Open assistant' }))
+    const dialog = screen.getByRole('dialog', { name: 'Assistant' })
+    for (let i = 0; i < 12; i++) {
+      await user.tab()
+      expect(dialog).toContainElement(document.activeElement as HTMLElement)
+    }
+    await user.tab({ shift: true })
+    expect(dialog).toContainElement(document.activeElement as HTMLElement)
   })
 })
 

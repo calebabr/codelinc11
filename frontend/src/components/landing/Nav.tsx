@@ -24,7 +24,7 @@ export default function Nav() {
       )}
     >
       <nav className="mx-auto flex h-18 max-w-[1200px] items-center justify-between px-6" aria-label="Main">
-        <Link to="/" aria-label="bitewise home">
+        <Link to="/welcome" aria-label="bitewise home">
           <Logo />
         </Link>
 

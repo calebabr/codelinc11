@@ -68,6 +68,57 @@ RETRY_NOTE = ("Your last answer contained dollar amounts that did not come from 
               "to). Do not add or subtract amounts yourself.")
 
 
+_QUESTIONS_INTENT = re.compile(
+    r"ask (?:my |the |your )?(?:dentist|dental office|office)|questions? (?:to|i should|should i) ask"
+    r"|what should i ask|what do i ask", re.IGNORECASE)
+_SAVINGS_INTENT = re.compile(
+    r"\bsav(?:e|es|ing|ings)\b|cheaper|less expensive|lower (?:my |the )?(?:bill|cost|price)"
+    r"|reduce (?:my |the )?(?:bill|cost)|\btips?\b|cut (?:my |the )?cost", re.IGNORECASE)
+MIN_PRESTEP_SCORE = 0.7
+
+
+def detect_tip_intent(text: str) -> str | None:
+    """'get_dentist_questions' or 'get_savings_tips' when the message asks for one, else None."""
+    if _QUESTIONS_INTENT.search(text or ""):
+        return "get_dentist_questions"
+    if _SAVINGS_INTENT.search(text or ""):
+        return "get_savings_tips"
+    return None
+
+
+def _prestep_match(req: ChatRequest, tctx: ToolContext) -> tuple[str, dict] | None:
+    """Best procedure for a tips/questions request: from the latest message, else the most recent
+    earlier user message that names one. Returns (find_procedure result, best match) or None."""
+    users = [m.content for m in req.messages if m.role == "user"]
+    for text in reversed(users):
+        found = run_tool("find_procedure", {"query": text}, tctx)
+        matches = found.get("matches") or []
+        if matches and matches[0]["score"] >= MIN_PRESTEP_SCORE:
+            return text, {"found": found, "best": matches[0]}
+    return None
+
+
+def _prestep(req: ChatRequest, tctx: ToolContext) -> Iterator[dict]:
+    """Deterministic pre-step. Yields tool events; the last yielded item is
+    {"event": "_prestep", "data": {...}} with the finished tool calls, or nothing if it did not apply."""
+    last = next((m.content for m in reversed(req.messages) if m.role == "user"), "")
+    tool = detect_tip_intent(last)
+    if tool is None:
+        return
+    hit = _prestep_match(req, tctx)
+    if hit is None:
+        return
+    _, info = hit
+    code, name = info["best"]["code"], info["best"]["name"]
+    calls = [("pre_1", "find_procedure", {"query": last}, info["found"])]
+    args = {"codes": [code]}
+    calls.append(("pre_2", tool, args, run_tool(tool, args, tctx)))
+    for _id, nm, a, res in calls:
+        yield _ev("tool_start", {"name": nm, "args": a})
+        yield _ev("tool_end", {"name": nm, "result": res})
+    yield _ev("_prestep", {"calls": calls, "code": code, "name": name})
+
+
 def _ev(name: str, data: dict) -> dict:
     return {"event": name, "data": data}
 
@@ -166,6 +217,21 @@ def run_chat(req: ChatRequest, client: Any = None, *, context: MemberContext | N
                 break
 
     results: list[dict] = []
+    for ev in _prestep(req, tctx):
+        if ev["event"] != "_prestep":
+            yield ev
+            continue
+        pc = ev["data"]
+        turns.append({"role": "assistant", "content": "",
+                      "tool_calls": [{"id": i, "name": n, "args": a} for i, n, a, _ in pc["calls"]]})
+        turns.append({"role": "tool", "results": [
+            {"id": i, "name": n, "content": json.dumps(r)} for i, n, _, r in pc["calls"]]})
+        results += [r for *_, r in pc["calls"]]
+        system += (f"\n\nThe tools were already run for this question, assuming {pc['name']} "
+                   f"({pc['code']}). Write the answer now from those results. Do not ask a clarifying "
+                   "question and do not ask about the tooth. Begin with the assumption in one short "
+                   "phrase (for example 'for a molar root canal'), give the short list, and offer to "
+                   "adjust if it is a different procedure.")
     answer: str | None = None
     mode = provider.name
     message = UNAVAILABLE

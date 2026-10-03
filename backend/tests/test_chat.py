@@ -184,7 +184,8 @@ def test_tool_functions_still_work_for_the_ai_agent():
 
 # ---------- over HTTP ----------
 
-def test_sse_over_http_event_order():
+def test_sse_over_http_event_order(monkeypatch):
+    monkeypatch.setenv("ASSISTANT_ALLOW_ANONYMOUS", "1")
     from fastapi.testclient import TestClient
 
     from app.main import app

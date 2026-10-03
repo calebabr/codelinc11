@@ -1,6 +1,7 @@
-import { API_URL, ApiError, DEMO_MONTH } from "@/lib/api/planYear"
-import type { BenefitsStatus, EstimateResponse, MemberOverview, ScheduleEntry, Usage } from "@/lib/types/home"
+import { API_URL, ApiError } from "@/lib/api/planYear"
+import type { MemberOverview, ScheduleEntry, VisitResponse } from "@/lib/types/home"
 
+import { errorMessage } from "@/lib/api/planYear"
 export { errorMessage, remindersUrl } from "@/lib/api/planYear"
 
 async function json<T>(path: string, init?: RequestInit): Promise<T> {
@@ -33,12 +34,21 @@ export const getOverview = (token: string, memberId: string) =>
 export const getSchedule = (token: string, memberId: string) =>
   authed<ScheduleEntry[]>(token, `/members/${encodeURIComponent(memberId)}/schedule`)
 
-function post<T>(path: string, body: unknown) {
-  return json<T>(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+function post<T>(path: string, body: unknown, token?: string) {
+  const headers: Record<string, string> = { "Content-Type": "application/json" }
+  if (token) headers.Authorization = `Bearer ${token}`
+  return json<T>(path, { method: "POST", headers, body: JSON.stringify(body) })
 }
 
-export const postEstimate = (planId: string, code: string, usage: Usage) =>
-  post<EstimateResponse>("/estimate", { plan_id: planId, code, usage })
+/** Saves a visit for the member. The server does the math and returns the new numbers. */
+export const postVisit = (token: string, memberId: string, code: string) =>
+  post<VisitResponse>(`/members/${encodeURIComponent(memberId)}/visits`, { code, in_network: true }, token)
 
-export const postBenefits = (planId: string, usage: Usage) =>
-  post<BenefitsStatus>("/benefits-status", { plan_id: planId, usage, current_month: DEMO_MONTH })
+/** Primary only. Puts the demo data back to how it started. */
+export const postDemoReset = (token: string) => post<unknown>("/demo/reset", {}, token)
+
+/** A plain message; a 404 means the server does not have the route yet. */
+export function visitErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof ApiError && err.status === 404) return `${fallback} This feature is not available on the server yet.`
+  return errorMessage(err)
+}

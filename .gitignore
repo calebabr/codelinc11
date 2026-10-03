@@ -30,3 +30,6 @@ Thumbs.db
 .worktrees/
 *.tar.gz
 *.log
+
+# Session signing secret (generated locally)
+database/.session_secret

@@ -92,12 +92,10 @@ def test_guard_accepts_tip_amounts_and_rejects_invented_ones(store):
 
 def test_chat_calls_savings_tool_and_passes_the_guard(client_for):
     fake = FakeProvider([
-        call("get_savings_tips", codes=["D2740"]),
         say("Ways to save on the crown:\n- Wait until January: $800 now, $625 then, about $175 less.\n"
             "If it hurts or is urgent, see your dentist right away. " + DISC)])
     ev = parse_sse(ask(client_for(fake), ALEX, "How can I save money on this crown?").text)
-    assert ev[0][0] == "tool_start"
-    assert next(d for n, d in ev if n == "tool_start")["name"] == "get_savings_tips"
+    assert "get_savings_tips" in [d["name"] for n, d in ev if n == "tool_start"]
     assert ev[-1][1]["mode"] == "anthropic" and "$175" in answer_text(ev)
     names = {t["function"]["name"] for t in fake.calls[0]["tools"]}
     assert "get_savings_tips" in names
@@ -110,7 +108,7 @@ def test_chat_calls_questions_tool(client_for):
     fake = FakeProvider([call("get_dentist_questions", codes=["D3330"]),
                          say("Questions to ask:\n- Which codes will you bill?\n" + DISC)])
     ev = parse_sse(ask(client_for(fake), ALEX, "What should I ask before the root canal?").text)
-    end = next(d for n, d in ev if n == "tool_end")
+    end = [d for n, d in ev if n == "tool_end"][-1]
     assert end["result"]["sections"] and end["result"]["safety_note"]
     assert ev[-1][1]["mode"] == "anthropic"
 
@@ -140,16 +138,50 @@ def test_chips_present_for_adults_and_children(store):
     json.dumps(adult)
 
 
-def test_dentist_questions_flow_has_no_clarifying_turn(client_for):
-    fake = FakeProvider([
-        call("find_procedure", query="root canal"),
-        call("get_dentist_questions", codes=["D3330"]),
-        say("For a molar root canal, ask:\n- Which codes will you bill?\n"
-            "Tell me if it is a different tooth. " + DISC)])
+# ---------------------------------------------------------------- deterministic pre-step
+
+def _started(ev):
+    return [d["name"] for n, d in ev if n == "tool_start"]
+
+
+def test_prestep_root_canal_questions_never_asks_a_clarifying_question(client_for):
+    fake = FakeProvider([say("For a molar root canal, ask:\n- Which codes will you bill?\n" + DISC)])
     ev = parse_sse(ask(client_for(fake), ALEX, "What should I ask my dentist about a root canal?").text)
-    started = [d["name"] for n, d in ev if n == "tool_start"]
-    assert started == ["find_procedure", "get_dentist_questions"]
-    assert "?" not in answer_text(ev).split("\n")[0]
+    assert _started(ev) == ["find_procedure", "get_dentist_questions"]
+    end = [d for n, d in ev if n == "tool_end"][1]
+    assert end["result"]["procedures"] and end["result"]["sections"]
+    assert len(fake.calls) == 1  # the model only wrote the answer
+    turns = fake.calls[0]["turns"]
+    call_turn = next(t for t in turns if t.get("tool_calls"))
+    assert call_turn["tool_calls"][1]["args"] == {"codes": ["D3330"]}
+    assert "Do not ask a clarifying" in fake.calls[0]["system"]
     assert ev[-1][1]["mode"] == "anthropic"
-    system = fake.calls[0]["system"]
-    assert "never stop to ask about tooth location" in system and "D3330" in system
+
+
+def test_prestep_savings_request_for_a_crown(client_for):
+    fake = FakeProvider([say("For a crown: wait until January, $800 now or $625 then. " + DISC)])
+    ev = parse_sse(ask(client_for(fake), ALEX, "How can I save money on a crown?").text)
+    assert _started(ev) == ["find_procedure", "get_savings_tips"]
+    assert ev[-1][1]["mode"] == "anthropic" and "$625" in answer_text(ev)
+
+
+def test_prestep_uses_the_procedure_named_earlier(client_for):
+    fake = FakeProvider([say("For a crown, ask:\n- Which codes will you bill?\n" + DISC)])
+    body = {"messages": [{"role": "user", "content": "What will a crown cost me?"},
+                         {"role": "assistant", "content": "You would pay $800. " + DISC},
+                         {"role": "user", "content": "What should I ask my dentist?"}],
+            "member_id": ALEX}
+    from .test_agent_assistant import auth
+    ev = parse_sse(client_for(fake).post("/chat", json=body, headers=auth(ALEX)).text)
+    end = [d for n, d in ev if n == "tool_end"][1]
+    assert _started(ev)[1] == "get_dentist_questions" and "Crown" in end["result"]["procedures"][0]
+
+
+def test_prestep_skipped_for_unrelated_or_unmatched_questions(client_for):
+    fake = FakeProvider([call("estimate_cost", code="D2740"), say("You would pay $800. " + DISC)])
+    ev = parse_sse(ask(client_for(fake), ALEX, "What will a crown cost me?").text)
+    assert _started(ev) == ["estimate_cost"]
+    # tips intent but no procedure anywhere: normal loop, model decides
+    fake = FakeProvider([call("get_savings_tips"), say("Here are general ideas. " + DISC)])
+    ev = parse_sse(ask(client_for(fake), ALEX, "Any tips to lower my bill?").text)
+    assert _started(ev) == ["get_savings_tips"] and len(fake.calls) == 2

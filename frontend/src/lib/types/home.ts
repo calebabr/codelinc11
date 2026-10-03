@@ -78,3 +78,10 @@ export interface EstimateResponse {
   in_network: VisitEstimate
   out_of_network: VisitEstimate
 }
+
+/** 201 response of POST /members/{id}/visits. */
+export interface VisitResponse {
+  estimate: VisitEstimate
+  usage: Usage
+  benefits: BenefitsStatus
+}

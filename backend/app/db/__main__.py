@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import sys
 
-from .core import db_path, migrate, reset
+from .core import db_path, reset, seed_if_empty
 
 
 def main(argv: list[str]) -> int:
@@ -17,9 +17,10 @@ def main(argv: list[str]) -> int:
     if "--reset" in argv or not path.exists():
         reset(path)
         print(f"Created {path} and loaded the demo household.")
+    elif seed_if_empty(path):
+        print(f"{path} was empty. Loaded the demo household.")
     else:
-        applied = migrate(path)
-        print(f"{path} exists. Applied migrations: {applied or 'none'}. Use --reset to reseed.")
+        print(f"{path} already has data. Use --reset to reseed.")
     return 0
 
 

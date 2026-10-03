@@ -7,6 +7,8 @@ from fastapi import APIRouter, HTTPException
 
 from ..data import load_catalog, load_plans
 from ..db import DEMO_TODAY
+from ..db.core import reseed
+from ..engine.estimate import estimate
 from ..engine.status import benefits_status
 from ..models import (
     MemberOverview,
@@ -15,6 +17,8 @@ from ..models import (
     ScheduleEntry,
     ServiceEligibility,
     Usage,
+    VisitRequest,
+    VisitResponse,
 )
 from .households import member_model, tier_model
 from .session import StoreDep, Viewer, guarded
@@ -81,3 +85,52 @@ def member_schedule(member_id: str, viewer: Viewer,
     """Upcoming appointments and reminders for one person, soonest first."""
     rows = guarded(lambda: store.list_upcoming_schedule(viewer, member_id))
     return [ScheduleEntry(**r) for r in rows]
+
+
+def _cents(dollars: float) -> int:
+    return round(dollars * 100)
+
+
+def _usage_models(u: dict[str, Any]) -> tuple[Usage, MemberUsageDollars]:
+    usage = Usage(max_used=u["max_used_cents"] / 100, deductible_met=u["deductible_met_cents"] / 100,
+                  history=["D1110"] * u["cleanings_used"])
+    return usage, MemberUsageDollars(plan_year=u["plan_year"], max_used=usage.max_used,
+                                     deductible_met=usage.deductible_met, visits=u["visits"],
+                                     cleanings_used=u["cleanings_used"])
+
+
+@router.post("/members/{member_id}/visits", response_model=VisitResponse, status_code=201)
+def log_visit(member_id: str, req: VisitRequest, viewer: Viewer, store: StoreDep) -> VisitResponse:
+    """Log a visit: the engine estimates it with this person's usage and the household's current
+    plan, then the amounts are saved to this person's usage. Same visibility rules as the overview."""
+    member = guarded(lambda: store.get_member(viewer, member_id))
+    proc = load_catalog().get(req.code)
+    if proc is None:
+        raise HTTPException(status_code=404, detail=f"Unknown procedure code '{req.code}'")
+    household = guarded(lambda: store.get_household(viewer, member["household_id"]))
+    plan = load_plans().get(household["plan_tier"]["id"])
+    if plan is None:
+        raise HTTPException(status_code=404, detail=f"No plan data for tier '{household['plan_tier']['id']}'")
+    visit_date = req.visit_date or DEMO_TODAY
+    u = guarded(lambda: store.get_member_usage(viewer, member_id, visit_date.year))
+    usage, _ = _usage_models(u)
+    est = estimate(proc, plan, usage, req.in_network)
+    after = guarded(lambda: store.record_visit(
+        viewer, member_id, visit_date.isoformat(), est.name,
+        billed_cents=_cents(est.billed), plan_paid_cents=_cents(est.plan_pays),
+        patient_paid_cents=_cents(est.you_pay), procedure_code=est.code,
+        deductible_applied_cents=_cents(est.deductible_applied)))
+    new_usage, dollars = _usage_models(after)
+    status = benefits_status(plan, new_usage, load_catalog(), DEMO_TODAY.month)
+    return VisitResponse(estimate=est, usage=dollars, benefits=status)
+
+
+@router.post("/demo/reset")
+def demo_reset(viewer: Viewer, store: StoreDep) -> dict[str, bool]:
+    """Primary only: put the demo database back to its original state. Member ids stay the same,
+    so signed-in sessions stay valid."""
+    me = guarded(lambda: store.get_member(viewer, viewer))
+    if me["role"] != "primary":
+        raise HTTPException(status_code=403, detail="Only the primary account holder can reset the demo.")
+    reseed(store.path)
+    return {"ok": True}

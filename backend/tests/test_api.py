@@ -194,7 +194,8 @@ def test_cors_allows_vite_origin():
     assert r.headers.get("access-control-allow-origin") in ("http://localhost:5173", "*")
 
 
-def test_chat_endpoint_streams_sse():
+def test_chat_endpoint_streams_sse(monkeypatch):
+    monkeypatch.setenv("ASSISTANT_ALLOW_ANONYMOUS", "1")
     body = {"messages": [{"role": "user", "content": "What will a crown cost me?"}],
             "plan_id": "preferred", "usage": G3_USAGE}
     r = client.post("/chat", json=body)

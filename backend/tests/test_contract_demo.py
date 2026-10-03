@@ -116,7 +116,8 @@ def test_alex_demo_flow(store):
     assert events[-1] == ("done", {"mode": "anthropic"})
 
 
-def test_chat_with_no_model_says_so_and_invents_no_numbers(store):
+def test_chat_with_no_model_says_so_and_invents_no_numbers(store, monkeypatch):
+    monkeypatch.setenv("ASSISTANT_ALLOW_ANONYMOUS", "1")
     r = chat_client(store, None).post("/chat", json={"plan_id": "preferred", "messages": [
         {"role": "user", "content": "crown?"}]})
     events = sse(r.text)

@@ -2,9 +2,9 @@
 // household (from the backend) and which family member the app is showing
 // ("active member").
 //
-// Sign-in is the demo flow: POST /auth/demo-login (no password). On first load we
-// sign in as the household's primary member (Jordan) unless the person picked
-// someone else earlier in this browser tab (remembered in sessionStorage only).
+// Sign-in is the demo flow: POST /auth/demo-login (no password). On load we sign in
+// again only if the person chose an account earlier in this browser tab (remembered
+// in sessionStorage only). Otherwise the status is "signed-out" and the app shows /login.
 // The token stays in memory. Pages read everything from useSession() and never
 // hard-code a person or fetch their own token.
 
@@ -124,9 +124,14 @@ export function SessionProvider({ children, initialMemberId }: { children: React
         if (cancelled) return
         setAccounts(list)
         const wanted = initialMemberId ?? remembered()
-        const pick =
-          list.find((a) => a.member_id === wanted) ?? list.find((a) => a.role === "primary") ?? list[0]
-        if (!pick) throw new Error("No demo accounts are available.")
+        const pick = wanted ? list.find((a) => a.member_id === wanted) : undefined
+        if (!pick) {
+          // Nobody signed in yet: the app sends the visitor to /login.
+          if (list.length === 0) throw new Error("No demo accounts are available.")
+          if (wanted) remember(null)
+          setStatus("signed-out")
+          return
+        }
         await doSignIn(pick.member_id)
         if (!cancelled) setStatus("ready")
       } catch (e) {

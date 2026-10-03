@@ -55,7 +55,7 @@ function InviteBox({ member, householdId, token }: { member: FamilyMember; house
   if (invite) {
     return (
       <p className="note" role="status">
-        Invite {invite.status} for {invite.email}. This is a demo, so no email is sent.
+        Invite recorded as {invite.status}. No email is sent in this demo.
       </p>
     )
   }
@@ -85,7 +85,7 @@ function InviteBox({ member, householdId, token }: { member: FamilyMember; house
         </p>
       )}
       <button type="submit" className="btn btn-orange" disabled={busy}>
-        {busy ? "Sending…" : "Send invite"}
+        {busy ? "Saving…" : "Add invite (demo)"}
       </button>
     </form>
   )
