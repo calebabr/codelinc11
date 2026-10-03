@@ -16,8 +16,5 @@ createRoot(document.getElementById('root')!).render(
         </AuthProvider>
       </BrowserRouter>
     </MotionConfig>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
   </StrictMode>,
 )

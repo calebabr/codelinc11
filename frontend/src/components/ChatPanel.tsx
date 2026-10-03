@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from "react"
-import { Send, Sparkles, Wrench, RotateCcw } from "lucide-react"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { Mic, Send, Sparkles, Wrench, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { useUser } from "@/state/UserContext"
 import { answer } from "@/lib/chat"
+import { useSpeechRecognition } from "@/lib/useSpeechRecognition"
 import type { ChatMessage, ToolCall } from "@/lib/types"
 
 const TOOL_LABELS: Record<string, string> = {
@@ -71,6 +72,22 @@ export function ChatPanel() {
   const [liveTools, setLiveTools] = useState<ToolCall[]>([])
   const [streaming, setStreaming] = useState("")
   const scrollRef = useRef<HTMLDivElement>(null)
+  // Text already in the box when dictation starts, so speech appends to it.
+  const baseInputRef = useRef("")
+
+  // Speech-to-text: fold the transcript into the input field as the user talks.
+  const handleTranscript = useCallback((text: string, isFinal: boolean) => {
+    const base = baseInputRef.current
+    const combined = base ? `${base} ${text}` : text
+    setInput(combined)
+    if (isFinal) baseInputRef.current = combined
+  }, [])
+  const speech = useSpeechRecognition({ onTranscript: handleTranscript })
+
+  function toggleDictation() {
+    if (!speech.listening) baseInputRef.current = input.trim()
+    speech.toggle()
+  }
 
   const messages = threads[activeProfile.id] ?? [introMessage(activeProfile.name)]
 
@@ -104,6 +121,8 @@ export function ChatPanel() {
   async function send(text: string) {
     const trimmed = text.trim()
     if (!trimmed || busy) return
+    if (speech.listening) speech.stop()
+    baseInputRef.current = ""
     setInput("")
     setBusy(true)
     const pid = activeProfile.id
@@ -207,24 +226,55 @@ export function ChatPanel() {
         </div>
       )}
 
-      <form
-        className="flex items-center gap-2 border-t px-4 py-3"
-        onSubmit={(e) => {
-          e.preventDefault()
-          send(input)
-        }}
-      >
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask about your coverage…"
-          disabled={busy}
-          aria-label="Message"
-        />
-        <Button type="submit" size="icon" disabled={busy || !input.trim()} aria-label="Send">
-          <Send className="size-4" />
-        </Button>
-      </form>
+      <div className="border-t px-4 py-3">
+        {speech.error && (
+          <p className="mb-2 text-xs text-destructive">{speech.error}</p>
+        )}
+        {speech.listening && (
+          <p className="mb-2 flex items-center gap-1.5 text-xs text-primary">
+            <span className="relative flex size-2">
+              <span className="absolute inline-flex size-2 animate-ping rounded-full bg-primary/60" />
+              <span className="relative inline-flex size-2 rounded-full bg-primary" />
+            </span>
+            Listening… speak now
+          </p>
+        )}
+        <form
+          className="flex items-center gap-2"
+          onSubmit={(e) => {
+            e.preventDefault()
+            send(input)
+          }}
+        >
+          <Input
+            value={input}
+            onChange={(e) => {
+              setInput(e.target.value)
+              baseInputRef.current = e.target.value.trim()
+            }}
+            placeholder={speech.listening ? "Listening…" : "Ask about your coverage…"}
+            disabled={busy}
+            aria-label="Message"
+          />
+          {speech.supported && (
+            <Button
+              type="button"
+              size="icon"
+              variant={speech.listening ? "default" : "outline"}
+              onClick={toggleDictation}
+              disabled={busy}
+              aria-label={speech.listening ? "Stop voice input" : "Start voice input"}
+              aria-pressed={speech.listening}
+              title={speech.listening ? "Stop voice input" : "Speak your question"}
+            >
+              <Mic className="size-4" />
+            </Button>
+          )}
+          <Button type="submit" size="icon" disabled={busy || !input.trim()} aria-label="Send">
+            <Send className="size-4" />
+          </Button>
+        </form>
+      </div>
     </div>
   )
 }
