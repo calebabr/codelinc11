@@ -10,12 +10,14 @@ import PlanYearPage from '@/pages/PlanYear/PlanYearPage'
 import AssistantPage from '@/pages/Assistant/AssistantPage'
 import LoginPage from '@/pages/Login/LoginPage'
 import StyleGuide from '@/pages/StyleGuide'
+import Landing from '@/pages/Landing'
 
-// Routes: /, /plans, /family, /costs, /plan-year, /assistant. /login is the demo sign-in.
+// Routes: /, /plans, /family, /costs, /plan-year, /assistant. /login is the demo sign-in. /welcome is the public landing page.
 // eslint-disable-next-line react-refresh/only-export-components
 export function AppRoutes() {
   return (
     <Routes>
+      <Route path="/welcome" element={<Landing />} />
       <Route path="/login" element={<LoginPage />} />
       <Route element={<Shell />}>
         <Route index element={<HomePage />} />

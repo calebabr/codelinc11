@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "@fontsource-variable/bricolage-grotesque/opsz.css";
+@import "@fontsource-variable/manrope";
+@import "@fontsource-variable/newsreader/opsz.css";
+@import "@fontsource-variable/newsreader/opsz-italic.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -69,6 +73,13 @@
     --color-savings: var(--savings);
     --color-savings-ink: var(--savings-ink);
     --color-paper: var(--paper);
+    /* Landing page colors and display font (Ulisses). Only the landing page uses these. */
+    --color-blush: var(--blush);
+    --color-peach: var(--peach);
+    --color-mint: var(--mint);
+    --color-mint-ink: var(--mint-ink);
+    --font-display: 'Newsreader Variable', Georgia, 'Times New Roman', serif;
+    --font-quote: Georgia, 'Times New Roman', serif;
 
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
@@ -141,6 +152,10 @@
 
     /* Legacy aliases (old editorial names), now portal colors */
     --paper: var(--soft);
+    --blush: #fbeff2;
+    --peach: #fff1ea;
+    --mint: #e6f6ef;
+    --mint-ink: #146c43;
     --savings: var(--orange-dark);   /* big savings figures and text on white (4.5:1) */
     --savings-ink: var(--orange-dark);
 }
@@ -369,3 +384,38 @@
     padding: 1.75rem;
   }
 }
+
+/*
+  Landing page look (Ulisses, branch fe/landing). Scoped with .landing so it never touches the portal.
+  Colors and radius are variables, so overriding them here restyles the landing components.
+  Fonts are literal in the theme, so the landing sets its own families below.
+*/
+.landing {
+  --primary: #6b0f2a;
+  --secondary: #fbeff2;
+  --secondary-foreground: #6b0f2a;
+  --accent: #fbeff2;
+  --accent-foreground: #6b0f2a;
+  --foreground: #1c0a12;
+  --muted-foreground: #4b5563;
+  --border: #ece6e8;
+  --savings: #ff4f17;
+  --savings-ink: #c2410c;
+  --radius: 1.25rem;
+  font-family: 'Manrope Variable', system-ui, sans-serif;
+  scroll-behavior: smooth;
+}
+.landing h1, .landing h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-optical-sizing: auto;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+.landing h1 em, .landing h2 em { font-style: italic; letter-spacing: -0.035em; }
+.landing h3 {
+  font-family: 'Bricolage Grotesque Variable', 'Manrope Variable', system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+.landing .money { font-family: var(--font-display); font-optical-sizing: auto; font-weight: 400; }
