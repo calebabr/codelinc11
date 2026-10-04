@@ -14,7 +14,7 @@ tests/
 
 | Kind | Location | Written by |
 |---|---|---|
-| Backend unit tests (engine, API, chat) | `backend/tests/` | The agent that writes the backend code |
+| Backend unit tests (engine, API, chat) | `backend/tests/` (organized by markers; see [backend/tests/README.md](../backend/tests/README.md)) | The agent that writes the backend code; the Tests agent owns the regression file and the markers |
 | Frontend unit and component tests | next to the code, `frontend/src/**/*.test.ts(x)` | The Frontend agent |
 | End-to-end flows | `tests/e2e/` | Tests agent |
 | API contract checks | `tests/contract/` | Tests agent |
@@ -52,6 +52,7 @@ These also run with the normal commands:
 Counts: backend 391 passed, frontend 151 tests (17 files). All suites need no network or key. One frontend test (`SessionContext.test.tsx`, "sends a signed-out visitor to the login page...") timed out once on a full run under load and passes alone.
 
 ## Commands
+- Backend by group: `scripts/test-backend.ps1 [all|fast|coverage|<marker>]` (or `.sh`). Markers: `unit`, `api`, `contract`, `regression`, `agent`, `db`, `slow`. Regression tests for fixed bugs are in `backend/tests/test_regressions.py` (14 tests). Last full run: 516 passed (473 when coverage was measured), 96% line coverage of `backend/app`.
 - Backend: `cd backend && .venv/Scripts/python -m pytest -q` and `ruff check .`
 - Frontend: `cd frontend && npm run test`
 - Browser end-to-end (`tests/e2e/`): not built yet. The demo flow is covered at the API level by `test_contract_demo.py`; a Playwright run of the same flow is the next step.

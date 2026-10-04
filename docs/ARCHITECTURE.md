@@ -52,6 +52,11 @@ flowchart LR
 | `GET /health` | Server up, `chat_mode` (`anthropic`, `ollama` or `unavailable`) |
 | `GET /auth/demo-accounts[?household_id=]`, `POST /auth/demo-login` | Demo sign-in; `sandbox: true` gives each visitor their own copy of the demo family (`hh-rivera.<sid>`), reused by `household_id`, 410 when expired |
 | `PUT /households/{id}/names` | Rename people and the family (primary, sandbox families only) |
+| `GET /members/{id}/notifications?unread=1` | Makes any new notifications from the person's data (benefits expiring, unused checkups and cleanings, appointments within 14 days, saved treatment plans, deductible met; amounts from the benefits engine; idempotent through `dedupe_key`), then lists them newest first with `unread_count`. Same visibility as the overview. Allowed in the shared template family |
+| `POST /members/{id}/notifications/{nid}/read` · `POST /members/{id}/notifications/read-all` | Mark one or all read |
+| `GET` / `PUT /members/{id}/notification-prefs` | In-app (default on), email and text (default off), and which kinds. Email or text needs a valid contact on the profile (plain 422 otherwise). PUT: demo families only (403 for the template) |
+| `POST /members/{id}/notifications/test` | `{channel: app\|email\|sms}`: a sample in-app notification, or a delivery preview to the stored contact. Demo families only; rate limited (compute bucket) |
+| `GET /members/{id}/outbox` | Delivery previews, newest first. Status is always `preview`: no email or text is ever sent (`Notifier` interface, default `PreviewNotifier`, in `backend/app/notifier.py`) |
 | `PATCH /members/{id}/profile` | Edit name, date of birth, email, phone, ZIP, notes (primary: anyone in the household; adult: self; demo families only, 403 for the shared template; plain 422 messages) |
 | `POST /households/{id}/members` | Add a person (primary, demo family only, max 8; under 18 becomes a managed member) |
 | `DELETE /households/{id}/members/{member_id}` | Remove a person and every row stored for them (primary, demo family only, never the primary) |

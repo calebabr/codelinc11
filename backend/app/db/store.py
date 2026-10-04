@@ -772,7 +772,7 @@ def _usage(conn: sqlite3.Connection, member_id: str, year: int) -> dict[str, Any
 
 
 def _now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    return datetime.now(timezone.utc).isoformat(timespec="microseconds")
 
 
 def _prefs(conn: sqlite3.Connection, member_id: str) -> dict[str, Any]:
