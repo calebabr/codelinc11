@@ -33,7 +33,7 @@ const EXPLAIN = {
     { label: "Plan paid", amount: 80 },
     { label: "You owe", amount: 120 },
   ],
-  what_to_do_next: "Pay the $120 you owe by the date on the bill.",
+  what_to_do_next: ["Pay the $120 you owe by the date on the bill.", "Keep this notice for your records."],
   balance_billing_note: "This dentist is out of network, so they can bill you the difference.",
 }
 const SAMPLES = [
@@ -170,7 +170,9 @@ describe("Reports page", () => {
     const steps = within(ex).getAllByTestId("explain-step")
     expect(steps.map((s) => s.textContent)).toEqual(["Billed$200", "Allowed$150", "Deductible$50", "Plan paid$80", "You owe$120"])
     expect(within(ex).getByTestId("balance-note")).toHaveTextContent("they can bill you the difference")
-    expect(within(ex).getByText("Pay the $120 you owe by the date on the bill.")).toBeInTheDocument()
+    expect(
+      within(ex).getByText("Pay the $120 you owe by the date on the bill. Keep this notice for your records."),
+    ).toBeInTheDocument()
     expect(calls.some((c) => c.url.endsWith("/members/m-alex/reports/r2/explain"))).toBe(true)
     await user.click(screen.getByRole("button", { name: "Hide Filling EOB" }))
     expect(screen.queryByTestId("explanation")).not.toBeInTheDocument()

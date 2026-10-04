@@ -37,6 +37,9 @@ type Raw = Record<string, unknown>
 const isObj = (v: unknown): v is Raw => typeof v === "object" && v !== null && !Array.isArray(v)
 const str = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v : null)
 const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null)
+/** A string, or a list of sentences joined into one paragraph (the server sends "what to do next" as a list). */
+const sentences = (v: unknown): string | null =>
+  Array.isArray(v) ? str(v.filter((s): s is string => typeof s === "string" && !!s.trim()).join(" ")) : str(v)
 
 /** Accepts the stored fields under `data` or `data_json` (object or JSON text). */
 function normalizeItem(raw: Raw): ReportItem {
@@ -134,7 +137,7 @@ export async function getExplanation(token: string, memberId: string, id: string
     title: str(raw.title) ?? "",
     what_it_is: str(raw.what_it_is) ?? str(raw.summary) ?? str(raw.what) ?? "",
     steps,
-    next_step: str(raw.what_to_do_next) ?? str(raw.next_step) ?? str(raw.next_steps) ?? str(raw.what_to_do),
+    next_step: sentences(raw.what_to_do_next) ?? sentences(raw.next_step) ?? sentences(raw.next_steps) ?? sentences(raw.what_to_do),
     balance_billing_note: typeof bb === "string" ? str(bb) : null,
     lines,
   }
