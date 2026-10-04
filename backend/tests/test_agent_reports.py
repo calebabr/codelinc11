@@ -133,7 +133,7 @@ def test_guard_accepts_amounts_from_cents_in_both_forms_and_blocks_invented_ones
 
 def test_scope_is_accepted_and_uses_the_reports_prompt_and_tools(client_for):
     fake = FakeProvider([call("get_reports"),
-                         say("Your saved documents are made-up samples. Jordan has one EOB. " + DISC)])
+                         say("Your saved documents are made-up samples. Marc has one EOB. " + DISC)])
     r = ask_reports(client_for(fake), JORDAN, "Show my documents")
     assert r.status_code == 200
     ev = parse_sse(r.text)
@@ -165,7 +165,7 @@ def test_the_model_never_sees_contact_details_or_other_chats(client_for, store):
     seen = json.dumps(fake.calls[0])
     for bad in ("555-0100", "@", "phone", "Plan highlights", "Visits this plan year"):
         assert bad not in seen
-    assert "The person asking: Alex." in fake.calls[0]["system"]
+    assert "The person asking: AC." in fake.calls[0]["system"]
 
 
 def test_reports_chat_is_not_saved_to_general_memory(client_for, store):
@@ -273,7 +273,7 @@ def test_a_member_only_gets_reports_they_may_see(client_for):
     ev = parse_sse(ask_reports(client_for(fake), ALEX, "What do I owe right now?", viewer=JORDAN).text)
     end = ends(ev)[0]["result"]
     assert end["count"] == 5 and all(i["id"].startswith("ri-alex") for i in end["items"])
-    # Alex cannot see Jordan's EOB id, even by name
+    # AC cannot see Marc's EOB id, even by name
     fake = FakeProvider([call("explain_report", id="ri-jordan-1"), say("I could not find it. " + DISC)])
     ev = parse_sse(ask_reports(client_for(fake), ALEX, "Show ri-jordan-1").text)
     assert "error" in ends(ev)[0]["result"]

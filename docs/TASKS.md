@@ -39,7 +39,7 @@ Hard deadline: **hackathon demo, 2026-10-04 10:00 AM.** Plan: [../agents/tasks/P
 - [x] T37 Rate limiting (`backend/app/ratelimit.py`): per-household chat, global daily chat cap, sign-in per IP, compute, upload, reset; 429 with `Retry-After`. **Owner: backend agent**, completed 2026-10-03
   - Outcome: protects the Anthropic key. In memory, per process
 - [x] T27 to T29 F7 Monte Carlo ("Which plan fits us?"): `engine/simulate.py`, `POST /simulate`, assistant tool `compare_plans`, Plans page section, docs. **Owner: backend, frontend and docs agents**, completed 2026-10-03
-  - Outcome: Rivera household, average care: Basic 82% / Preferred 17% / Premium 1% cheapest; with Alex's crown, Preferred 54%
+  - Outcome: Halog household, average care: Basic 82% / Preferred 17% / Premium 1% cheapest; with AC's crown, Preferred 54%
 - [x] T31 Plan-comparison follow-ups: "Ask next" chips, plan terms in the tool result, percentage number guard. **Owner: AI agent**, completed 2026-10-03
 - [x] T34 and T35 Saved plan comparisons (`/members/{id}/saved-simulations`, the server computes the summary) and "Save to Plan My Year" / "Saved plan comparisons". **Owner: backend and frontend agents**, completed 2026-10-03
 - [x] Assistant chips "Summarize the plan simulations" and "How are the simulations calculated?" (up to 7 chips); "Questions to ask your dentist" is a plain list. Completed 2026-10-03

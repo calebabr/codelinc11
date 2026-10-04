@@ -69,7 +69,7 @@ def test_visibility(client):
     assert client.get(url(JORDAN), headers=alex).status_code == 403
     assert client.post(url(JORDAN), json={"name": "x", "items": []}, headers=alex).status_code == 403
     assert client.get(url(ALEX), headers=jordan).status_code == 200
-    made = client.post(url(MAYA), json={"name": "Maya", "items": []}, headers=jordan)
+    made = client.post(url(MAYA), json={"name": "Sophia", "items": []}, headers=jordan)
     assert made.status_code == 201
     assert client.get(url(MAYA), headers=maya).status_code == 403
     assert client.get(url(MAYA), headers=alex).status_code == 403

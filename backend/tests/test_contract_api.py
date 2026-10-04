@@ -87,7 +87,7 @@ def test_member_overview_shape_and_alex_has_400_left(client):
 
 def test_member_schedule_shape(client):
     rows = client.get(f"/members/{ALEX}/schedule", headers=login(client, ALEX)).json()
-    assert rows, "Alex has a seeded reminder"
+    assert rows, "AC has a seeded reminder"
     keys(rows[0], "id", "member_id", "member_name", "kind", "due_date", "title")
     assert {r["member_id"] for r in rows} == {ALEX}
 

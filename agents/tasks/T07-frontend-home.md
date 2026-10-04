@@ -23,7 +23,7 @@ The router, shell and shared context (T02), other pages, `backend/`.
 - No native dropdowns; large readable numbers; 375 px layout. Estimate disclaimer where results appear.
 
 ## Acceptance checks
-- Alex in November shows **$400 left of $1,500** and the reminder; Jordan shows his own different numbers.
+- AC in November shows **$400 left of $1,500** and the reminder; Marc shows his own different numbers.
 - "Log a visit" updates only the active member, using the engine's result.
 - Calendar button downloads a valid `.ics`.
 - Loading, empty and error states exist. `npm run typecheck`, `npm run test`, `npm run build` pass. Tests read exact numbers from mocked API responses.

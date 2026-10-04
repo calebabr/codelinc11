@@ -403,7 +403,7 @@ class MemberName(BaseModel):
 
 class HouseholdNamesRequest(BaseModel):
     """Rename a demo family. Names are checked by the route (letters, spaces, ' - . only)."""
-    household_name: str | None = Field(default=None, max_length=200)   # surname, e.g. "Rivera"
+    household_name: str | None = Field(default=None, max_length=200)   # surname, e.g. "Demo"
     members: list[MemberName] = Field(default_factory=list, max_length=12)
 
 

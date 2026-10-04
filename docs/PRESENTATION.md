@@ -21,7 +21,7 @@ Follow [DEMO.md](DEMO.md). The key moment: **$2,300 now, $1,405 optimized, you s
 
 ### Moment 2: "Which plan fits us?" (Monte Carlo)
 - One idea: nobody knows next year's dental care, so we simulate 5,000 possible years for the family and show how often each plan costs the least. Same engine, same seed, same answer.
-- Numbers (Rivera household, average care, seed 42): Basic is cheapest in 82% of years; with Alex's crown as known care, Preferred is cheapest in 54%.
+- Numbers (Halog household, average care, seed 42): Basic is cheapest in 82% of years; with AC's crown as known care, Preferred is cheapest in 54%.
 - You can save a comparison to Plan My Year and open it again later. The assistant answers "Summarize the plan simulations" from the same numbers.
 - Notes: say plainly that the odds are synthetic placeholders, not a prediction. Built on `feature/choose-a-plan` (not merged to `main` yet); show it live only from a build that has it.
 

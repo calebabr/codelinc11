@@ -5,7 +5,7 @@ A 3 to 5 minute path. The numbers below were checked live in the browser and aga
 **What to run:** the demo works on `main` (the production version) and on `feature/choose-a-plan` (the Monte Carlo "Which plan fits us?" step, saved comparisons and the phone features). Step 10 ("Which plan fits us?") was checked against the API and by component tests, and the orchestrator checked the one-tap demo, Name your family, rate limits and phones live; a human has not yet clicked step 10 through in a browser. Run the demo from the branch that has everything you plan to show.
 
 ## Story
-Alex Rivera (39) has a root canal that cannot wait, a crown, and two fillings. It is November and only $400 of the $1,500 yearly maximum is left. The app shows how to pay $895 less.
+AC (39) has a root canal that cannot wait, a crown, and two fillings. It is November and only $400 of the $1,500 yearly maximum is left. The app shows how to pay $895 less.
 
 ## Opening: the audience joins (optional, about 30 seconds)
 Every visitor now gets their **own** demo family, so the audience can try the app on their phones while you present, and nobody can change your demo.
@@ -21,19 +21,19 @@ How to get phones onto the app (same Wi-Fi, tunnel, public hosting): [DEMO-PHONE
 | # | What you do | What the audience sees |
 |---|---|---|
 | 1 | Open the landing page `/welcome` | "Know what you'll pay before you're in the chair." The product name Molar Money. Tap **Try the demo** (or **Log in** and then **Try the demo**) |
-| 2 | You are signed in as **Jordan Rivera** (the primary account holder) in a brand-new demo family | Home for Jordan: $1,290 left of $1,500, deductible $50 to go, 1 of 2 cleanings used, a "use your benefits before they reset" banner. A **Name your family** card appears once (optional) |
+| 2 | You are signed in as **Marc Halog** (the primary account holder) in a brand-new demo family | Home for Marc: $1,290 left of $1,500, deductible $50 to go, 1 of 2 cleanings used, a "use your benefits before they reset" banner. A **Name your family** card appears once (optional) |
 | 3 | In **Name your family**, type made-up names for the four people and the family, then save (or **Skip**) | Every page shows the new names at once. Four first-name boxes (You, Your spouse, Your young child, Your older child) and a family name. Person names are 1 to 24 characters (the family name box allows 30): letters, spaces, apostrophes, hyphens, periods. This works only for the primary account in a demo family |
-| 4 | Open **Family** | The household tree: Jordan, Alex, Maya (9, managed by Jordan, no login) and Noah (23, an adult child whose own account is waiting for approval). Tap a person to see their own numbers |
-| 5 | Open the **Viewing** switcher in the top bar and pick **Alex** | The whole app changes to Alex: $400 left of $1,500, deductible met |
+| 4 | Open **Family** | The household tree: Marc, AC, Sophia (9, managed by Marc, no login) and Hannah (23, an adult child whose own account is waiting for approval). Tap a person to see their own numbers |
+| 5 | Open the **Viewing** switcher in the top bar and pick **AC** | The whole app changes to AC: $400 left of $1,500, deductible met |
 | 6 | Go to **Plan My Year** and tap **Try the demo case** | Root canal (urgent), crown (after the root canal), two fillings. The savings card: **Doing everything now $2,300, best order $1,405, you save $895**. Month by month: root canal stays in November, crown in January, fillings in February and March |
 | 7 | Point at "Why this order", then scroll to **Ways to save** and **Questions to ask your dentist** | Plain-language reasons; urgent care never moves; the dentist questions are a plain list |
-| 8 | Open the **Assistant** (page or the orange button on any page) as Alex and ask "How much would a crown cost me?" | A streamed answer: **$800 now, or $625 if you wait until January** |
-| 9 | Optional: **Costs**, pick **Crown, porcelain/ceramic**, toggle **Out of network** | In network you pay **$625** (Jordan, fresh deductible); out of network **$925**, of which **$300 is balance billing** |
+| 8 | Open the **Assistant** (page or the orange button on any page) as AC and ask "How much would a crown cost me?" | A streamed answer: **$800 now, or $625 if you wait until January** |
+| 9 | Optional: **Costs**, pick **Crown, porcelain/ceramic**, toggle **Out of network** | In network you pay **$625** (Marc, fresh deductible); out of network **$925**, of which **$300 is balance billing** |
 | 10 | Optional: **Plans**, tap **Premium**, **Switch to this plan**, confirm | Header changes to "Premium plan" and every page updates. Switch back with **Back to Preferred (demo plan)** and confirm |
 | 11 | Say the line: "The engine does the math. The AI only explains it." | |
 
 ## Optional moment: the notification bell
-About 30 seconds. Look at the **bell** in the top right of the app bar. It shows an unread badge. On 2026-11-01 (the demo clock) the counts are: **Jordan 3** (plan year ending soon, unused cleanings, "Cleaning and exam" on Nov 18), **Alex 5**, **Noah 1** (reminder "Send student enrollment proof, due Nov 30"). Jordan also sees Maya's Dec 4 checkup under **Coming up**.
+About 30 seconds. Look at the **bell** in the top right of the app bar. It shows an unread badge. On 2026-11-01 (the demo clock) the counts are: **Marc 3** (plan year ending soon, unused cleanings, "Cleaning and exam" on Nov 18), **AC 5**, **Hannah 1** (reminder "Send student enrollment proof, due Nov 30"). Marc also sees Sophia's Dec 4 checkup under **Coming up**.
 
 1. Tap the bell. **Coming up** lists the next appointments and reminders; **Alerts** lists unread notifications.
 2. Tap an alert: it is marked read and takes you to the right page. **Mark all as read** clears the badge.
@@ -45,8 +45,8 @@ Home also has a **Notifications** card. Switching **Viewing** changes the bell t
 ## The Monte Carlo moment: "Which plan fits us?"
 Optional, about 60 seconds. Do it after the crown, as the "what should we pick?" question.
 
-1. **Plans**, scroll to **Which plan fits us?**. Keep everyone on **Average** care and run it. One card per plan. Rivera household, 5,000 simulated years, seed 42, in network: Basic is cheapest in **82%** of years (typical year $1,939), Preferred 17%, Premium 1%.
-2. Tap **Try Alex's crown** to add it as known care. The result changes: **Preferred 54%**, Basic 39%, Premium 7%.
+1. **Plans**, scroll to **Which plan fits us?**. Keep everyone on **Average** care and run it. One card per plan. Halog household, 5,000 simulated years, seed 42, in network: Basic is cheapest in **82%** of years (typical year $1,939), Preferred 17%, Premium 1%.
+2. Tap **Try AC's crown** to add it as known care. The result changes: **Preferred 54%**, Basic 39%, Premium 7%.
 3. Say out loud: "These odds are synthetic placeholders, not a prediction. The prices come from the same engine as every estimate."
 4. In the assistant, tap the chip **Summarize the plan simulations** (or **How are the simulations calculated?**). The answer uses the same numbers; follow-up chips under it ("Ask next") let you keep going.
 
@@ -58,8 +58,8 @@ Optional, about 60 seconds. Do it after the crown, as the "what should we pick?"
 Every result shows: "This is an estimate. Your actual cost depends on your dentist's charges and claim review."
 
 ## Tips on stage
-- Move between pages with the nav tabs, not the browser reload button. A full reload resets **Viewing** to the signed-in person (Jordan). The browser remembers your demo family, so a reload brings you back into it ("Continue your demo family").
-- Before you start, press **Reset demo data** on Home (or `POST /demo/reset`) so Alex's numbers and saved plans are back to the seed. It restores only your own demo family. To get a completely new family, use **Start a fresh family** on `/login`.
+- Move between pages with the nav tabs, not the browser reload button. A full reload resets **Viewing** to the signed-in person (Marc). The browser remembers your demo family, so a reload brings you back into it ("Continue your demo family").
+- Before you start, press **Reset demo data** on Home (or `POST /demo/reset`) so AC's numbers and saved plans are back to the seed. It restores only your own demo family. To get a completely new family, use **Start a fresh family** on `/login`.
 - **The shared-family problem is solved.** Before, everyone used one shared demo household, so one tester could change what everyone saw. Now each visitor has a private copy.
 - Optional voice input: the mic button in the assistant (Chrome or Edge; needs microphone permission). Over plain `http://` on a Wi-Fi address phones block the mic, so voice works only on HTTPS (a tunnel).
 
@@ -81,9 +81,9 @@ The model runs over the internet, so a slow venue connection slows it. In order:
 | Crown out of network | You pay **$925** (**$300** balance billing) |
 | Third cleaning in a year | Not covered, you pay $120 |
 | Plan My Year, scenario S2 | **$2,300 to $1,405, save $895** |
-| Which plan fits us? (optional; Rivera, average care, seed 42, in network) | No known care: Basic 82%, Preferred 17%, Premium 1%. With Alex's crown: Basic 39%, Preferred 54%, Premium 7% |
+| Which plan fits us? (optional; Halog household, average care, seed 42, in network) | No known care: Basic 82%, Preferred 17%, Premium 1%. With AC's crown: Basic 39%, Preferred 54%, Premium 7% |
 
-The seed gives Alex $1,100 used and the deductible met, so Plan My Year gives the S2 numbers. The demo clock in the database is `2026-11-01`.
+The seed gives AC $1,100 used and the deductible met, so Plan My Year gives the S2 numbers. The demo clock in the database is `2026-11-01`.
 
 ## Fallback if the AI is down
 The assistant needs internet and the Anthropic key in `backend/.env`. Without them the chat says plainly that it is unavailable; it never makes up an answer. Every other page still works because the numbers come from the engine. Then:

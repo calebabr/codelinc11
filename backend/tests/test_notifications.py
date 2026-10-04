@@ -118,7 +118,7 @@ def test_other_members_get_their_own_notifications(client):
     _hid, ids, heads = family(client)
     jordan = get_list(client, ids["jordan"], heads["jordan"])
     assert set(kinds(jordan)) == {"benefits_expiring", "preventive_unused", "upcoming_appointment",
-                           "eob_ready"}               # eob_ready: Jordan has an unpaid synthetic EOB (B4)
+                           "eob_ready"}               # eob_ready: Marc has an unpaid synthetic EOB (B4)
     assert "$1,290 of your yearly maximum is left" in [n["title"] for n in jordan["notifications"]]
     noah = get_list(client, ids["noah"], heads["noah"])
     assert kinds(noah) == ["reminder"]       # coverage is pending: no benefit notifications, his reminder shows
@@ -155,14 +155,14 @@ def test_demo_seed_items_show_with_default_settings(client):
     appt = next(n for n in jordan["notifications"] if n["kind"] == "upcoming_appointment")
     assert appt["title"] == "Cleaning and exam on Nov 18" and appt["severity"] == "info"
     assert "in 17 days" in appt["body"] and appt["link"] == "/"
-    # Maya is a managed child: the primary sees her notification.
+    # Sophia is a managed child: the primary sees her notification.
     maya = get_list(client, ids["maya"], heads["jordan"])
     assert "Checkup and cleaning on Dec 4" in [n["title"] for n in maya["notifications"]]
     noah = get_list(client, ids["noah"], heads["noah"])
     rem = noah["notifications"][0]
     assert rem["kind"] == "reminder" and rem["title"] == "Reminder: Send student enrollment proof, due Nov 30"
     assert rem["severity"] == "info" and rem["link"] == "/" and "in 29 days" in rem["body"]
-    assert "Needed to keep Noah covered." in rem["body"]
+    assert "Needed to keep Hannah covered." in rem["body"]
     alex = get_list(client, ids["alex"], heads["alex"])
     arem = next(n for n in alex["notifications"] if n["kind"] == "reminder")
     assert arem["title"] == "Reminder: Use your remaining benefits, due Dec 15"
@@ -284,7 +284,7 @@ def test_read_unknown_notification_and_someone_elses_is_404(client):
     jordan_nid = get_list(client, ids["jordan"], heads["jordan"])["notifications"][0]["id"]
     assert client.post(f"/members/{ids['alex']}/notifications/99999/read",
                        headers=heads["alex"]).status_code == 404
-    # Jordan's notification id through Alex's member path is not found.
+    # Marc's notification id through AC's member path is not found.
     assert client.post(f"/members/{ids['alex']}/notifications/{jordan_nid}/read",
                        headers=heads["jordan"]).status_code == 404
 
@@ -310,7 +310,7 @@ def test_email_and_sms_need_a_contact_on_file(client):
         r = client.put(f"/members/{ids['maya']}/notification-prefs", headers=heads["jordan"],
                        json={"app": True, "email": key == "email", "sms": key == "sms"})
         assert r.status_code == 422
-        assert word in r.json()["detail"] and "Maya" in r.json()["detail"]
+        assert word in r.json()["detail"] and "Sophia" in r.json()["detail"]
     ok = client.put(f"/members/{ids['alex']}/notification-prefs", headers=heads["alex"],
                     json={"app": True, "email": True, "sms": True})
     assert ok.status_code == 200 and ok.json()["email"] is True and ok.json()["sms"] is True
@@ -373,7 +373,7 @@ def test_previews_written_only_when_enabled_and_never_sent(client, store):
     assert {m["status"] for m in out} == {"preview"}
     emails = [m for m in out if m["channel"] == "email"]
     texts = [m for m in out if m["channel"] == "sms"]
-    assert {m["to_address"] for m in emails} == {"alex.rivera@example.test"}
+    assert {m["to_address"] for m in emails} == {"ac.halog@example.test"}
     assert {m["to_address"] for m in texts} == {"3345550143"}
     assert all(m["subject"] for m in emails) and all(m["subject"] is None for m in texts)
     assert all(len(m["body"]) <= 320 for m in texts)
@@ -424,7 +424,7 @@ def test_test_route_app_email_sms(client):
     e = client.post(f"/members/{ids['alex']}/notifications/test", headers=heads["alex"],
                     json={"channel": "email"}).json()
     assert e["outbox"]["channel"] == "email" and e["outbox"]["status"] == "preview"
-    assert e["outbox"]["to_address"] == "alex.rivera@example.test" and e["notification"] is None
+    assert e["outbox"]["to_address"] == "ac.halog@example.test" and e["notification"] is None
     s = client.post(f"/members/{ids['alex']}/notifications/test", headers=heads["alex"],
                     json={"channel": "sms"}).json()
     assert s["outbox"]["to_address"] == "3345550143" and s["outbox"]["subject"] is None
@@ -474,7 +474,7 @@ def test_adult_sees_only_themself_primary_sees_everyone(client):
                       json={"app": True}).status_code == 403
     assert client.post(f"/members/{ids['jordan']}/notifications/test", headers=heads["alex"],
                        json={"channel": "app"}).status_code == 403
-    for who in ("alex", "maya", "noah"):                      # the primary may act for everyone, Maya included
+    for who in ("alex", "maya", "noah"):                      # the primary may act for everyone, Sophia included
         assert client.get(f"/members/{ids[who]}/notifications", headers=heads["jordan"]).status_code == 200
         assert client.get(f"/members/{ids[who]}/notification-prefs", headers=heads["jordan"]).status_code == 200
     assert client.put(f"/members/{ids['maya']}/notification-prefs", headers=heads["jordan"],

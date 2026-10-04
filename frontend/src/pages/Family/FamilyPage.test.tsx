@@ -6,7 +6,7 @@ import { ALL_MEMBERS, MEMBERS, TestSessionProvider, TIER } from "@/test/session"
 import FamilyPage from "./FamilyPage"
 
 const tier = TIER
-// The server says Noah already has a login; these tests need him without one so the invite shows.
+// The server says Hannah already has a login; these tests need him without one so the invite shows.
 const ALL = ALL_MEMBERS.map((m) => (m.id === "m-noah" ? { ...MEMBERS.noah, has_login: false } : m))
 
 const USED: Record<string, { used: number; ded: number; visits: number; cleanings: number }> = {
@@ -70,14 +70,14 @@ beforeEach(mockApi)
 afterEach(() => vi.restoreAllMocks())
 
 describe("Family page", () => {
-  it("shows four nodes for the Rivera household with login and pending markers", async () => {
+  it("shows four nodes for the Halog household with login and pending markers", async () => {
     const { container } = renderPage()
     expect(await screen.findByTestId("node-m-jordan")).toBeInTheDocument()
     expect(screen.getAllByTestId(/^node-/)).toHaveLength(4)
     expect(within(screen.getByTestId("node-m-alex")).getByText("Has their own account")).toBeInTheDocument()
     const maya = within(screen.getByTestId("node-m-maya"))
     expect(maya.queryByText("Has their own account")).toBeNull()
-    expect(maya.getByText("Managed by Jordan")).toBeInTheDocument()
+    expect(maya.getByText("Managed by Marc")).toBeInTheDocument()
     expect(within(screen.getByTestId("node-m-noah")).getByText("Waiting for approval")).toBeInTheDocument()
     expect(screen.getByTestId("tree-legend")).toHaveTextContent("Adults 18 and over can have their own account. Children's profiles are managed by a parent.")
     expect(container.querySelector("select")).toBeNull()
@@ -92,9 +92,9 @@ describe("Family page", () => {
     expect(lines.length).toBeGreaterThanOrEqual(5)
     expect(lines.every((l) => l.getAttribute("aria-hidden") === "true")).toBe(true)
     expect(screen.getByTestId("partner-link")).toHaveAttribute("aria-hidden", "true")
-    expect(screen.getByRole("button", { name: "Maya Rivera, child, age 9" })).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: /^Noah Rivera, child, age 23, pending verification$/ })).toBeInTheDocument()
-    // Noah's drop is dashed (pending); nothing is highlighted for a child who is not selected
+    expect(screen.getByRole("button", { name: "Sophia, child, age 9" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /^Hannah, child, age 23, pending verification$/ })).toBeInTheDocument()
+    // Hannah's drop is dashed (pending); nothing is highlighted for a child who is not selected
     const noahDrop = within(screen.getByTestId("node-m-noah").parentElement!).getAllByTestId("connector")[0]
     expect(noahDrop.className).toContain("border-dashed")
     await user.click(screen.getByTestId("node-m-maya"))
@@ -121,7 +121,7 @@ describe("Family page", () => {
     expect(calls.every((c) => !c.url.includes("/overview") || c.auth === "Bearer tok-m-jordan")).toBe(true)
   })
 
-  it("shows Noah as pending with his note and pending service chips", async () => {
+  it("shows Hannah as pending with his note and pending service chips", async () => {
     const user = userEvent.setup()
     renderPage()
     await user.click(await screen.findByTestId("node-m-noah"))
@@ -135,8 +135,8 @@ describe("Family page", () => {
     const user = userEvent.setup()
     renderPage()
     await user.click(await screen.findByTestId("node-m-noah"))
-    await user.click(await screen.findByRole("button", { name: "Invite Noah" }))
-    await user.type(screen.getByLabelText("Email address for Noah Rivera"), "noah@example.com")
+    await user.click(await screen.findByRole("button", { name: "Invite Hannah" }))
+    await user.type(screen.getByLabelText("Email address for Hannah"), "noah@example.com")
     await user.click(screen.getByRole("button", { name: "Add invite (demo)" }))
     expect(await screen.findByRole("status")).toHaveTextContent("Invite recorded as pending. No email is sent in this demo.")
     const sent = calls.find((c) => c.url.endsWith("/invites"))!
@@ -159,7 +159,7 @@ describe("Family page", () => {
   it("shows only their own node when an adult who is not primary signs in", async () => {
     const user = userEvent.setup()
     renderPage()
-    await user.click(await screen.findByRole("button", { name: "Alex Rivera (adult)" }))
+    await user.click(await screen.findByRole("button", { name: "AC (adult)" }))
     await waitFor(() => expect(screen.getAllByTestId(/^node-/)).toHaveLength(1))
     expect(screen.getByTestId("node-m-alex")).toBeInTheDocument()
     await waitFor(() => expect(screen.getByTestId("max-left")).toHaveTextContent("$400 left"))
@@ -171,7 +171,7 @@ describe("Family page", () => {
     const user = userEvent.setup()
     renderPage()
     await user.click(await screen.findByTestId("node-m-maya"))
-    await user.click(await screen.findByRole("button", { name: "View as Maya" }))
-    expect(await screen.findByRole("button", { name: "Viewing as Maya" })).toBeDisabled()
+    await user.click(await screen.findByRole("button", { name: "View as Sophia" }))
+    expect(await screen.findByRole("button", { name: "Viewing as Sophia" })).toBeDisabled()
   })
 })

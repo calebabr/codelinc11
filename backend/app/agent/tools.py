@@ -412,13 +412,13 @@ TOOL_SCHEMAS: list[dict] = [
                         "reasons. Covers the people the signed-in person may see. Everyone defaults to average care."),
         "parameters": {"type": "object", "properties": {
             "care_levels": {"type": "object", "additionalProperties": {"type": "string", "enum": list(LEVELS)},
-                            "description": "Optional care level by member id or name, e.g. {'Alex': 'high'}"},
+                            "description": "Optional care level by member id or name, e.g. {'AC': 'high'}"},
             "known_codes": {"type": "array", "items": {"type": "string"},
                             "description": "CDT codes of care the active member already knows they need, e.g. ['D2740']"},
             "known_care_by_member": {"type": "object", "additionalProperties": {
                 "type": "array", "items": {"type": "string"}},
                 "description": ("Known care for specific people only, by member id or name, "
-                                "e.g. {'Alex': ['D2740']}. Other people are not affected.")},
+                                "e.g. {'AC': ['D2740']}. Other people are not affected.")},
             "in_network": {"type": "boolean",
                            "description": "false to price everything out of network (default true)"}}}}},
 ]

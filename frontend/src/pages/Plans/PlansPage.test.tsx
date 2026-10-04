@@ -25,7 +25,7 @@ function stubFetch() {
         puts.push({ url: String(input), body: JSON.parse(String(init.body)), auth: headers.Authorization ?? null })
         const b = putResult.body ?? {
           id: "hh-rivera",
-          name: "Rivera household",
+          name: "Halog household",
           plan_tier: { ...TIER, id: "premium", name: "Premium", annual_max: 2500 },
           members: [],
         }
@@ -143,7 +143,7 @@ describe("Plans page", () => {
       renderPage("m-alex")
       await user.click(await screen.findByTestId("tier-premium"))
       expect(screen.queryByRole("button", { name: "Switch to this plan" })).toBeNull()
-      expect(screen.getByText("Only Jordan can change the family plan.")).toBeInTheDocument()
+      expect(screen.getByText("Only Marc can change the family plan.")).toBeInTheDocument()
     })
 
     it("explains clearly when the server does not have the plan route yet (404)", async () => {
@@ -166,7 +166,7 @@ describe("Plans page", () => {
       await user.click(screen.getByRole("button", { name: "Yes, switch to Premium" }))
       await screen.findByTestId("switch-done")
 
-      putResult = { status: 200, body: { id: "hh-rivera", name: "Rivera household", plan_tier: TIER, members: [] } }
+      putResult = { status: 200, body: { id: "hh-rivera", name: "Halog household", plan_tier: TIER, members: [] } }
       await user.click(screen.getByRole("button", { name: "Back to Preferred (demo plan)" }))
       await user.click(screen.getByRole("button", { name: "Yes, switch to Preferred" }))
       expect(await screen.findByTestId("switch-done")).toHaveTextContent("now on the Preferred plan")

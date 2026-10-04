@@ -28,7 +28,7 @@ const PLANS = ["basic", "preferred", "premium"].map((id) => ({
 }))
 
 const SAVED_REQUEST = {
-  members: [{ id: "m-alex", name: "Alex", age: 39, care_level: "high", known_care: [{ code: "D2740", count: 1 }] }],
+  members: [{ id: "m-alex", name: "AC", age: 39, care_level: "high", known_care: [{ code: "D2740", count: 1 }] }],
   plan_ids: ["basic", "preferred", "premium"], n: 5000, seed: 42, in_network: false,
 }
 const rec = (id: string, name: string): SavedSimulation => ({
@@ -154,8 +154,8 @@ describe("Saved plan comparisons list", () => {
     renderSaved()
     const card = within(await screen.findByTestId("saved-comparison"))
     expect(card.getByTestId("saved-summary")).toHaveTextContent("Best: Basic, cheapest in 82% of years")
-    expect(card.getByText(/Alex \(high care\)/)).toBeInTheDocument()
-    expect(card.getByText(/Crown for Alex/)).toBeInTheDocument()
+    expect(card.getByText(/AC \(high care\)/)).toBeInTheDocument()
+    expect(card.getByText(/Crown for AC/)).toBeInTheDocument()
     expect(card.getByText(/Out of network/)).toBeInTheDocument()
     expect(calls[0].auth).toBe("Bearer tok-m-jordan")
   })
@@ -232,10 +232,10 @@ describe("Open pre-fills the Plans page", () => {
       expect(last.members.map((m: any) => [m.id, m.care_level, m.known_care])).toEqual([["m-alex", "high", [{ code: "D2740", count: 1 }]]])
       expect(last.in_network).toBe(false)
     }, { timeout: 3000 })
-    expect(screen.getByRole("button", { name: /^Alex, age 39, covered/ })).toHaveAttribute("aria-pressed", "true")
-    expect(screen.getByRole("button", { name: /^Jordan, age 41, not covered/ })).toHaveAttribute("aria-pressed", "false")
+    expect(screen.getByRole("button", { name: /^AC, age 39, covered/ })).toHaveAttribute("aria-pressed", "true")
+    expect(screen.getByRole("button", { name: /^Marc, age 41, not covered/ })).toHaveAttribute("aria-pressed", "false")
     expect(screen.getByRole("button", { name: "Out of network" })).toHaveAttribute("aria-pressed", "true")
-    expect(within(screen.getByRole("group", { name: "Care level for Alex" })).getByRole("button", { name: "High care" })).toHaveAttribute("aria-pressed", "true")
-    expect(within(screen.getByTestId("known-row")).getByRole("button", { name: "Alex" })).toHaveAttribute("aria-pressed", "true")
+    expect(within(screen.getByRole("group", { name: "Care level for AC" })).getByRole("button", { name: "High care" })).toHaveAttribute("aria-pressed", "true")
+    expect(within(screen.getByTestId("known-row")).getByRole("button", { name: "AC" })).toHaveAttribute("aria-pressed", "true")
   })
 })

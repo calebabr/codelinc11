@@ -12,14 +12,14 @@ const SUGG: Record<string, string[]> = {
 }
 const CONTEXT: Record<string, object> = {
   "m-alex": {
-    member_id: "m-alex", name: "Alex Rivera", age: 39, relationship: "spouse", status: "active", plan: "Preferred",
-    plan_highlights: "Alex plan: $1,500 yearly max.", history: ["2026-03-02: Cleaning (you paid $0.00)"],
+    member_id: "m-alex", name: "AC", age: 39, relationship: "spouse", status: "active", plan: "Preferred",
+    plan_highlights: "AC plan: $1,500 yearly max.", history: ["2026-03-02: Cleaning (you paid $0.00)"],
     preferences: ["Prefers morning visits."], must_haves: ["Crown covered"], chat_memory: [],
     shared_with_assistant: ["Plan tier and yearly numbers"],
   },
   "m-jordan": {
-    member_id: "m-jordan", name: "Jordan Rivera", age: 41, relationship: "self", status: "active", plan: "Preferred",
-    plan_highlights: "Jordan highlights here.", history: [], preferences: [], must_haves: [],
+    member_id: "m-jordan", name: "Marc Halog", age: 41, relationship: "self", status: "active", plan: "Preferred",
+    plan_highlights: "Marc highlights here.", history: [], preferences: [], must_haves: [],
     chat_memory: [{ role: "user", content: "Who is covered?" }], shared_with_assistant: ["Plan tier and yearly numbers"],
   },
 }
@@ -87,13 +87,13 @@ describe("parseSse", () => {
 })
 
 describe("Assistant page", () => {
-  it("shows Alex's chips and context, and streams the answer exactly as sent", { timeout: 15000 }, async () => {
+  it("shows AC's chips and context, and streams the answer exactly as sent", { timeout: 15000 }, async () => {
     const user = userEvent.setup()
     renderPage()
-    expect(screen.getByTestId("talking-about")).toHaveTextContent("Alex Rivera")
+    expect(screen.getByTestId("talking-about")).toHaveTextContent("AC")
     const chip = await screen.findByRole("button", { name: "What will a crown cost me?" }, { timeout: 5000 })
     const knows = within(await screen.findByTestId("knows-panel", {}, { timeout: 5000 }))
-    expect(await knows.findByText("Alex plan: $1,500 yearly max.", {}, { timeout: 5000 })).toBeInTheDocument()
+    expect(await knows.findByText("AC plan: $1,500 yearly max.", {}, { timeout: 5000 })).toBeInTheDocument()
     expect(knows.getByText("Prefers morning visits.")).toBeInTheDocument()
 
     await user.click(chip)
@@ -113,15 +113,15 @@ describe("Assistant page", () => {
     await user.click(await screen.findByRole("button", { name: "What will a crown cost me?" }))
     await screen.findByText("A crown would cost you $800.")
 
-    await user.click(screen.getByRole("button", { name: "Jordan" }))
-    expect(screen.getByTestId("talking-about")).toHaveTextContent("Jordan Rivera")
+    await user.click(screen.getByRole("button", { name: "Marc" }))
+    expect(screen.getByTestId("talking-about")).toHaveTextContent("Marc Halog")
     expect(await screen.findByRole("button", { name: "Who's covered on my plan?" })).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "What will a crown cost me?" })).not.toBeInTheDocument()
     expect(screen.queryByText("A crown would cost you $800.")).not.toBeInTheDocument()
-    expect(await within(screen.getByTestId("knows-panel")).findByText("Jordan highlights here.")).toBeInTheDocument()
+    expect(await within(screen.getByTestId("knows-panel")).findByText("Marc highlights here.")).toBeInTheDocument()
     expect(screen.getByText("Who is covered?")).toBeInTheDocument()
 
-    await user.click(screen.getByRole("button", { name: "Alex" }))
+    await user.click(screen.getByRole("button", { name: "AC" }))
     expect(await screen.findByText("A crown would cost you $800.")).toBeInTheDocument()
   })
 
@@ -223,11 +223,11 @@ describe("Clear chat", () => {
   it("asks first, then deletes this person's saved chat and empties the conversation", async () => {
     const user = userEvent.setup()
     renderPage("m-alex")
-    await user.type(await screen.findByPlaceholderText("Ask about Alex's plan"), "crown?")
+    await user.type(await screen.findByPlaceholderText("Ask about AC's plan"), "crown?")
     await user.click(screen.getByRole("button", { name: "Send" }))
     await screen.findByText(/\$800/)
     await user.click(screen.getByRole("button", { name: /Clear chat/ }))
-    expect(screen.getByText("Delete Alex's chat history?")).toBeInTheDocument()
+    expect(screen.getByText("Delete AC's chat history?")).toBeInTheDocument()
     await user.click(screen.getByRole("button", { name: "Yes, clear" }))
     await waitFor(() => expect(screen.queryAllByTestId("msg-assistant")).toHaveLength(0))
     expect(calls.some((c) => c.method === "DELETE" && c.url.endsWith("/members/m-alex/chat"))).toBe(true)

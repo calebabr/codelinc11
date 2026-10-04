@@ -101,7 +101,7 @@ describe("Edit profile", () => {
     await waitFor(() => expect(patches()).toHaveLength(1))
     expect(patches()[0].url).toContain("/members/m-alex/profile")
     expect(patches()[0].body).toEqual({ email: "new@example.test" })
-    expect(await screen.findByTestId("profile-notice")).toHaveTextContent("Alex's profile was saved.")
+    expect(await screen.findByTestId("profile-notice")).toHaveTextContent("AC's profile was saved.")
     expect(screen.getByTestId("contact-email")).toHaveTextContent("new@example.test")
     expect(screen.queryByRole("form")).toBeNull()
   })
@@ -155,7 +155,7 @@ describe("Edit profile", () => {
     await user.click(screen.getByRole("button", { name: "Edit profile" }))
     fireEvent.change(screen.getByLabelText("Date of birth"), { target: { value: "2005-01-01" } })
     await user.click(screen.getByRole("button", { name: "Save" }))
-    expect(await screen.findByTestId("profile-notice")).toHaveTextContent("Maya is now 18 and counts as an adult. Adults can have their own account.")
+    expect(await screen.findByTestId("profile-notice")).toHaveTextContent("Sophia is now 18 and counts as an adult. Adults can have their own account.")
     expect(patches()[0].body).toEqual({ dob: "2005-01-01" })
   })
 
@@ -180,21 +180,21 @@ describe("Edit profile", () => {
   })
 
   it("does not offer a primary Edit profile for the wrong person when viewing someone else as a non-primary", async () => {
-    // Signed in as Noah (adult, not primary): sees only himself and may edit himself.
+    // Signed in as Hannah (adult, not primary): sees only himself and may edit himself.
     renderPage({ signedInId: "m-noah" })
     expect(await screen.findByRole("button", { name: "Edit profile" })).toBeInTheDocument()
   })
 })
 
 describe("Add a family member", () => {
-  const NEW: FamilyMember = { ...MEMBERS.maya, id: "m-casey", name: "Casey Rivera", relationship: "other", age: 30, role: "adult", has_login: false }
+  const NEW: FamilyMember = { ...MEMBERS.maya, id: "m-casey", name: "Casey Halog", relationship: "other", age: 30, role: "adult", has_login: false }
 
   it("adds an extra person and shows them in the tree", async () => {
     const user = userEvent.setup()
     responder = (c) => (c.method === "POST" ? { status: 201, body: NEW } : null)
     renderPage()
     await user.click(await screen.findByRole("button", { name: "Add a family member" }))
-    await user.type(screen.getByLabelText("Name"), "Casey Rivera")
+    await user.type(screen.getByLabelText("Name"), "Casey Halog")
     await user.click(screen.getByRole("button", { name: "Other" }))
     expect(screen.getByRole("button", { name: "Other" })).toHaveAttribute("aria-pressed", "true")
     fireEvent.change(screen.getByLabelText("Date of birth"), { target: { value: "1996-04-04" } })
@@ -203,8 +203,8 @@ describe("Add a family member", () => {
     await waitFor(() => expect(calls.some((c) => c.method === "POST")).toBe(true))
     const post = calls.find((c) => c.method === "POST")!
     expect(post.url).toContain("/households/hh-rivera/members")
-    expect(post.body).toEqual({ name: "Casey Rivera", relationship: "other", dob: "1996-04-04", phone: "3345550100" })
-    expect(await screen.findByText("Casey Rivera was added to your family.")).toBeInTheDocument()
+    expect(post.body).toEqual({ name: "Casey Halog", relationship: "other", dob: "1996-04-04", phone: "3345550100" })
+    expect(await screen.findByText("Casey Halog was added to your family.")).toBeInTheDocument()
     const extras = screen.getByTestId("extras")
     expect(within(extras).getByTestId("node-m-casey")).toBeInTheDocument()
     expect(screen.getAllByTestId(/^node-/)).toHaveLength(5)
@@ -215,7 +215,7 @@ describe("Add a family member", () => {
     responder = (c) => (c.method === "POST" ? { status: 201, body: { ...NEW, relationship: "child", role: "managed", age: 4 } } : null)
     renderPage()
     await user.click(await screen.findByRole("button", { name: "Add a family member" }))
-    await user.type(screen.getByLabelText("Name"), "Casey Rivera")
+    await user.type(screen.getByLabelText("Name"), "Casey Halog")
     await user.click(screen.getByRole("button", { name: "Child" }))
     fireEvent.change(screen.getByLabelText("Date of birth"), { target: { value: "2022-04-04" } })
     await user.click(screen.getByRole("button", { name: "Add to family" }))
@@ -246,29 +246,29 @@ describe("Remove from family", () => {
     responder = (c) => (c.method === "DELETE" ? { status: 200, body: { ok: true, member_id: "m-maya" } } : null)
     renderPage()
     await user.click(await screen.findByTestId("node-m-maya"))
-    await user.click(screen.getByRole("button", { name: "Remove Maya from family" }))
+    await user.click(screen.getByRole("button", { name: "Remove Sophia from family" }))
     expect(calls.some((c) => c.method === "DELETE")).toBe(false)
-    expect(screen.getByText("Remove Maya and all of their saved data from your demo family?")).toBeInTheDocument()
-    await user.click(screen.getByRole("button", { name: "Yes, remove Maya" }))
+    expect(screen.getByText("Remove Sophia and all of their saved data from your demo family?")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Yes, remove Sophia" }))
     await waitFor(() => expect(screen.queryByTestId("node-m-maya")).toBeNull())
     expect(calls.find((c) => c.method === "DELETE")!.url).toContain("/households/hh-rivera/members/m-maya")
-    expect(screen.getByText("Maya Rivera was removed from your family.")).toBeInTheDocument()
+    expect(screen.getByText("Sophia was removed from your family.")).toBeInTheDocument()
   })
 
   it("lets the primary keep the person (Keep) and sends nothing", async () => {
     const user = userEvent.setup()
     renderPage()
     await user.click(await screen.findByTestId("node-m-maya"))
-    await user.click(screen.getByRole("button", { name: "Remove Maya from family" }))
-    await user.click(screen.getByRole("button", { name: "Keep Maya" }))
+    await user.click(screen.getByRole("button", { name: "Remove Sophia from family" }))
+    await user.click(screen.getByRole("button", { name: "Keep Sophia" }))
     expect(calls.some((c) => c.method === "DELETE")).toBe(false)
-    expect(screen.getByRole("button", { name: "Remove Maya from family" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Remove Sophia from family" })).toBeInTheDocument()
   })
 
   it("shows a plain message instead of a remove button for the account holder", async () => {
     renderPage()
     expect(await screen.findByTestId("primary-keep")).toHaveTextContent("The account holder can't be removed from the family.")
-    expect(screen.queryByRole("button", { name: /Remove Jordan/ })).toBeNull()
+    expect(screen.queryByRole("button", { name: /Remove Marc/ })).toBeNull()
   })
 
   it("shows the server's message if a removal is refused", async () => {
@@ -276,8 +276,8 @@ describe("Remove from family", () => {
     responder = (c) => (c.method === "DELETE" ? { status: 422, body: { detail: "The account holder cannot be removed." } } : null)
     renderPage()
     await user.click(await screen.findByTestId("node-m-maya"))
-    await user.click(screen.getByRole("button", { name: "Remove Maya from family" }))
-    await user.click(screen.getByRole("button", { name: "Yes, remove Maya" }))
+    await user.click(screen.getByRole("button", { name: "Remove Sophia from family" }))
+    await user.click(screen.getByRole("button", { name: "Yes, remove Sophia" }))
     expect(await screen.findByRole("alert")).toHaveTextContent("The account holder cannot be removed.")
     expect(screen.getByTestId("node-m-maya")).toBeInTheDocument()
   })

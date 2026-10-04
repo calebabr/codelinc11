@@ -26,7 +26,7 @@ The router, shell and shared context (T02), other pages, `backend/`.
 - Estimate disclaimer; "urgent care should never wait" note; 375 px layout.
 
 ## Acceptance checks
-- For Alex in November with the S2 treatments the page shows **$2,300 → $1,405, saves $895**, with the root canal in the current year and the crown in January.
+- For AC in November with the S2 treatments the page shows **$2,300 → $1,405, saves $895**, with the root canal in the current year and the crown in January.
 - Switching to a different member recomputes with that person's usage.
 - Tests read these exact numbers from mocked responses. `npm run typecheck`, `npm run test`, `npm run build` pass.
 

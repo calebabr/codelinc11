@@ -4,9 +4,9 @@
 Stage 0 of the build plan (`agents/tasks/PLAN.md`): four agents worked in parallel to lay the foundation of the main product, then the docs agent wrote the project docs (T15).
 
 - **T01 Design:** portal tokens in `frontend/src/index.css`, style guide at `/style`, rules in `docs/design/portal-look.md`.
-- **T02 Frontend:** portal shell, six routes, `/login` placeholder, member switcher, assistant button, mock Rivera household; 10 tests.
+- **T02 Frontend:** portal shell, six routes, `/login` placeholder, member switcher, assistant button, mock Halog household; 10 tests.
 - **T03 Integration:** Caleb's engine, search, quote parser, questions and agent seam ported; three plan tiers; keyword chat fallback removed; 148 backend tests.
-- **T04 Database:** SQLite schema, seed and access layer for the Rivera household; 17 tests.
+- **T04 Database:** SQLite schema, seed and access layer for the Halog household; 17 tests.
 - **T15 Docs:** README, SETUP, ARCHITECTURE, MATH, AI, DEMO, PRESENTATION, PROJECT-STORY, TASKS, summaries.
 
 ## Why

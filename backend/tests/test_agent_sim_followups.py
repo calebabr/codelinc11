@@ -108,22 +108,22 @@ def test_method_question_needs_no_tool_and_prompt_has_the_method(store):
 def test_alex_crown_what_if_applies_to_alex_only(store):
     ctx = ToolContext.from_member(build_member_context(store, JORDAN, JORDAN))
     base = compare_plans(ctx=ctx)
-    out = run_tool("compare_plans", {"known_care_by_member": {"Alex": ["D2740"]}}, ctx)
+    out = run_tool("compare_plans", {"known_care_by_member": {"AC": ["D2740"]}}, ctx)
     known = {m["name"]: m["known_care"] for m in out["members"]}
-    assert known["Alex Rivera"] == ["D2740"]
-    assert all(v == [] for k, v in known.items() if k != "Alex Rivera")
+    assert known["AC"] == ["D2740"]
+    assert all(v == [] for k, v in known.items() if k != "AC")
     assert share(out, "premium") > share(base, "premium")
-    # Maya's simulated years are identical with and without Alex's known care.
+    # Sophia's simulated years are identical with and without AC's known care.
     household = ctx.household
     cat = load_catalog()
     plain = [SimulateMember(id=p["id"], name=p["name"], age=p["age"]) for p in household]
     from app.models import SimulateKnownCare
     crown = [m.model_copy(update={"known_care": [SimulateKnownCare(code="D2740")]})
-             if m.name == "Alex Rivera" else m for m in plain]
+             if m.name == "AC" else m for m in plain]
     a = sample_household_years(plain, 200, 42, cat)
     b = sample_household_years(crown, 200, 42, cat)
-    maya = next(i for i, m in enumerate(plain) if m.name == "Maya Rivera")
-    alex = next(i for i, m in enumerate(plain) if m.name == "Alex Rivera")
+    maya = next(i for i, m in enumerate(plain) if m.name == "Sophia")
+    alex = next(i for i, m in enumerate(plain) if m.name == "AC")
     assert [y[maya] for y in a] == [y[maya] for y in b]
     assert [y[alex] for y in a] != [y[alex] for y in b]
 
@@ -134,7 +134,7 @@ def test_out_of_network_and_unknown_person(store):
     assert out["in_network"] is False
     assert compare_plans(ctx=ctx)["in_network"] is True
     assert "error" in compare_plans(known_care_by_member={"Zed": ["D2740"]}, ctx=ctx)
-    assert "error" in compare_plans(known_care_by_member={"Alex": ["D9999"]}, ctx=ctx)
+    assert "error" in compare_plans(known_care_by_member={"AC": ["D9999"]}, ctx=ctx)
 
 
 def test_done_carries_followups_after_a_comparison_only(store):
@@ -143,7 +143,7 @@ def test_done_carries_followups_after_a_comparison_only(store):
     assert 1 <= len(fu) <= 4
     assert "Why is Basic cheapest?" in fu
     assert any("needs a crown" in q for q in fu) and "How does this simulation work?" in fu
-    assert not any("Maya" in q or "Riley" in q for q in fu)   # first adult, not a child
+    assert not any("Sophia" in q or "Riley" in q for q in fu)   # first adult, not a child
     events, _ = chat(store, "What do I have left this year?", history=[])
     assert events[-1]["event"] == "done" and "followups" not in events[-1]["data"]
 

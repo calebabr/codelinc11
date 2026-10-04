@@ -125,7 +125,7 @@ describe("Costs page: estimate", () => {
     expect(container.querySelector("select")).toBeNull()
   })
 
-  it("shows $800 for Alex, who has used $1,100", async () => {
+  it("shows $800 for AC, who has used $1,100", async () => {
     const user = userEvent.setup()
     renderPage("m-alex")
     await user.click(await screen.findByRole("button", { name: "Crown" }))

@@ -66,7 +66,7 @@ def test_regression_quote_parser_ignores_header_date_and_totals(monkeypatch):
     'Total estimate' line into procedures, with 2026 as the fee. They must make no items."""
     monkeypatch.setattr(treatment_parser, "OllamaClient", _NoOllama)
     c = TestClient(app)
-    quote = ("Patient: Alex Rivera     Exam date: 10/02/2026\n"
+    quote = ("Patient: AC     Exam date: 10/02/2026\n"
              "  #19   D2740   Crown, porcelain/ceramic    $1,600.00\n"
              "Subtotal: $1,600\nTotal estimate: $1,600.00\n")
     r = c.post("/treatment-plan/parse", json={"text": quote})
@@ -224,7 +224,7 @@ def test_regression_demo_accounts_expose_member_status(api):
     /auth/demo-accounts must carry each person's status."""
     accounts = api.get("/auth/demo-accounts").json()
     assert {a["display_name"].split()[0]: a["status"] for a in accounts} == {
-        "Jordan": "active", "Alex": "active", "Noah": "pending"}
+        "Marc": "active", "AC": "active", "Hannah": "pending"}
 
 
 # ------------------------------------------------------------------ assistant behavior
@@ -241,10 +241,10 @@ def test_regression_dentist_questions_request_is_not_a_clarifying_turn(client_fo
 
 
 def test_regression_compare_plans_what_if_applies_only_to_the_named_member(store):
-    """Bug (found 2026-10-02): 'Alex needs a crown' was applied to every family member in the plan
+    """Bug (found 2026-10-02): 'AC needs a crown' was applied to every family member in the plan
     comparison. Known care must land only on the named person."""
     ctx = ToolContext.from_member(build_member_context(store, JORDAN, JORDAN))
-    out = run_tool("compare_plans", {"known_care_by_member": {"Alex": ["D2740"]}}, ctx)
+    out = run_tool("compare_plans", {"known_care_by_member": {"AC": ["D2740"]}}, ctx)
     known = {m["name"]: m["known_care"] for m in out["members"]}
-    assert known["Alex Rivera"] == ["D2740"]
-    assert all(v == [] for k, v in known.items() if k != "Alex Rivera")
+    assert known["AC"] == ["D2740"]
+    assert all(v == [] for k, v in known.items() if k != "AC")

@@ -48,7 +48,7 @@ def test_matches_simulate_for_the_rivera_household(store):
 
 def test_adult_sees_only_themself(store):
     out = compare_plans(ctx=ctx_for(store, ALEX, ALEX))
-    assert [m["name"] for m in out["members"]] == ["Alex Rivera"]
+    assert [m["name"] for m in out["members"]] == ["AC"]
 
 
 def test_overrides_and_known_codes_change_the_result(store):
@@ -56,17 +56,17 @@ def test_overrides_and_known_codes_change_the_result(store):
     base = compare_plans(ctx=ctx)
     with_crown = compare_plans(known_codes=["d2740"], ctx=ctx)
     assert share(with_crown, "premium") > share(base, "premium")
-    alex = [m["known_care"] for m in with_crown["members"] if m["name"] == "Alex Rivera"]
+    alex = [m["known_care"] for m in with_crown["members"] if m["name"] == "AC"]
     assert alex == [["D2740"]]
-    high = compare_plans(care_levels={"Alex": "high", "m-maya": "low"}, ctx=ctx)
+    high = compare_plans(care_levels={"AC": "high", "m-maya": "low"}, ctx=ctx)
     levels = {m["name"]: m["care_level"] for m in high["members"]}
-    assert levels["Alex Rivera"] == "high" and levels["Maya Rivera"] == "low"
-    assert levels["Jordan Rivera"] == "average"
+    assert levels["AC"] == "high" and levels["Sophia"] == "low"
+    assert levels["Marc Halog"] == "average"
 
 
 def test_bad_input_returns_errors(store):
     ctx = ctx_for(store, JORDAN, JORDAN)
-    assert "error" in compare_plans(care_levels={"Alex": "wild"}, ctx=ctx)
+    assert "error" in compare_plans(care_levels={"AC": "wild"}, ctx=ctx)
     assert "error" in compare_plans(known_codes=["D9999"], ctx=ctx)
 
 

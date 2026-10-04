@@ -1,4 +1,4 @@
-"""Demo sandboxes (T36): every visitor gets a private copy of the Rivera family, plus the
+"""Demo sandboxes (T36): every visitor gets a private copy of the Demo family, plus the
 "Name your family" route. Temporary database, no network, no model, no key."""
 import re
 import sqlite3
@@ -80,13 +80,13 @@ def test_clone_has_unique_suffixed_ids_and_template_numbers(client, store):
     assert d["household"]["id"] == sb["household_id"]
     assert d["member"]["id"].startswith("m-alex.") and d["member"]["role"] == "adult"
     assert d["household"]["plan_tier"]["id"] == "preferred"
-    # Alex is an adult: sees only self. Jordan sees the four people.
+    # AC is an adult: sees only self. Marc sees the four people.
     dj, _hj = enter(client, "m-jordan", sb["household_id"])
     members = dj["household"]["members"]
     assert len(members) == 4 and all(SID_ID.match(m["id"]) for m in members)
     assert {m["role"] for m in members} == {"primary", "adult", "managed"}
     assert next(m for m in members if m["id"].startswith("m-maya"))["has_login"] is False
-    # Same numbers as the template: Alex has $400 left, a crown costs him $800.
+    # Same numbers as the template: AC has $400 left, a crown costs him $800.
     alex = d["member"]["id"]
     ov = client.get(f"/members/{alex}/overview", headers=h).json()
     assert ov["benefits"]["max_remaining"] == 400
@@ -254,8 +254,8 @@ def test_reset_restores_sandbox_in_place_with_same_ids_and_tokens(client, store)
     after_ids = [r["id"] for r in rows(store, "SELECT id FROM members WHERE household_id = ?", (hid,))]
     assert after_ids == before_ids
     again = client.get(f"/households/{hid}", headers=h).json()  # the old token still works
-    assert again["plan_tier"]["id"] == "preferred" and again["name"] == "Rivera household"
-    assert again["members"][0]["name"] == "Jordan Rivera"
+    assert again["plan_tier"]["id"] == "preferred" and again["name"] == "Halog household"
+    assert again["members"][0]["name"] == "Marc Halog"
     assert client.get(f"/members/{jordan}/overview", headers=h).json()["usage"]["visits"] == 1
     assert store.get_member_context(jordan, jordan)["chat_memory"] == []
     assert len(rows(store, "SELECT * FROM sandboxes")) == 1
@@ -383,7 +383,7 @@ def test_rename_flows_everywhere(client, store):
     out = compare_plans(ctx=ToolContext.from_member(mc))
     assert [m["name"] for m in out["members"]] == ["Pat Lopez", "Sam Lopez", "Lily Lopez", "O'Neil-Smith Jr."]
     text = " ".join(suggest_questions(mc))
-    assert "Rivera" not in text and "Jordan" not in text
+    assert "Halog" not in text and "Marc" not in text
 
 
 def test_household_name_already_ending_in_household(client):
@@ -401,7 +401,7 @@ def test_names_are_trimmed_and_may_be_a_subset(client):
                    json={"members": [{"member_id": f"m-maya.{sid}", "name": "  Zoë   Ana  "}]})
     assert r.status_code == 200
     names = [m["name"] for m in r.json()["members"]]
-    assert names == ["Jordan Rivera", "Alex Rivera", "Zoë Ana", "Noah Rivera"]
+    assert names == ["Marc Halog", "AC", "Zoë Ana", "Hannah"]
 
 
 def test_rename_is_primary_only(client):
@@ -420,7 +420,7 @@ def test_template_household_cannot_be_renamed(client):
     r = client.put(f"/households/{HH}/names", headers=h,
                    json={"household_name": "Hacked", "members": [{"member_id": "m-jordan", "name": "Pat"}]})
     assert r.status_code == 403
-    assert client.get(f"/households/{HH}", headers=h).json()["name"] == "Rivera household"
+    assert client.get(f"/households/{HH}", headers=h).json()["name"] == "Halog household"
 
 
 def test_other_sandbox_household_is_forbidden(client):
@@ -475,10 +475,10 @@ def test_unknown_member_and_empty_requests(client):
 def test_no_hard_coded_family_names_in_app_logic():
     import pathlib
     root = pathlib.Path(__file__).resolve().parents[1] / "app"
-    pat = re.compile(r"\"(Jordan|Alex|Maya|Noah|Rivera)\b|'(Jordan|Alex|Maya|Noah|Rivera)\b|m-(jordan|alex|maya|noah)|hh-rivera")
+    pat = re.compile(r"\"(Marc|AC|Sophia|Hannah|Halog)\b|'(Marc|AC|Sophia|Hannah|Halog)\b|m-(jordan|alex|maya|noah)|hh-rivera")
     hits = []
     for f in root.rglob("*.py"):
         for n, line in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):
-            if pat.search(line) and "e.g." not in line and "'Alex'" not in line:
+            if pat.search(line) and "e.g." not in line and "'AC'" not in line:
                 hits.append(f"{f.name}:{n}")
     assert hits == []

@@ -26,8 +26,8 @@ The router, shell and shared context (T02; you supply the panel component it mou
 - No dropdowns; 375 px layout.
 
 ## Acceptance checks
-- Asking "What will a crown cost me?" as Alex (November, $1,100 used) shows **$800**; the answer comes from the stream and every dollar figure is displayed as the API returned it.
-- Switching to Jordan shows a different thread, different chips and a different "knows" panel.
+- Asking "What will a crown cost me?" as AC (November, $1,100 used) shows **$800**; the answer comes from the stream and every dollar figure is displayed as the API returned it.
+- Switching to Marc shows a different thread, different chips and a different "knows" panel.
 - Tests with a mocked stream cover: chips per member, thread separation, the unavailable state, attaching and removing a PDF. `npm run typecheck`, `npm run test`, `npm run build` pass.
 
 ## Docs to update

@@ -49,7 +49,7 @@ function Line({ className, on, dashed }: { className: string; on?: boolean; dash
 /*
  * The backend has no parent or partner field, so the tree is inferred from the
  * relationship label: self + spouse/partner are the couple; everyone else hangs
- * from the couple (a child with their own login, such as Noah, hangs the same way).
+ * from the couple (a child with their own login, such as Hannah, hangs the same way).
  */
 export function FamilyTree({
   members,

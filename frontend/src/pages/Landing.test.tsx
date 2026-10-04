@@ -33,12 +33,12 @@ beforeEach(() => {
       if (url.endsWith("/auth/demo-login")) {
         bodies.push(JSON.parse(String(init?.body)))
         const members = ALL_MEMBERS.map((m) => ({ ...m, id: `${m.id}.aaaaaa`, household_id: "hh-rivera.aaaaaa" }))
-        const household = { id: "hh-rivera.aaaaaa", name: "Rivera household", plan_tier: TIER, members }
+        const household = { id: "hh-rivera.aaaaaa", name: "Halog household", plan_tier: TIER, members }
         return ok({ token: "t", member: members[0], household, sandbox: { household_id: "hh-rivera.aaaaaa", expires_at: "x" } })
       }
       if (url.includes("/households/")) {
         const members = ALL_MEMBERS.map((m) => ({ ...m, id: `${m.id}.aaaaaa`, household_id: "hh-rivera.aaaaaa" }))
-        return ok({ id: "hh-rivera.aaaaaa", name: "Rivera household", plan_tier: TIER, members })
+        return ok({ id: "hh-rivera.aaaaaa", name: "Halog household", plan_tier: TIER, members })
       }
       return ok([])
     }),
@@ -63,7 +63,7 @@ describe("landing page", () => {
     const buttons = await screen.findAllByRole("button", { name: /Try the demo/ }, { timeout: 8000 })
     expect(buttons.length).toBeGreaterThanOrEqual(2) // nav and hero
     await user.click(buttons[buttons.length - 1])
-    expect(await screen.findByTestId("household-label")).toHaveTextContent("Rivera household")
+    expect(await screen.findByTestId("household-label")).toHaveTextContent("Halog household")
     expect(bodies).toEqual([{ member_id: "m-jordan", sandbox: true }])
   })
 

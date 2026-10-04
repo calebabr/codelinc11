@@ -31,7 +31,7 @@ Caleb (git identity `calebabr`, `cjabrantes06@gmail.com`) is the product owner a
 
 **Product (all verified in tests and in the live browser):**
 - Portal look and shell, six pages (Home, Plans, Family, Costs, Plan My Year, Assistant) plus Landing (`/welcome`), Login (`/login`), the QR page `/join`, and the new **Notifications** page.
-- **Sign-in:** Clerk was removed. **"Try the demo"** is the only way in: each visitor gets their own demo copy of the Rivera family (`POST /auth/demo-login` with `sandbox: true`, ids suffixed `.xxxxxx`, 24 h TTL, cap 300, about 4.4 KB each), with a "Name your family" card, reset only affects your own family.
+- **Sign-in:** Clerk was removed. **"Try the demo"** is the only way in: each visitor gets their own demo copy of the Demo family (`POST /auth/demo-login` with `sandbox: true`, ids suffixed `.xxxxxx`, 24 h TTL, cap 300, about 4.4 KB each), with a "Name your family" card, reset only affects your own family.
 - **Rate limits** (in memory, per family; sign-in per address; global daily chat cap `CHAT_GLOBAL_DAILY_CAP` 3000 protects the Anthropic key), token expiry, stable session secret, chat requires sign-in.
 - **Cost engine** (all money math in `backend/app/engine/`), three plan tiers, Plan My Year scheduler, saved Plan My Year plans, plan switching (primary only), per-person overview.
 - **Monte Carlo "Which plan fits us?"** on the Plans page (`POST /simulate`, assistant tool `compare_plans`, follow-up "Ask next" chips, percentage check on assistant answers), and **saving a comparison to Plan My Year** (`/members/{id}/saved-simulations`, summary computed on the server).
@@ -43,7 +43,7 @@ Caleb (git identity `calebabr`, `cjabrantes06@gmail.com`) is the product owner a
 - Renamed the product to **Molar Money** everywhere user-visible; README team list updated; README and docs refreshed (counts, live deployment, notifications, demo script).
 - Deployment guide `docs/DEPLOYMENT.md` rewritten for AWS plus Netlify; an unused AWS reference kit is in `infra/aws/` (CloudFormation, never run).
 
-**Verified numbers on `main` before the stop:** backend **523 tests pass**, ruff clean; frontend **205 tests pass**, typecheck and build clean. Golden numbers (never change them to make code pass): cleaning **$0**; crown fresh year **$625**; crown with $1,100 used **$800**; out of network fresh year **$925** (**$300** balance billing); plan-year scenario **$2,300 to $1,405, saves $895**. Alex has $1,100 used and $400 left. Simulation, Rivera household average care, seed 42: cheapest shares Basic 82 / Preferred 17 / Premium 1; with Alex's crown 39 / 54 / 7 (Preferred wins).
+**Verified numbers on `main` before the stop:** backend **523 tests pass**, ruff clean; frontend **205 tests pass**, typecheck and build clean. Golden numbers (never change them to make code pass): cleaning **$0**; crown fresh year **$625**; crown with $1,100 used **$800**; out of network fresh year **$925** (**$300** balance billing); plan-year scenario **$2,300 to $1,405, saves $895**. AC has $1,100 used and $400 left. Simulation, Halog household average care, seed 42: cheapest shares Basic 82 / Preferred 17 / Premium 1; with AC's crown 39 / 54 / 7 (Preferred wins).
 
 ## 4. What is LEFT (in order)
 

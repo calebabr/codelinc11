@@ -83,20 +83,20 @@ describe("SessionProvider", () => {
   it("sends a signed-out visitor to the login page and offers the demo accounts", async () => {
     renderApp("/plans")
     expect(await screen.findByRole("heading", { name: "Welcome back" })).toBeInTheDocument()
-    expect(await screen.findByRole("button", { name: /Jordan Rivera/ })).toHaveTextContent("Account holder")
-    expect(screen.getByRole("button", { name: /Alex Rivera/ })).toHaveTextContent("Adult")
-    expect(screen.getByRole("button", { name: /Noah Rivera/ })).toHaveTextContent("Waiting for approval")
-    expect(screen.queryByRole("button", { name: /Maya/ })).toBeNull()
+    expect(await screen.findByRole("button", { name: /Marc Halog/ })).toHaveTextContent("Account holder")
+    expect(screen.getByRole("button", { name: /AC/ })).toHaveTextContent("Adult")
+    expect(screen.getByRole("button", { name: /Hannah/ })).toHaveTextContent("Waiting for approval")
+    expect(screen.queryByRole("button", { name: /Sophia/ })).toBeNull()
     expect(calls.some((c) => c.url.endsWith("/auth/demo-login"))).toBe(false)
   })
 
-  it("choosing Jordan on the login page signs in, loads the household with the token and goes home", async () => {
+  it("choosing Marc on the login page signs in, loads the household with the token and goes home", async () => {
     const user = userEvent.setup()
     renderApp("/login")
-    await user.click(await screen.findByRole("button", { name: /Jordan Rivera/ }))
-    expect(await screen.findByTestId("household-label")).toHaveTextContent("Rivera household")
-    expect(screen.getByTestId("active-member-label")).toHaveTextContent("Jordan Rivera")
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Welcome back, Jordan")
+    await user.click(await screen.findByRole("button", { name: /Marc Halog/ }))
+    expect(await screen.findByTestId("household-label")).toHaveTextContent("Halog household")
+    expect(screen.getByTestId("active-member-label")).toHaveTextContent("Marc Halog")
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Welcome back, Marc")
     const login = calls.find((c) => c.url.endsWith("/auth/demo-login"))!
     expect(login.method).toBe("POST")
     expect(login.body).toEqual({ member_id: "m-jordan", sandbox: true })
@@ -108,7 +108,7 @@ describe("SessionProvider", () => {
   it("remembers the chosen person for this tab", async () => {
     sessionStorage.setItem("dental.signedInMemberId", "m-alex")
     renderApp()
-    await waitFor(() => expect(screen.getByTestId("active-member-label")).toHaveTextContent("Alex Rivera"))
+    await waitFor(() => expect(screen.getByTestId("active-member-label")).toHaveTextContent("AC"))
     expect(calls.find((c) => c.url.endsWith("/auth/demo-login"))!.body).toEqual({ member_id: "m-alex", sandbox: true })
   })
 
@@ -130,8 +130,8 @@ describe("SessionProvider", () => {
     await user.click(await screen.findByRole("button", { name: "Sign out" }))
     expect(await screen.findByRole("heading", { name: "Welcome back" })).toBeInTheDocument()
     expect(sessionStorage.getItem("dental.signedInMemberId")).toBeNull()
-    await user.click(await screen.findByRole("button", { name: /Alex Rivera/ }))
-    await waitFor(() => expect(screen.getByTestId("active-member-label")).toHaveTextContent("Alex Rivera"))
+    await user.click(await screen.findByRole("button", { name: /AC/ }))
+    await waitFor(() => expect(screen.getByTestId("active-member-label")).toHaveTextContent("AC"))
     expect(sessionStorage.getItem("dental.signedInMemberId")).toBe("m-alex")
   })
 

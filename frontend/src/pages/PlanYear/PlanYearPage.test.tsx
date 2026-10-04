@@ -46,7 +46,7 @@ let savedStatus: number
 function mockApi(opts: { overviewFails?: boolean; savedStatus?: number } = {}) {
   calls = []
   savedStatus = opts.savedStatus ?? 200
-  saved = [{ id: "sp1", member_id: "m-alex", name: "Alex S2 case", items: S2_ITEMS, created_at: "2026-10-01T00:00:00Z", updated_at: "2026-10-01T00:00:00Z" }]
+  saved = [{ id: "sp1", member_id: "m-alex", name: "AC S2 case", items: S2_ITEMS, created_at: "2026-10-01T00:00:00Z", updated_at: "2026-10-01T00:00:00Z" }]
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: string, init?: RequestInit) => {
@@ -121,7 +121,7 @@ describe("Plan My Year page", () => {
     await waitFor(() => expect(screen.getByTestId("left-this-year")).toHaveTextContent("$400 left this year"))
   })
 
-  it("demo case for Alex shows $2,300 to $1,405 and saves $895, root canal this year, crown in January", async () => {
+  it("demo case for AC shows $2,300 to $1,405 and saves $895, root canal this year, crown in January", async () => {
     const user = userEvent.setup()
     const { container } = renderPage()
     await user.click(screen.getByRole("button", { name: "Try the demo case" }))
@@ -255,9 +255,9 @@ describe("Plan My Year page", () => {
   it("lists the saved plans and opens one, using the live schedule numbers", async () => {
     const user = userEvent.setup()
     renderPage()
-    const card = await screen.findByRole("listitem", { name: "Alex S2 case" })
+    const card = await screen.findByRole("listitem", { name: "AC S2 case" })
     expect(card).toHaveTextContent("4 treatments")
-    await user.click(within(card).getByRole("button", { name: "Open Alex S2 case" }))
+    await user.click(within(card).getByRole("button", { name: "Open AC S2 case" }))
     expect(screen.getAllByTestId("treatment-row")).toHaveLength(4)
     expect(within(card).getByText("Open now")).toBeInTheDocument()
     await waitFor(() => expect(screen.getByTestId("savings-total")).toHaveTextContent("$895"))
@@ -268,7 +268,7 @@ describe("Plan My Year page", () => {
     renderPage()
     await user.click(await screen.findByRole("button", { name: "Add Crown" }))
     const name = screen.getByLabelText("Plan name") as HTMLInputElement
-    expect(name.value).toMatch(/^Plan for Alex, /)
+    expect(name.value).toMatch(/^Plan for AC, /)
     await user.clear(name)
     await user.type(name, "My crown")
     await user.click(screen.getByRole("button", { name: "Save this plan" }))
@@ -287,9 +287,9 @@ describe("Plan My Year page", () => {
   it("renames and deletes (after a confirm step) a saved plan", async () => {
     const user = userEvent.setup()
     renderPage()
-    const card = await screen.findByRole("listitem", { name: "Alex S2 case" })
-    await user.click(within(card).getByRole("button", { name: "Rename Alex S2 case" }))
-    const input = within(card).getByLabelText("New name for Alex S2 case")
+    const card = await screen.findByRole("listitem", { name: "AC S2 case" })
+    await user.click(within(card).getByRole("button", { name: "Rename AC S2 case" }))
+    const input = within(card).getByLabelText("New name for AC S2 case")
     await user.clear(input)
     await user.type(input, "Renamed")
     await user.click(within(card).getByRole("button", { name: "Save name" }))

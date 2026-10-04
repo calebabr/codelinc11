@@ -159,7 +159,7 @@ def test_zip_errors_and_member_zip_fallback(client):
     for bad in ("00000", "abc", "3683"):
         r = search(client, h, zip=bad)
         assert r.status_code == 422 and r.json()["detail"] == UNKNOWN_ZIP
-    # No zip: Jordan's profile ZIP (36830) is used; same as passing it.
+    # No zip: Marc's profile ZIP (36830) is used; same as passing it.
     assert search(client, h).json() == search(client, h, zip="36830").json()
     # No ZIP anywhere: 422 with the same message.
     assert client.patch(f"/members/{ids['jordan']}/profile", headers=h, json={"zip": ""}).status_code == 200
@@ -231,7 +231,7 @@ def test_estimate_follows_plan_change_and_member(client, store):
         ref = client.post("/estimate", json={"plan_id": tier, "code": "D2740"}).json()
         assert pays[tier] == ref["in_network"]["you_pay"]
     assert len(set(pays.values())) > 1
-    # The primary may ask for another member (Alex: $1,100 used, deductible met).
+    # The primary may ask for another member (AC: $1,100 used, deductible met).
     set_plan(client, hid, h, "preferred")
     r = search(client, h, zip="36830", code="D2740", member_id=ids["alex"], network="in")
     assert r.status_code == 200
@@ -259,7 +259,7 @@ def test_get_provider(client):
     assert r.status_code == 200
     d = r.json()
     assert d["practice_name"] == "Plainsman Family Dental" and d["estimate"] is None
-    assert d["distance_mi"] is not None          # Jordan's profile ZIP is 36830
+    assert d["distance_mi"] is not None          # Marc's profile ZIP is 36830
     far = client.get("/providers/prv-001", headers=h, params={"zip": "46802"}).json()
     assert far["distance_mi"] > 500
     assert client.get("/providers/prv-001", headers=h, params={"zip": "11111"}).status_code == 422

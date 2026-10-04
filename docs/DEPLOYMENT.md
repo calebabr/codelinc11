@@ -35,7 +35,7 @@ Changing it needs a redeploy, because Vite bakes it into the build. The old `VIT
 ## After every release (checklist)
 1. The backend container starts and `GET /health` answers with `"chat_mode":"anthropic"`.
 2. Open the Netlify address, tap **Try the demo**, and land on Home as the account holder in a new family ("Welcome back, ...").
-3. Ask the assistant "What will a crown cost me?" and expect $800 for Alex-type usage; open **Plans**, scroll to "Which plan fits us?" and expect shares that add to 100.
+3. Ask the assistant "What will a crown cost me?" and expect $800 for AC-type usage; open **Plans**, scroll to "Which plan fits us?" and expect shares that add to 100.
 4. On a phone (cellular, not the office Wi-Fi), open `/join` and scan the code.
 5. Watch the daily chat cap and the Anthropic usage page for the first day.
 

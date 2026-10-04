@@ -25,7 +25,7 @@ You start **idle**. Do not write until the orchestrator sends you the finished a
 | File | Reader | Contents |
 |---|---|---|
 | `README.md` (root) | Recruiters, anyone landing on GitHub | One-paragraph pitch, screenshots list (placeholders until captured), feature list, tech stack, architecture diagram (Mermaid), quick start, how the multi-agent build worked, what I built (see below), limitations |
-| `docs/DEMO.md` | Presenters | The 10:00 AM demo script: a 3 to 5 minute path (sign in as Jordan, switch to Alex, Plan My Year $2,300 to $1,405, the assistant answering as Alex vs Jordan), exact clicks, exact numbers, a fallback if the AI key fails, and a pre-demo checklist |
+| `docs/DEMO.md` | Presenters | The 10:00 AM demo script: a 3 to 5 minute path (sign in as Marc, switch to AC, Plan My Year $2,300 to $1,405, the assistant answering as AC vs Marc), exact clicks, exact numbers, a fallback if the AI key fails, and a pre-demo checklist |
 | `docs/PRESENTATION.md` | Presenters, slide builders | Slide-by-slide outline: problem, who it's for, solution, live demo, how it works (the engine does the math, the AI explains), what's real vs synthetic, team and build process, what's next. One idea per slide, speaker notes, numbers that match the golden numbers |
 | `docs/ARCHITECTURE.md` | Teammates, reviewers | System diagram (React, FastAPI, engine, SQLite, Anthropic and Ollama), data flow for an estimate, a plan-year run and a chat message, the API endpoint table, the folder map |
 | `docs/AI.md` | Reviewers | How the assistant works: tool loop, number guard, per-member context, safety wording |

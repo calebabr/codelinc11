@@ -37,7 +37,7 @@ describe("name rules (the same as the server's)", () => {
     expect(nameProblem("A".repeat(30), 30, false)).toBe("")
   })
   it("takes the surname from the household name", () => {
-    expect(surnameOf("Rivera household")).toBe("Rivera")
+    expect(surnameOf("Halog household")).toBe("Halog")
     expect(surnameOf("Lee")).toBe("Lee")
   })
 })

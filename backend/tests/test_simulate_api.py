@@ -25,7 +25,7 @@ def auth():
 
 
 def body(**kw):
-    base = {"members": [{"id": "m-alex", "name": "Alex", "age": 34, "care_level": "average",
+    base = {"members": [{"id": "m-alex", "name": "AC", "age": 34, "care_level": "average",
                          "known_care": [{"code": "D2740", "count": 1}]}],
             "plan_ids": ["basic", "preferred", "premium"], "n": 1000, "seed": 42, "in_network": True}
     base.update(kw)
