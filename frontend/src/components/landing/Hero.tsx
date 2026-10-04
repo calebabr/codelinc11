@@ -40,7 +40,7 @@ function FloatingCard({
       <motion.div
         animate={reduce ? undefined : { y: [0, -6, 0] }}
         transition={{ duration: 6, ease: 'easeInOut', repeat: Infinity, delay: drift }}
-        className={cn('rounded-[20px] shadow-[0_18px_40px_-12px_rgba(28,10,18,0.25)]', cardClassName)}
+        className={cn('rounded-[20px] shadow-[0_18px_40px_-12px_rgba(28,28,30,0.25)]', cardClassName)}
       >
         {children}
       </motion.div>
@@ -188,17 +188,17 @@ export default function Hero({ zoom = false }: { zoom?: boolean }) {
                 {/* Soft browser frame: white backing + shadow, fades out as the screenshot fills the screen */}
                 <motion.div
                   style={live ? { opacity: frameOpacity } : undefined}
-                  className="absolute inset-x-0 -top-12 bottom-0 rounded-[20px] bg-white shadow-[0_30px_60px_-20px_rgba(107,15,42,0.25)]"
+                  className="absolute inset-x-0 -top-12 bottom-0 rounded-[20px] bg-white shadow-[0_30px_60px_-20px_rgba(101,0,48,0.25)]"
                   aria-hidden
                 />
                 <motion.div
                   style={live ? { opacity: barOpacity } : undefined}
-                  className="absolute inset-x-0 bottom-full flex h-12 items-center gap-2 rounded-t-[20px] border-b bg-[#faf7f8] px-4"
+                  className="absolute inset-x-0 bottom-full flex h-12 items-center gap-2 rounded-t-[20px] border-b bg-[var(--soft)] px-4"
                   aria-hidden
                 >
-                  <span className="size-2.5 rounded-full bg-[#e5dadd]" />
-                  <span className="size-2.5 rounded-full bg-[#e5dadd]" />
-                  <span className="size-2.5 rounded-full bg-[#e5dadd]" />
+                  <span className="size-2.5 rounded-full bg-[var(--line)]" />
+                  <span className="size-2.5 rounded-full bg-[var(--line)]" />
+                  <span className="size-2.5 rounded-full bg-[var(--line)]" />
                   <span className="ml-3 h-6 flex-1 rounded-full bg-white px-3 text-[11px] leading-6 text-muted-foreground">
                     molarmoney.app/coverage
                   </span>
@@ -228,14 +228,14 @@ export default function Hero({ zoom = false }: { zoom?: boolean }) {
                 delay={0.9}
                 drift={0}
                 className="relative w-48"
-                cardClassName="bg-white p-4 ring-1 ring-black/5 shadow-[0_24px_48px_-12px_rgba(28,10,18,0.35)]"
+                cardClassName="bg-white p-4 ring-1 ring-black/5 shadow-[0_24px_48px_-12px_rgba(28,28,30,0.35)]"
               >
                 <p className="text-xs font-semibold text-muted-foreground">Filling · back tooth</p>
                 <p className="mt-1 text-xs font-bold tracking-wide text-muted-foreground uppercase">You pay</p>
                 <p className="money text-[34px] text-primary">$40</p>
                 <div className="mt-2 flex h-2 overflow-hidden rounded-full" aria-hidden>
                   <span className="w-4/5 bg-primary" />
-                  <span className="w-1/5 bg-[#d1d5db]" />
+                  <span className="w-1/5 bg-[var(--track)]" />
                 </div>
                 <p className="mt-1.5 text-[11px] text-muted-foreground">Plan pays $160</p>
               </FloatingCard>

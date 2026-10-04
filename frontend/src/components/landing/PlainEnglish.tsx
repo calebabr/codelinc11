@@ -21,7 +21,7 @@ export default function PlainEnglish() {
       </Reveal>
 
       <Reveal className="mt-12 grid items-center gap-6 lg:grid-cols-[1fr_auto_1fr]" gap={0.15}>
-        <motion.figure variants={rise} className="rounded-[20px] border bg-[#faf9f7] p-7">
+        <motion.figure variants={rise} className="rounded-[20px] border bg-[var(--soft)] p-7">
           <figcaption className="eyebrow text-[11px]">Your plan booklet says</figcaption>
           <blockquote className="mt-4 font-quote text-lg leading-relaxed text-muted-foreground italic">
             “Type C – Major Services: Covered at 50% of the Maximum Allowable Charge after satisfaction of the

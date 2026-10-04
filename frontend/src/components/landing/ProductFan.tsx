@@ -9,8 +9,8 @@ const CAPTION = 'One plan, three questions answered: whatâ€™s covered, what youâ
 // Final state (end of the scroll). Radii are divided by the scale so the corners *look* 28px.
 const CENTER_END = { scale: 0.72, radius: 28 / 0.72 }
 const SIDE_END = { scale: 0.62, radius: 28 / 0.62, rotate: 6 }
-const SHADOW_OFF = '0 40px 80px -30px rgba(107, 15, 42, 0)'
-const SHADOW_ON = '0 40px 80px -30px rgba(107, 15, 42, 0.35)'
+const SHADOW_OFF = '0 40px 80px -30px rgba(101,0,48, 0)'
+const SHADOW_ON = '0 40px 80px -30px rgba(101,0,48, 0.35)'
 
 // How far the side cards slide out: 340px on wide screens, less on tablets
 function sideOffset(vw: number) {

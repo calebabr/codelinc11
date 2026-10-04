@@ -28,7 +28,7 @@ function CompareBar({ row, i }: { row: (typeof rows)[number]; i: number }) {
           transition={{ duration: 0.9, ease, delay: 0.2 + i * 0.25 }}
         />
         <motion.span
-          className="h-full border-l-2 border-white bg-[#d1d5db]"
+          className="h-full border-l-2 border-white bg-[var(--track)]"
           initial={{ width: 0 }}
           whileInView={{ width: `${(row.you.value / TOTAL) * 100}%` }}
           viewport={{ once: true }}
