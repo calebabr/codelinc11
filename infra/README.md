@@ -46,7 +46,7 @@ End-to-end tests are not in CI; run them locally before checkpoints.
 ## Deployment
 Config is ready (not yet provisioned): **Render** for the backend (`render.yaml` +
 `backend/Dockerfile`, with a persistent disk for the SQLite DB) and **Vercel** for
-the frontend (`frontend/vercel.json`; `frontend/netlify.toml` as an alternative).
+the frontend (`frontend/vercel.json`; `netlify.toml` at the repo root as an alternative).
 Full step-by-step: [`docs/DEPLOYMENT.md`](../docs/DEPLOYMENT.md).
 
 Creating the actual services is done by the user in each provider's dashboard.

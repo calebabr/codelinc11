@@ -1,0 +1,38 @@
+# Netlify config for the frontend (alternative to Vercel; see docs/DEPLOYMENT.md).
+# It lives at the repo root so Netlify finds it with no dashboard setup: connect the
+# repo and deploy. The backend runs elsewhere (Render, render.yaml).
+#
+# Set these in Netlify (Site configuration > Environment variables). They are read at
+# build time, so redeploy after changing them:
+#   VITE_API_URL                the backend URL, for example https://dental-benefits-api.onrender.com
+#   VITE_CLERK_PUBLISHABLE_KEY  the Clerk publishable key (pk_...). Never the secret key.
+# Then add the Netlify URL to the backend's CORS_ORIGINS and to the allowed origins in Clerk.
+
+[build]
+  base = "frontend"          # the app's package.json is in frontend/
+  command = "npm run build"  # Netlify installs packages from package-lock.json first
+  publish = "dist"           # relative to base: frontend/dist
+
+[build.environment]
+  NODE_VERSION = "20"        # same as CI
+
+# Single-page app: every route (/plans, /login/factor-one ...) serves index.html.
+# Real files such as /assets/*.js are served first, so this only catches app routes.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Built assets have a content hash in their names, so they can be cached for a year.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Basic security headers for every page.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"

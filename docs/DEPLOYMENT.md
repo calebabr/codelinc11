@@ -30,7 +30,7 @@ Files: [`render.yaml`](../render.yaml) (blueprint) and [`backend/Dockerfile`](..
 ## 2. Frontend → Vercel
 
 File: [`frontend/vercel.json`](../frontend/vercel.json) (Netlify alternative:
-[`frontend/netlify.toml`](../frontend/netlify.toml)).
+[`netlify.toml`](../netlify.toml) at the repo root, so Netlify needs no base-directory setting).
 
 1. In Vercel: **New Project → import this repo**. Set **Root Directory = `frontend`**.
    Vercel detects Vite; `vercel.json` sets the build + SPA rewrites.
