@@ -1,6 +1,7 @@
 import { Link } from "react-router"
 import { useSession } from "@/state/SessionContext"
 import { MemberSwitcher } from "./MemberSwitcher"
+import { NotificationBell } from "@/features/notifications/NotificationBell"
 
 // Slim burgundy bar above the main nav: household name, member switcher, sign-in state.
 export function UtilityBar() {
@@ -14,7 +15,8 @@ export function UtilityBar() {
             {" "}· {household.plan_tier.name} plan
           </span>
         </span>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <NotificationBell />
           <MemberSwitcher />
           {account ? (
             <button type="button" onClick={signOut} className="hidden min-h-11 items-center underline-offset-2 hover:underline sm:inline-flex">
