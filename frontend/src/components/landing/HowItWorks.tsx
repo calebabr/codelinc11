@@ -14,7 +14,7 @@ const steps = [
   { title: 'Plan your year', text: 'Time your care so your benefits go further.', screen: screens.plan },
 ]
 
-const INK = '#1C0A12'
+const INK = '#1c1c1e' // --ink
 const GRAY = '#9CA3AF'
 const quick = { duration: 0.3, ease }
 
@@ -43,7 +43,7 @@ function Shot({ screen, className }: { screen: (typeof steps)[number]['screen'];
       height={SCREEN_H}
       loading="lazy"
       decoding="async"
-      className={cn('aspect-[4/3] w-full rounded-[16px] object-cover object-top shadow-[0_24px_50px_-24px_rgba(107,15,42,0.35)]', className)}
+      className={cn('aspect-[4/3] w-full rounded-[16px] object-cover object-top shadow-[0_24px_50px_-24px_rgba(101,0,48,0.35)]', className)}
     />
   )
 }
@@ -75,8 +75,8 @@ function ScrollSteps() {
 
             <div className="relative mt-10 pl-8">
               {/* Progress line: gray track, burgundy fill that grows with the scroll */}
-              <div className="absolute inset-y-0 left-0 w-[2px] bg-[#E5E7EB]" aria-hidden>
-                <motion.div className="h-full w-full origin-top bg-primary" style={{ scaleY: scrollYProgress }} />
+              <div className="absolute inset-y-0 left-0 w-[2px] bg-[var(--line)]" aria-hidden>
+                <motion.div className="h-full w-full origin-top bg-[linear-gradient(180deg,var(--burgundy),var(--orange))]" style={{ scaleY: scrollYProgress }} />
               </div>
 
               <ol className="space-y-3">

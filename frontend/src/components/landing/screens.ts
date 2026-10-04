@@ -3,9 +3,9 @@ export const SCREEN_W = 1600
 export const SCREEN_H = 1200
 
 export const screens = {
-  coverage: { src: '/screens/coverage.png', srcSet: '/screens/coverage-800.webp 800w, /screens/coverage.png 1600w', alt: 'The Molar Money My Coverage screen: what your plan covers and what you have left' },
-  estimate: { src: '/screens/estimate.png', srcSet: '/screens/estimate-800.webp 800w, /screens/estimate.png 1600w', alt: 'The Molar Money Estimate screen: what you pay and what your plan pays for a procedure' },
-  plan: { src: '/screens/plan.png', srcSet: '/screens/plan-800.webp 800w, /screens/plan.png 1600w', alt: 'The Molar Money Plan My Year screen: when to schedule each procedure' },
+  coverage: { src: '/screens/coverage.png', srcSet: '/screens/coverage-800.webp 800w, /screens/coverage.png 1600w', alt: 'The Molar Money Plans page: the three plans side by side and what yours covers, in plain English' },
+  estimate: { src: '/screens/estimate.png', srcSet: '/screens/estimate-800.webp 800w, /screens/estimate.png 1600w', alt: 'The Molar Money Reports page: what you owe right now, and each bill explained' },
+  plan: { src: '/screens/plan.png', srcSet: '/screens/plan-800.webp 800w, /screens/plan.png 1600w', alt: 'The Molar Money Plan My Year page: the cheapest order for your treatments and how much you save' },
 } as const
 
 // Product fan geometry. The hero's zoom ends exactly where the fan starts, so both read these.
