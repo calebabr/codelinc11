@@ -1,6 +1,8 @@
+import { Suspense } from "react"
 import { Navigate, Outlet, useLocation } from "react-router"
 import { motion } from "motion/react"
 import { ease } from "@/lib/motion"
+import { PageLoading } from "./PageLoading"
 import { useSessionGate } from "@/state/SessionContext"
 import { UtilityBar } from "./UtilityBar"
 import { NavBar } from "./NavBar"
@@ -11,8 +13,7 @@ export function Shell() {
   const gate = useSessionGate()
   const { pathname } = useLocation()
 
-  // Signed in to Clerk (RequireClerk) but no household profile picked yet
-  if (gate.status === "signed-out") return <Navigate to="/choose-profile" replace />
+  if (gate.status === "signed-out") return <Navigate to="/login" replace />
   if (gate.status === "loading") {
     return (
       <div className="mx-auto max-w-md p-8" role="status">
@@ -35,11 +36,11 @@ export function Shell() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--soft)] text-ink">
+    <div className="flex min-h-dvh flex-col bg-[var(--soft)] text-ink">
       <UtilityBar />
       <NavBar />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
-        {/* key: replay the entrance on every page change. Its sections stagger in via .page-motion (index.css). */}
+        {/* key: replay the entrance on every page change; its sections stagger in via .page-motion (index.css) */}
         <motion.div
           key={pathname}
           className="page-motion"
@@ -47,7 +48,9 @@ export function Shell() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease }}
         >
-          <Outlet />
+          <Suspense fallback={<PageLoading />}>
+            <Outlet />
+          </Suspense>
         </motion.div>
       </main>
       <Footer />

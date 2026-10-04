@@ -1,4 +1,3 @@
-import { useState } from "react"
 import { money } from "@/lib/format"
 import { remindersUrl } from "@/lib/api/planYear"
 import type { BenefitsStatus, QuestionsResponse, SavingsTipsResponse } from "@/lib/types/planYear"
@@ -38,15 +37,6 @@ export function SavingsTipsCard({ state }: { state: Loadable<SavingsTipsResponse
 }
 
 export function QuestionsCard({ state }: { state: Loadable<QuestionsResponse> }) {
-  const [asked, setAsked] = useState<Set<string>>(new Set())
-  function toggle(id: string) {
-    setAsked((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
   return (
     <section aria-labelledby="py-questions" className="portal-card">
       <h2 id="py-questions" className="portal-card-title">Questions to ask your dentist</h2>
@@ -58,21 +48,11 @@ export function QuestionsCard({ state }: { state: Loadable<QuestionsResponse> })
               {state.data.sections.map((s) => (
                 <div key={s.id}>
                   <h3 className="font-bold">{s.title}</h3>
-                  <ul className="mt-1 space-y-2">
+                  <ul className="mt-1 list-disc space-y-2 pl-5">
                     {s.questions.map((q) => (
                       <li key={q.id}>
-                        <button
-                          type="button"
-                          aria-pressed={asked.has(q.id)}
-                          onClick={() => toggle(q.id)}
-                          className={`w-full rounded-2xl border p-3 text-left ${asked.has(q.id) ? "border-ok bg-[var(--tint-ok)]" : "border-line bg-white"}`}
-                        >
-                          <span className="block font-semibold">{q.text}</span>
-                          <span className="block text-sm text-muted-foreground">{q.why}</span>
-                          <span className="mt-1 block text-xs font-semibold text-burgundy">
-                            {asked.has(q.id) ? "Asked. Tap to undo." : "Tap when you have asked this."}
-                          </span>
-                        </button>
+                        <span className="block font-semibold">{q.text}</span>
+                        <span className="block text-sm text-muted-foreground">{q.why}</span>
                       </li>
                     ))}
                   </ul>

@@ -1,6 +1,9 @@
 import { useState } from "react"
 import { money, percent } from "@/lib/format"
 import { postInvite } from "@/lib/api/family"
+import { useSession } from "@/state/SessionContext"
+import { formatPhone } from "./contact"
+import { ProfileForm } from "./ProfileForm"
 import { errorMessage } from "@/lib/api/planYear"
 import type { FamilyMember, InviteResponse, MemberOverview, ServiceEligibility } from "@/lib/types/family"
 import type { Async } from "./useFamily"
@@ -91,6 +94,77 @@ function InviteBox({ member, householdId, token }: { member: FamilyMember; house
   )
 }
 
+function ContactRow({ member, canEdit, onEdit }: { member: FamilyMember; canEdit: boolean; onEdit: () => void }) {
+  // Without edit rights, a missing detail simply shows nothing (no broken empty prompts).
+  if (!canEdit && !member.email && !member.phone) return null
+  const empty = (text: string) =>
+    canEdit ? (
+      <button type="button" className="min-h-11 text-left font-bold text-burgundy underline" onClick={onEdit}>
+        {text}
+      </button>
+    ) : null
+  return (
+    <dl className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2" aria-label="Contact" data-testid="contact-row">
+      <div>
+        <dt className="text-muted-foreground">Email</dt>
+        <dd className="break-words font-bold" data-testid="contact-email">
+          {member.email || empty("Add an email")}
+        </dd>
+      </div>
+      <div>
+        <dt className="text-muted-foreground">Text message (SMS)</dt>
+        <dd className="font-bold" data-testid="contact-phone">
+          {member.phone ? formatPhone(member.phone) : empty("Add a phone")}
+        </dd>
+      </div>
+    </dl>
+  )
+}
+
+function RemoveBox({ member, onRemoved }: { member: FamilyMember; onRemoved: (name: string) => void }) {
+  const { removeMember } = useSession()
+  const [confirming, setConfirming] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const first = member.name.split(" ")[0]
+  async function go() {
+    setBusy(true)
+    setError(null)
+    try {
+      await removeMember(member.id)
+      onRemoved(member.name)
+    } catch (err) {
+      setError(errorMessage(err))
+      setBusy(false)
+    }
+  }
+  if (!confirming) {
+    return (
+      <button type="button" className="btn btn-outline min-h-11" onClick={() => setConfirming(true)}>
+        Remove {first} from family
+      </button>
+    )
+  }
+  return (
+    <div className="note space-y-2" role="group" aria-label={`Remove ${member.name}`}>
+      <p>Remove {first} and all of their saved data from your demo family?</p>
+      {error && (
+        <p role="alert" className="text-sm text-warn-ink">
+          {error}
+        </p>
+      )}
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className="btn btn-orange min-h-11" onClick={go} disabled={busy}>
+          {busy ? "Removing…" : `Yes, remove ${first}`}
+        </button>
+        <button type="button" className="btn btn-outline min-h-11" onClick={() => setConfirming(false)} disabled={busy}>
+          Keep {first}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export function MemberDetail({
   member,
   overview,
@@ -101,6 +175,9 @@ export function MemberDetail({
   isActive,
   onViewAs,
   onRetry,
+  canEdit = false,
+  onChanged = () => undefined,
+  onRemoved = () => undefined,
 }: {
   member: FamilyMember
   overview: Async<MemberOverview>
@@ -111,7 +188,16 @@ export function MemberDetail({
   isActive: boolean
   onViewAs: () => void
   onRetry: () => void
+  /** The viewer may change this person's profile (demo family only). */
+  canEdit?: boolean
+  /** The profile was saved: reload this person's numbers. */
+  onChanged?: () => void
+  onRemoved?: (name: string) => void
 }) {
+  const [editing, setEditing] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
+  const primaryFirst = (useSession().household.members.find((m) => m.role === "primary")?.name ?? "a parent").split(" ")[0]
+  const canRemove = canEdit && viewerIsPrimary && member.role !== "primary"
   const pending = member.status === "pending"
   const o = overview.data
   const first = member.name.split(" ")[0]
@@ -133,6 +219,39 @@ export function MemberDetail({
           </button>
         )}
       </div>
+
+      <ContactRow member={member} canEdit={canEdit} onEdit={() => setEditing(true)} />
+      {notice && (
+        <p className="note" role="status" data-testid="profile-notice">
+          {notice}
+        </p>
+      )}
+      {canEdit && !editing && (
+        <div>
+          <button
+            type="button"
+            className="btn btn-outline min-h-11"
+            onClick={() => {
+              setNotice(null)
+              setEditing(true)
+            }}
+          >
+            Edit profile
+          </button>
+        </div>
+      )}
+      {canEdit && editing && (
+        <ProfileForm
+          member={member}
+          primaryFirst={primaryFirst}
+          onCancel={() => setEditing(false)}
+          onSaved={(saved, note) => {
+            setEditing(false)
+            setNotice(note ?? `${saved.name.split(" ")[0]}'s profile was saved.`)
+            onChanged()
+          }}
+        />
+      )}
 
       {pending && (
         <p className="note" data-testid="pending-note">
@@ -213,6 +332,12 @@ export function MemberDetail({
       )}
 
       {canInvite && <InviteBox member={member} householdId={householdId} token={token} />}
+      {canRemove && <RemoveBox member={member} onRemoved={onRemoved} />}
+      {viewerIsPrimary && member.role === "primary" && (
+        <p className="text-sm text-muted-foreground" data-testid="primary-keep">
+          The account holder can't be removed from the family.
+        </p>
+      )}
     </section>
   )
 }

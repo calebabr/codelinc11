@@ -19,6 +19,8 @@ Index of the project documentation.
 | [MATH.md](MATH.md) | How each cost is calculated, with the golden examples |
 | [AI.md](AI.md) | How the assistant works today and what is planned |
 | [DEMO.md](DEMO.md) | The 10:00 AM demo script with fallback and checklist |
+| [DEMO-PHONES.md](DEMO-PHONES.md) | Getting phones onto the demo: QR code, same Wi-Fi, tunnel, public hosting |
+| [features/](features/F7-choose-a-plan-monte-carlo.md) | Feature write-ups (F7: Which plan fits us?) |
 | [PRESENTATION.md](PRESENTATION.md) | Slide-by-slide outline |
 | [PROJECT-STORY.md](PROJECT-STORY.md) | Factual build story for resumes and interviews |
 | [summaries/](summaries/) | One short status summary per area |
@@ -26,6 +28,6 @@ Index of the project documentation.
 | [planning/](planning/) | Early planning docs (project ideas, Path 1 deep dive); background only, superseded by FEATURES.md |
 | pitch/ | Reserved for slides and pitch drafts (empty) |
 
-Other folders have their own READMEs: [../agents/](../agents/README.md) (the agent team), [../backend/](../backend/README.md), [../frontend/](../frontend/README.md), [../database/](../database/README.md), [../tests/](../tests/README.md), [../infra/](../infra/README.md).
+Other folders have their own READMEs: [../agents/](../agents/README.md) (the agent team), [../backend/](../backend/README.md), [../frontend/](../frontend/README.md), [../database/](../database/README.md), [../tests/](../tests/README.md), [../infra/](../infra/README.md) (the AWS kit in `infra/aws/` is a reference; it was not run).
 
 Docs must match the code. If you can't verify something against the repo, mark it as not verified.

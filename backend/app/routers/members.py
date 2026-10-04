@@ -3,11 +3,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from .. import ratelimit
 from ..data import load_catalog, load_plans
 from ..db import DEMO_TODAY
-from ..db.core import reseed
 from ..engine.estimate import estimate
 from ..engine.status import benefits_status
 from ..models import (
@@ -20,6 +20,7 @@ from ..models import (
     VisitRequest,
     VisitResponse,
 )
+from ..notifications import sync_notifications
 from .households import member_model, tier_model
 from .session import StoreDep, Viewer, guarded
 
@@ -70,13 +71,16 @@ def member_overview(member_id: str, viewer: Viewer,
     usage = Usage(max_used=u["max_used_cents"] / 100, deductible_met=u["deductible_met_cents"] / 100,
                   history=["D1110"] * u["cleanings_used"])
     status = benefits_status(plan, usage, load_catalog(), DEMO_TODAY.month)
+    guarded(lambda: sync_notifications(store, viewer, member_id))
+    unread = (guarded(lambda: store.count_unread_notifications(viewer, member_id))
+              if guarded(lambda: store.get_notification_prefs(viewer, member_id))["app"] else 0)
     return MemberOverview(
         member=member_model(member), plan_tier=tier_model(tier),
         usage=MemberUsageDollars(plan_year=u["plan_year"], max_used=usage.max_used,
                                  deductible_met=usage.deductible_met, visits=u["visits"],
                                  cleanings_used=u["cleanings_used"]),
         benefits=status, reminder=status.reminder, eligibility=_eligibility(plan, member),
-        as_of=DEMO_TODAY.isoformat())
+        as_of=DEMO_TODAY.isoformat(), notifications_unread=unread)
 
 
 @router.get("/members/{member_id}/schedule", response_model=list[ScheduleEntry])
@@ -99,7 +103,8 @@ def _usage_models(u: dict[str, Any]) -> tuple[Usage, MemberUsageDollars]:
                                      cleanings_used=u["cleanings_used"])
 
 
-@router.post("/members/{member_id}/visits", response_model=VisitResponse, status_code=201)
+@router.post("/members/{member_id}/visits", response_model=VisitResponse, status_code=201,
+             dependencies=[Depends(ratelimit.limit_compute)])
 def log_visit(member_id: str, req: VisitRequest, viewer: Viewer, store: StoreDep) -> VisitResponse:
     """Log a visit: the engine estimates it with this person's usage and the household's current
     plan, then the amounts are saved to this person's usage. Same visibility rules as the overview."""
@@ -125,12 +130,13 @@ def log_visit(member_id: str, req: VisitRequest, viewer: Viewer, store: StoreDep
     return VisitResponse(estimate=est, usage=dollars, benefits=status)
 
 
-@router.post("/demo/reset")
+@router.post("/demo/reset", dependencies=[Depends(ratelimit.limit_reset)])
 def demo_reset(viewer: Viewer, store: StoreDep) -> dict[str, bool]:
-    """Primary only: put the demo database back to its original state. Member ids stay the same,
-    so signed-in sessions stay valid."""
+    """Primary only: put the caller's own demo family back to its original state (names, plan,
+    usage, visits, saved plans; chat memory is cleared). Member ids stay the same, so signed-in
+    sessions stay valid. Other families are not touched."""
     me = guarded(lambda: store.get_member(viewer, viewer))
     if me["role"] != "primary":
         raise HTTPException(status_code=403, detail="Only the primary account holder can reset the demo.")
-    reseed(store.path)
+    guarded(lambda: store.reset_household(viewer))
     return {"ok": True}

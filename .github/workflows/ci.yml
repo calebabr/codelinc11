@@ -27,10 +27,15 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-          cache-dependency-path: backend/requirements.txt
-      - run: pip install -r requirements.txt
+          cache-dependency-path: backend/requirements-dev.txt
+      - run: pip install -r requirements-dev.txt
       - run: ruff check .
-      - run: pytest -q
+      - name: Fast tests (everything except slow)
+        run: pytest -m "not slow"
+      - name: All tests with coverage summary
+        run: |
+          pytest --cov=app --cov-report=term | tee coverage.txt
+          { echo '### Backend coverage'; echo '```'; sed -n '/coverage:/,$p' coverage.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
   frontend:
     runs-on: ubuntu-latest

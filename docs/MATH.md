@@ -72,7 +72,18 @@ Maximum remaining, deductible remaining, frequency used and left, and the value 
 Orthodontia is stored but the engine does not use it yet. The database stores the same tiers in cents (`database/seeds/demo_household.json`).
 
 ## Yearly cost for a plan (`engine/annual_cost.py`, `POST /annual-cost`)
-Premiums (monthly premium x 12 x covered people) plus expected care. Each covered person has their own deductible, yearly maximum and frequency counts (nobody shares one maximum); each person's care runs in order through the same `estimate()` used everywhere else. Used by the Costs page "Yearly cost" tab. A plan-comparison simulation (Monte Carlo) is not built.
+Premiums (monthly premium x 12 x covered people) plus expected care. Each covered person has their own deductible, yearly maximum and frequency counts (nobody shares one maximum); each person's care runs in order through the same `estimate()` used everywhere else. Used by the Costs page "Yearly cost" tab. The plan-comparison simulation is the next section.
+
+## Choose a plan: Monte Carlo (`engine/simulate.py`, `POST /simulate`)
+Answers "which plan costs this household the least?" over many possible years. The odds are synthetic placeholders (M to review), not claims data.
+- **Simulated year.** For each person: 2 exams (D0120) and 2 cleanings (D1110), then Poisson counts (Knuth's method, `random.Random(seed)`, default seed 42) of fillings D2392, root canals D3330, crowns D2740 and extractions D7140. Yearly rates per person: low 0.2 / 0.02 / 0.03 / 0.02, average 0.6 / 0.05 / 0.10 / 0.05, high 1.5 / 0.15 / 0.40 / 0.10. Children under 13 get sealants (D1351) at the low filling rate (0.2) in place of fillings, and use at most the average level for root canals, crowns and extractions. Known care is added to every year.
+- **Order.** Each person's codes are in a canonical order (preventive, basic, major, then by code), so a person's cost under a plan depends only on (plan, in-network or not, codes).
+- **Common random numbers.** All people's years are drawn once, in a fixed order, and then priced under every plan. Nothing is reseeded per plan.
+- **Pricing.** Only the existing engine: `run_year()` in network, `estimate(..., in_network=False)` out of network, one person at a time starting with nothing used (each person has their own deductible, maximum and cleaning limits). Prices are cached per request by (plan, in-network, codes), so 5,000 years for 4 people and 3 plans take about 0.15 seconds.
+- **Household total** for a year = monthly premium x 12 x people + what the people pay.
+- **Statistics.** Percentiles use the nearest-rank method on the sorted totals (rank = ceil(p/100 x n)); the median is the 50th percentile. A plan "wins" a year when its total is lowest; exact ties go to the lower premium, then the plan id. `cheapest_share` is whole percents using the largest-remainder method (ties by lower premium, then plan id), so shares add up to exactly 100. The histogram uses shared, rounded bin edges (about 12 bins from the lowest to the highest total) with one count list per plan.
+- **Reasons** are built in code from the numbers: the premium difference, the bad-year (90th percentile) totals, and which of preventive, basic or major coverage explains the gap in the years that are bad for the lowest-premium plan.
+- **Limits.** 1 to 8 people, `n` 100 to 20,000, up to 10 known-care items each (count 1 to 5). One plan year only; no waiting periods or switching costs.
 
 ## Rounding
 Dollar amounts are rounded to cents in the engine. The database stores whole cents.

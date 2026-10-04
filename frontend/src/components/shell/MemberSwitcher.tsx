@@ -5,20 +5,20 @@ import { useSession } from "@/state/SessionContext"
 
 // Card-style menu (not a native <select>) for choosing the active family member.
 export function MemberSwitcher() {
-  const { household, activeMember, setActiveMemberId } = useSession()
+  const { household, activeMember, setActiveMemberId, account, signOut } = useSession()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!open) return
-    const onDown = (e: MouseEvent) => {
+    const onDown = (e: PointerEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false)
-    document.addEventListener("mousedown", onDown)
+    document.addEventListener("pointerdown", onDown)
     document.addEventListener("keydown", onKey)
     return () => {
-      document.removeEventListener("mousedown", onDown)
+      document.removeEventListener("pointerdown", onDown)
       document.removeEventListener("keydown", onKey)
     }
   }, [open])
@@ -29,7 +29,7 @@ export function MemberSwitcher() {
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white ring-1 ring-white/30 transition-colors hover:bg-white/20"
+        className="flex min-h-11 items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white ring-1 ring-white/30 transition-colors hover:bg-white/20"
       >
         <span className="text-[0.7rem] opacity-80">Viewing</span>
         <span data-testid="active-member-label">{activeMember.name}</span>
@@ -40,7 +40,7 @@ export function MemberSwitcher() {
         <div
           role="group"
           aria-label="Choose a family member"
-          className="absolute right-0 z-50 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-xl bg-white p-2 text-ink shadow-xl ring-1 ring-[var(--line)]"
+          className="absolute right-0 z-50 mt-1 max-h-[min(70dvh,28rem)] w-72 max-w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain rounded-xl bg-white p-2 text-ink shadow-xl ring-1 ring-[var(--line)]"
         >
           <ul className="flex flex-col gap-1">
             {household.members.map((m) => {
@@ -55,7 +55,7 @@ export function MemberSwitcher() {
                       setOpen(false)
                     }}
                     className={cn(
-                      "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--soft)]",
+                      "flex min-h-12 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--soft)]",
                       selected && "bg-[var(--soft)] ring-1 ring-burgundy",
                     )}
                   >
@@ -75,6 +75,18 @@ export function MemberSwitcher() {
               )
             })}
           </ul>
+          {account && (
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false)
+                signOut()
+              }}
+              className="mt-1 flex min-h-12 w-full items-center rounded-lg border-t border-[var(--line)] px-3 text-left text-sm font-semibold text-burgundy hover:bg-[var(--soft)] sm:hidden"
+            >
+              Sign out
+            </button>
+          )}
         </div>
       )}
     </div>

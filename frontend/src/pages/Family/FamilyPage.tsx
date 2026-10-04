@@ -2,12 +2,16 @@ import { useEffect, useState } from "react"
 import { FamilyTree } from "@/features/family/FamilyTree"
 import { MemberDetail } from "@/features/family/MemberDetail"
 import { useOverview } from "@/features/family/useFamily"
+import { AddMemberCard } from "@/features/family/AddMemberForm"
+import { NameFamilyForm } from "@/features/family/NameFamilyForm"
 import { useSession } from "@/state/SessionContext"
 
 export default function FamilyPage() {
   const session = useSession()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [reload, setReload] = useState(0)
+  const [renaming, setRenaming] = useState(false)
+  const [removed, setRemoved] = useState<string | null>(null)
 
   const { household, user: viewer, token, accounts } = session
   const members = household.members
@@ -19,6 +23,10 @@ export default function FamilyPage() {
   const selected = members.find((m) => m.id === selectedId) ?? null
   const overview = useOverview(selected?.id ?? null, token, reload)
   const viewerIsPrimary = viewer.role === "primary"
+  // Only demo families can be edited. A non-primary adult may edit only themself.
+  const editable = !!session.sandbox
+  const canEditSelected =
+    editable && !!selected && (viewerIsPrimary || (viewer.role === "adult" && selected.id === viewer.id))
 
   return (
     <div className="space-y-8 pb-12">
@@ -35,11 +43,37 @@ export default function FamilyPage() {
         This is an estimate. Your actual cost depends on your dentist's charges and claim review.
       </p>
 
+      {viewerIsPrimary && session.sandbox && (
+        <div>
+          {renaming ? (
+            <NameFamilyForm title="Rename family" cancelLabel="Cancel" onDone={() => setRenaming(false)} />
+          ) : (
+            <button type="button" className="btn btn-outline" onClick={() => setRenaming(true)}>
+              Rename family
+            </button>
+          )}
+        </div>
+      )}
+
+      {viewerIsPrimary && editable && (
+        <AddMemberCard
+          onAdded={(m) => {
+            setRemoved(null)
+            setSelectedId(m.id)
+          }}
+        />
+      )}
+      {removed && (
+        <p className="note" role="status">
+          {removed} was removed from your family.
+        </p>
+      )}
+
       <>
           {members.length === 0 ? (
             <p className="note">No family members to show yet.</p>
           ) : (
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
               <div className="portal-card">
                 <h2 className="portal-card-title">{viewerIsPrimary ? "Your household" : "Your profile"}</h2>
                 <div className="mt-4">
@@ -53,6 +87,13 @@ export default function FamilyPage() {
               </div>
               {selected && (
                 <MemberDetail
+                  key={selected.id}
+                  canEdit={canEditSelected}
+                  onChanged={() => setReload((n) => n + 1)}
+                  onRemoved={(name) => {
+                    setRemoved(name)
+                    setSelectedId(viewer.id)
+                  }}
                   member={selected}
                   overview={overview}
                   viewerIsPrimary={viewerIsPrimary}
@@ -80,7 +121,7 @@ export default function FamilyPage() {
                     <button
                       key={a.account_id}
                       type="button"
-                      className="chip portal-card-select"
+                      className="chip portal-card-select min-h-11"
                       aria-pressed={a.member_id === viewer.id}
                       onClick={() => void session.signIn(a.member_id)}
                     >

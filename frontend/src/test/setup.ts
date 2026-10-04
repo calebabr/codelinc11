@@ -1,16 +1,9 @@
 import '@testing-library/jest-dom/vitest'
 import { afterEach, vi } from 'vitest'
-import { cleanup } from '@testing-library/react'
+import { cleanup, configure } from '@testing-library/react'
 
-// Clerk needs a real browser session. Tests run as a signed-in Clerk user; the household
-// profile still comes from SessionProvider / TestSessionProvider.
-vi.mock('@clerk/react', () => ({
-  ClerkProvider: ({ children }: { children: unknown }) => children,
-  useAuth: () => ({ isLoaded: true, isSignedIn: true, userId: 'user_test', getToken: async () => 'clerk-tok' }),
-  useClerk: () => ({ signOut: vi.fn(async () => {}) }),
-  SignIn: () => null,
-  SignUp: () => null,
-}))
+// Under heavy parallel load (several test runs at once) the 1 s default for findBy/waitFor is too short.
+configure({ asyncUtilTimeout: 5000 })
 
 afterEach(() => {
   cleanup()

@@ -1,4 +1,5 @@
-import { API_URL, ApiError, DEMO_MONTH } from "@/lib/api/planYear"
+import { API_URL, ApiError, apiFailure, DEMO_MONTH } from "@/lib/api/planYear"
+import { MAX_FOLLOWUPS } from "@/lib/types/assistant"
 import type { AssistantContext, AttachmentInfo, ChatTurn, StreamEvent, SuggestionsResponse } from "@/lib/types/assistant"
 
 export { errorMessage } from "@/lib/api/planYear"
@@ -19,14 +20,7 @@ async function authedFetch(token: string, path: string, init: RequestInit = {}):
 }
 
 async function failure(res: Response): Promise<ApiError> {
-  let detail = ""
-  try {
-    const b = await res.json()
-    if (typeof b?.detail === "string") detail = b.detail
-  } catch {
-    /* ignore */
-  }
-  return new ApiError(detail || `The server returned an error (${res.status}).`, res.status)
+  return apiFailure(res)
 }
 
 export async function getSuggestions(token: string, memberId: string): Promise<string[]> {
@@ -50,6 +44,19 @@ export async function uploadAttachment(token: string, memberId: string, file: Fi
   })
   if (!res.ok) throw await failure(res)
   return (await res.json()) as AttachmentInfo
+}
+
+/** Keep only usable follow-up questions from a `done` event: non-empty strings, trimmed, no repeats, at most four. */
+export function cleanFollowups(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return []
+  const out: string[] = []
+  for (const q of raw) {
+    if (typeof q !== "string") continue
+    const t = q.trim()
+    if (t && !out.includes(t)) out.push(t)
+    if (out.length >= MAX_FOLLOWUPS) break
+  }
+  return out
 }
 
 /** Parse Server-Sent Events text into events. Returns the unparsed rest. */

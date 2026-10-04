@@ -54,6 +54,7 @@ function mockApi(opts: { overviewFails?: boolean; savedStatus?: number } = {}) {
       const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : null
       calls.push({ url, body })
       const ok = (data: unknown) => ({ ok: true, status: 200, json: async () => data })
+      if (url.includes("/saved-simulations")) return { ok: false, status: 404, json: async () => ({ detail: "Not Found" }) }
       if (url.includes("/saved-plans")) {
         const method = init?.method ?? "GET"
         const mid = url.split("/members/")[1].split("/")[0]

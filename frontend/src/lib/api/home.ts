@@ -1,4 +1,4 @@
-import { API_URL, ApiError } from "@/lib/api/planYear"
+import { API_URL, ApiError, apiFailure } from "@/lib/api/planYear"
 import type { MemberOverview, ScheduleEntry, VisitResponse } from "@/lib/types/home"
 
 import { errorMessage } from "@/lib/api/planYear"
@@ -11,16 +11,7 @@ async function json<T>(path: string, init?: RequestInit): Promise<T> {
   } catch {
     throw new ApiError("We can't reach the server right now. Please try again in a moment.")
   }
-  if (!res.ok) {
-    let detail = ""
-    try {
-      const b = await res.json()
-      if (typeof b?.detail === "string") detail = b.detail
-    } catch {
-      /* ignore */
-    }
-    throw new ApiError(detail || `The server returned an error (${res.status}).`, res.status)
-  }
+  if (!res.ok) throw await apiFailure(res)
   return (await res.json()) as T
 }
 

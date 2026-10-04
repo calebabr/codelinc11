@@ -1,6 +1,7 @@
 """POST /annual-cost."""
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from .. import ratelimit
 from ..data import load_catalog, load_plans
 from ..engine.annual_cost import annual_cost
 from ..models import AnnualCostRequest, AnnualCostResponse
@@ -8,7 +9,7 @@ from ..models import AnnualCostRequest, AnnualCostResponse
 router = APIRouter(tags=["costs"])
 
 
-@router.post("/annual-cost", response_model=AnnualCostResponse)
+@router.post("/annual-cost", response_model=AnnualCostResponse, dependencies=[Depends(ratelimit.limit_compute)])
 def post_annual_cost(req: AnnualCostRequest) -> AnnualCostResponse:
     plan = load_plans().get(req.tier_id)
     if plan is None:

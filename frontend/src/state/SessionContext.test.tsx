@@ -54,15 +54,15 @@ function mockApi() {
       if (url.endsWith("/plans")) return ok([PLAN("basic", "Basic", 28), PLAN("preferred", "Preferred", 44), PLAN("premium", "Premium", 61)])
       const hh = url.match(/\/households\/([^/]+)$/)
       if (hh) return ok(householdFor(headers.Authorization!.replace("Bearer tok-", "")))
+      if (url.endsWith("/simulate")) return { ok: false, status: 404, json: async () => ({ detail: "Not Found" }) }
       return ok([])
     }),
   )
 }
 
-function renderApp(path = "/plans", { paused = false } = {}) {
+function renderApp(path = "/plans") {
   return render(
-    // getAuthToken stands in for Clerk's session token (see App's ClerkSession)
-    <SessionProvider getAuthToken={async () => "clerk-tok"} paused={paused}>
+    <SessionProvider>
       <MemoryRouter initialEntries={[path]}>
         <AppRoutes />
       </MemoryRouter>
@@ -74,14 +74,15 @@ beforeEach(() => {
   down = false
   tier = "preferred"
   sessionStorage.clear()
+  localStorage.clear()
   mockApi()
 })
 afterEach(() => vi.restoreAllMocks())
 
 describe("SessionProvider", () => {
-  it("sends a visitor with no profile picked to the profile picker and offers the profiles", async () => {
+  it("sends a signed-out visitor to the login page and offers the demo accounts", async () => {
     renderApp("/plans")
-    expect(await screen.findByRole("heading", { name: "Who’s using bitewise?" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Welcome back" })).toBeInTheDocument()
     expect(await screen.findByRole("button", { name: /Jordan Rivera/ })).toHaveTextContent("Account holder")
     expect(screen.getByRole("button", { name: /Alex Rivera/ })).toHaveTextContent("Adult")
     expect(screen.getByRole("button", { name: /Noah Rivera/ })).toHaveTextContent("Waiting for approval")
@@ -89,17 +90,16 @@ describe("SessionProvider", () => {
     expect(calls.some((c) => c.url.endsWith("/auth/demo-login"))).toBe(false)
   })
 
-  it("choosing Jordan on the profile picker signs in with the Clerk token, loads the household and goes home", async () => {
+  it("choosing Jordan on the login page signs in, loads the household with the token and goes home", async () => {
     const user = userEvent.setup()
-    renderApp("/choose-profile")
+    renderApp("/login")
     await user.click(await screen.findByRole("button", { name: /Jordan Rivera/ }))
     expect(await screen.findByTestId("household-label")).toHaveTextContent("Rivera household")
     expect(screen.getByTestId("active-member-label")).toHaveTextContent("Jordan Rivera")
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Welcome back, Jordan")
     const login = calls.find((c) => c.url.endsWith("/auth/demo-login"))!
     expect(login.method).toBe("POST")
-    expect(login.body).toEqual({ member_id: "m-jordan" })
-    expect(login.auth).toBe("Bearer clerk-tok")
+    expect(login.body).toEqual({ member_id: "m-jordan", sandbox: true })
     const hh = calls.find((c) => c.url.endsWith("/households/hh-rivera"))!
     expect(hh.auth).toBe("Bearer tok-m-jordan")
     expect(sessionStorage.getItem("dental.signedInMemberId")).toBe("m-jordan")
@@ -109,7 +109,7 @@ describe("SessionProvider", () => {
     sessionStorage.setItem("dental.signedInMemberId", "m-alex")
     renderApp()
     await waitFor(() => expect(screen.getByTestId("active-member-label")).toHaveTextContent("Alex Rivera"))
-    expect(calls.find((c) => c.url.endsWith("/auth/demo-login"))!.body).toEqual({ member_id: "m-alex" })
+    expect(calls.find((c) => c.url.endsWith("/auth/demo-login"))!.body).toEqual({ member_id: "m-alex", sandbox: true })
   })
 
   it("shows a clear error with a retry when the server is down, then recovers", async () => {
@@ -123,24 +123,16 @@ describe("SessionProvider", () => {
     expect(await screen.findByTestId("household-label")).toBeInTheDocument()
   })
 
-  it("switch profile goes back to the profile picker, and the cards sign in again", async () => {
+  it("signs out to the login page, and the login cards sign in again", async () => {
     const user = userEvent.setup()
     sessionStorage.setItem("dental.signedInMemberId", "m-jordan")
     renderApp("/plans")
-    await user.click(await screen.findByRole("button", { name: "Switch profile" }))
-    expect(await screen.findByRole("heading", { name: "Who’s using bitewise?" })).toBeInTheDocument()
+    await user.click(await screen.findByRole("button", { name: "Sign out" }))
+    expect(await screen.findByRole("heading", { name: "Welcome back" })).toBeInTheDocument()
     expect(sessionStorage.getItem("dental.signedInMemberId")).toBeNull()
     await user.click(await screen.findByRole("button", { name: /Alex Rivera/ }))
     await waitFor(() => expect(screen.getByTestId("active-member-label")).toHaveTextContent("Alex Rivera"))
     expect(sessionStorage.getItem("dental.signedInMemberId")).toBe("m-alex")
-  })
-
-  it("while nobody is signed in to Clerk (paused) it calls no API and forgets the remembered profile", async () => {
-    sessionStorage.setItem("dental.signedInMemberId", "m-jordan")
-    renderApp("/plans", { paused: true })
-    expect(await screen.findByRole("heading", { name: "Who’s using bitewise?" })).toBeInTheDocument()
-    expect(calls).toEqual([])
-    expect(sessionStorage.getItem("dental.signedInMemberId")).toBeNull()
   })
 
   it("changePlan updates the plan name in the utility bar without a reload", async () => {

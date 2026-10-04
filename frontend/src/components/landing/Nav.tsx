@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { Menu } from 'lucide-react'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import Logo from '@/components/Logo'
+import TryDemoButton from '@/components/auth/TryDemoButton'
 import { cn } from '@/lib/utils'
 
 // Sticky top bar. Transparent at the top of the page, white blur once you scroll.
@@ -23,8 +24,8 @@ export default function Nav() {
         scrolled ? 'bg-white/80 shadow-[0_1px_0_var(--border)] backdrop-blur-md' : 'bg-transparent',
       )}
     >
-      <nav className="mx-auto flex h-18 max-w-[1200px] items-center justify-between px-6" aria-label="Main">
-        <Link to="/welcome" aria-label="bitewise home">
+      <nav className="mx-auto flex h-18 max-w-[1200px] items-center justify-between px-6 pt-[env(safe-area-inset-top)]" aria-label="Main">
+        <Link to="/welcome" aria-label="Molar Money home" className="inline-flex min-h-11 items-center">
           <Logo />
         </Link>
 
@@ -32,15 +33,10 @@ export default function Nav() {
           <a href="#how-it-works" className="text-[15px] font-semibold text-muted-foreground hover:text-foreground">
             How it works
           </a>
-                      <Link to="/login" className="text-[15px] font-semibold text-foreground hover:text-primary">
+                      <Link to="/login" className="inline-flex min-h-11 items-center text-[15px] font-semibold text-foreground hover:text-primary">
               Log in
             </Link>
-            <Link
-              to="/signup"
-              className="inline-flex h-11 items-center rounded-full bg-primary px-6 text-[15px] font-bold text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Get started
-            </Link>
+            <TryDemoButton showArrow={false} className="h-11 min-h-11 px-6 text-[15px]" />
         </div>
 
         {/* Small screens: links in a slide-out panel */}
@@ -61,12 +57,7 @@ export default function Nav() {
                               <Link to="/login" className="rounded-xl px-3 py-3 text-base font-semibold hover:bg-accent">
                   Log in
                 </Link>
-                <Link
-                  to="/signup"
-                  className="mt-2 inline-flex h-12 items-center justify-center rounded-full bg-primary text-base font-bold text-primary-foreground"
-                >
-                  Get started
-                </Link>
+                <TryDemoButton showArrow={false} wrapperClassName="mt-2 flex w-full items-stretch" className="h-12 w-full" />
             </div>
           </SheetContent>
         </Sheet>

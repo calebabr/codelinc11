@@ -3,20 +3,20 @@ import Logo from '@/components/Logo'
 
 export default function Footer() {
   return (
-    <footer className="border-t">
+    <footer className="border-t pb-[env(safe-area-inset-bottom)]">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-6 py-10 md:flex-row md:items-center md:justify-between">
         <div className="space-y-2">
           <Logo />
           <p className="text-sm text-muted-foreground">Built for codeLinc 11 with Lincoln Financial</p>
         </div>
-        <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-semibold text-muted-foreground">
-          <a href="#how-it-works" className="hover:text-foreground">
+        <nav aria-label="Footer" className="flex flex-wrap gap-x-6 text-sm font-semibold text-muted-foreground">
+          <a href="#how-it-works" className="inline-flex min-h-11 items-center hover:text-foreground">
             How it works
           </a>
-          <Link to="/login" className="hover:text-foreground">
+          <Link to="/login" className="inline-flex min-h-11 items-center hover:text-foreground">
             Log in
           </Link>
-          <Link to="/signup" className="hover:text-foreground">
+          <Link to="/login" className="inline-flex min-h-11 items-center hover:text-foreground">
             Get started
           </Link>
         </nav>

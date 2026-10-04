@@ -133,10 +133,12 @@ Each feature lists what each layer owes. A feature is **done** only when every b
 - **Acceptance:** a sample plan PDF is extracted, shown for confirmation, and then works in F2.
 
 ### F7: Choose a Plan (P2)
-- [ ] **Engine (M):** `simulate()` Monte Carlo (same simulated years for every plan, n = 5,000)
-- [ ] **API (BE):** `POST /simulate`
-- [ ] **UI (FE):** profile picker, known planned work, box plot or histogram per plan, "cheapest in X% of years" cards
-- **Acceptance:** results stay the same with a fixed random seed, and adding a known crown changes which plan is recommended.
+- [x] **Engine (M):** `simulate()` Monte Carlo (same simulated years for every plan, n = 5,000), `backend/app/engine/simulate.py`
+- [x] **API (BE):** `POST /simulate`
+- [x] **AI (FLEX):** assistant tool `compare_plans` returns the same numbers as the page
+- [x] **UI (FE):** care level per person, known planned work, histogram per plan, "cheapest in X% of years" cards ("Which plan fits us?" on the Plans page)
+- **Acceptance:** results stay the same with a fixed random seed, and adding a known crown changes which plan is recommended. Checked 2026-10-03 for the Rivera household (average care, seed 42, in network): without known care Basic is cheapest in 82% of years; with Alex's crown as known care, Preferred is (54%).
+- **Status:** built on branch `feature/choose-a-plan`, not merged to `main` yet. The odds are synthetic placeholders. Details: [features/F7-choose-a-plan-monte-carlo.md](features/F7-choose-a-plan-monte-carlo.md).
 
 **Rule:** start F6 **or** F7, never both. Decide at the 2:00 AM stand-up.
 

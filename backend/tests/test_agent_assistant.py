@@ -353,7 +353,7 @@ def test_suggestions_differ_by_member(client_for, store):
     assert "What if I wait until January?" in got[ALEX]
     assert got[MAYA] != got[JORDAN] and any("braces" in q for q in got[MAYA])
     assert any("stay covered" in q for q in got[NOAH])
-    assert all(1 <= len(v) <= 5 for v in got.values())
+    assert all(1 <= len(v) <= 7 for v in got.values())
 
 
 def test_suggestions_default_to_the_viewer_and_respect_visibility(client_for):

@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react'
-import { Link } from 'react-router'
-import { ArrowRight, PiggyBank } from 'lucide-react'
+import TryDemoButton from '@/components/auth/TryDemoButton'
+import { PiggyBank } from 'lucide-react'
 import {
   easeInOut,
   motion,
@@ -12,7 +12,7 @@ import {
 } from 'motion/react'
 import { ease, rise, stagger } from '@/lib/motion'
 import SplitHeading from '@/components/landing/SplitHeading'
-import { fanStartPose, SCREEN_H, SCREEN_W, screens } from '@/components/landing/screens'
+import { fanStartPose, SCREEN_H, SCREEN_SIZES, SCREEN_W, screens } from '@/components/landing/screens'
 import { cn } from '@/lib/utils'
 
 // A small card that pops in after the screenshot, then drifts up and down slowly
@@ -156,17 +156,11 @@ export default function Hero({ zoom = false }: { zoom?: boolean }) {
                 className="mt-6 text-[48px] leading-[0.98] md:text-[72px] xl:text-[80px]"
               />
               <motion.p variants={rise} className="mt-7 max-w-xl text-lg leading-relaxed text-muted-foreground md:text-xl">
-                Bitewise turns your dental plan into plain English, estimates your costs, and plans your care so you get
+                Molar Money turns your dental plan into plain English, estimates your costs, and plans your care so you get
                 the most from your benefits.
               </motion.p>
               <motion.div variants={rise} className="mt-9 flex flex-wrap items-center gap-3">
-                <Link
-                  to="/signup"
-                  className="inline-flex h-13 items-center gap-2 rounded-full bg-primary px-7 text-base font-bold text-primary-foreground transition-colors hover:bg-primary/90"
-                >
-                  Get started
-                  <ArrowRight className="size-4" aria-hidden />
-                </Link>
+                <TryDemoButton className="h-14 text-lg" />
                 <a
                   href="#how-it-works"
                   className="inline-flex h-13 items-center rounded-full px-6 text-base font-bold text-foreground transition-colors hover:bg-accent"
@@ -206,7 +200,7 @@ export default function Hero({ zoom = false }: { zoom?: boolean }) {
                   <span className="size-2.5 rounded-full bg-[#e5dadd]" />
                   <span className="size-2.5 rounded-full bg-[#e5dadd]" />
                   <span className="ml-3 h-6 flex-1 rounded-full bg-white px-3 text-[11px] leading-6 text-muted-foreground">
-                    bitewise.app/coverage
+                    molarmoney.app/coverage
                   </span>
                 </motion.div>
                 <motion.div
@@ -215,6 +209,8 @@ export default function Hero({ zoom = false }: { zoom?: boolean }) {
                 >
                   <img
                     src={screens.coverage.src}
+                    srcSet={screens.coverage.srcSet}
+                    sizes={SCREEN_SIZES}
                     alt={screens.coverage.alt}
                     width={SCREEN_W}
                     height={SCREEN_H}

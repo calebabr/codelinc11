@@ -5,7 +5,7 @@
 //   DELETE /members/{id}/saved-plans/{plan_id}  -> 204
 // A saved plan stores only the treatment list. Dollar figures are always recomputed by /schedule.
 
-import { API_URL, ApiError } from "@/lib/api/planYear"
+import { API_URL, ApiError, apiFailure } from "@/lib/api/planYear"
 import type { TreatmentItem } from "@/lib/types/planYear"
 
 export const MAX_PLAN_ITEMS = 20
@@ -29,16 +29,7 @@ async function call<T>(path: string, token: string, init: RequestInit = {}): Pro
   } catch {
     throw new ApiError("We can't reach the server right now. Please try again in a moment.")
   }
-  if (!res.ok) {
-    let detail = ""
-    try {
-      const body = await res.json()
-      if (typeof body?.detail === "string") detail = body.detail
-    } catch {
-      /* ignore */
-    }
-    throw new ApiError(detail || `The server returned an error (${res.status}).`, res.status)
-  }
+  if (!res.ok) throw await apiFailure(res)
   if (res.status === 204) return undefined as T
   return (await res.json()) as T
 }

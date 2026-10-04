@@ -1,0 +1,38 @@
+# Tasks T39 to T41: the app must work on a phone opened from a QR code during the demo
+
+**User request (2026-10-04):** "Make sure the web app works when accessed on a mobile device via QR code during demo."
+
+A QR code is only a web address. The phone opens the site in its browser (mostly iPhone Safari and Android Chrome). Three things must hold: the **UI works on phones**, the **phone can actually reach the app** (public HTTPS address, or the same Wi-Fi), and there is a **QR code to scan**.
+
+## T39 frontend: phone audit and fixes
+**You may edit** `frontend/index.html`, `frontend/src/index.css`, `frontend/src/components/shell/`, `frontend/src/components/landing/`, `frontend/src/components/auth/`, `frontend/src/pages/Home/`, `Family/`, `Costs/`, `Assistant/`, `Login/`, `frontend/src/features/assistant/`, `features/home/`, `features/family/`, `features/costs/`, tests next to them, `frontend/README.md` (a "Phone support" section). **Do not touch** `frontend/src/pages/Plans/`, `pages/PlanYear/`, `features/plans/`, `features/planYear/` (another agent is editing them; list any problem you see there in your report with file and line) and `App.tsx` (another agent adds a route).
+**Audit and fix at 360, 375, 390 and 412 px widths and landscape**, every page: Landing (`/welcome`), Login, Home, Plans (report only), Family, Costs (all three tabs), Plan My Year (report only), Assistant and the floating assistant panel:
+- No sideways page scrolling anywhere (tables scroll inside their own box).
+- **Touch targets at least 44 x 44 px** for buttons, chips, cards and nav items.
+- **Inputs use at least 16 px font** (iPhone Safari zooms the page on smaller inputs).
+- **Sticky and fixed elements** respect the iPhone notch and home bar: add `viewport-fit=cover` and `env(safe-area-inset-*)` padding; use `dvh` instead of `vh` for full-height panels so the browser toolbar doesn't hide the bottom.
+- **The assistant panel is full screen on phones** with the input always visible above the on-screen keyboard (use `visualViewport` if needed), close button reachable, focus and Escape behavior kept.
+- The top nav and member switcher menu work with a thumb (menu fits the screen, scrolls if needed, closes on selection).
+- Charts and the family tree stay readable; long names wrap; no clipped text.
+- **Landing page performance on phones:** respect `prefers-reduced-motion`, avoid heavy scroll animations on small screens (simplify or disable the parallax and zoom effects below 768 px), no layout jump; images sized so the page loads fast on cellular. Report the built bundle sizes.
+- `index.html`: `<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">`, `theme-color` (burgundy `#650030`), an `apple-touch-icon` and a `manifest.webmanifest` (name "Molar Money", standalone display, icons from the existing favicon/logo so "Add to Home Screen" works). No service worker.
+- Voice input (mic) is hidden when unsupported (already), and shows the existing friendly error when the browser blocks the microphone. Note in the README that the mic needs HTTPS on phones.
+- Check Streaming chat on a phone-size viewport: text appears progressively, the page scrolls to the newest message, chips wrap.
+- Add or extend tests that assert the key mobile-safe attributes (viewport meta content, 16 px input class, dialog full-screen classes, 44 px target classes) where practical. `npm run typecheck`, `npm run test` (twice), `npm run build` pass.
+
+## T40 devops: how phones reach the app (three modes) and the CORS setting
+**You may edit** `frontend/vite.config.ts`, `frontend/package.json` (scripts only), `backend/app/main.py` (the CORS lines only), `backend/tests/test_cors.py` (new), `scripts/` (new files), `docs/DEMO-PHONES.md` (new), `docs/SETUP.md` and `infra/README.md` (short pointers), `.env.example`. **Do not touch** other app code.
+1. **CORS from the environment:** `CORS_ORIGINS` (comma separated, default the two localhost origins) read in `backend/app/main.py`; a regex option `CORS_ORIGIN_REGEX` for tunnel domains such as `https://.*\.trycloudflare\.com`. Tests prove default, extra origin, regex, and that an unlisted origin gets no CORS header.
+2. **Mode A, same Wi-Fi (free, no cloud):** Vite proxies `/api` to `http://localhost:8000` (strip the prefix) so the phone talks to ONE address; `npm run dev:lan` (`vite --host`) and a root script `scripts/lan-url.ps1` / `.sh` that prints the laptop's LAN address and the exact URL and writes the QR (see below). The frontend is run with `VITE_API_URL=/api` in this mode. Document the Windows firewall prompt, that many venue and guest Wi-Fi networks isolate clients (then use Mode B), that this is plain HTTP so the phone microphone will not work, and how to test it with one phone before the demo.
+3. **Mode B, tunnel from the laptop (recommended backup):** a free tunnel (Cloudflare Tunnel `cloudflared` or `ngrok`) that gives the running app an HTTPS address. Because the proxy serves frontend and API from one origin, no CORS change is needed. Exact commands (the user installs the tool; do not download anything yourself), what the temporary address looks like, and the rate-limit/key caution.
+4. **Mode C, public hosting:** frontend on a static host (Netlify, Vercel, GitHub Pages or the S3 + CloudFront kit in `infra/aws/`) with `VITE_API_URL` set to the backend's HTTPS address and `CORS_ORIGINS` set to the frontend address. Mixed content note: an HTTPS page cannot call an HTTP backend.
+5. **QR generation:** `scripts/make_qr.py` (uses the `qrcode` package with Pillow if available; if installing is not possible make it print the one pip command and fall back to printing a text QR) producing `qr-demo.png` and `qr-demo.svg` for any URL argument, git-ignored output. Do not call any online QR service (the address must not leave the machine).
+6. `docs/DEMO-PHONES.md`: a one-page runbook for presenters: pick a mode, 10-minute pre-demo checklist (test on an iPhone and an Android phone, on Wi-Fi and on cellular, in a private tab), what to do if the venue Wi-Fi blocks phones, what to do if the assistant is slow, and the backup plan (screen recording).
+Run backend `pytest -q`, `ruff check --no-cache .`; `bash -n` and the PowerShell parser on scripts. Do not start servers.
+
+## T41 frontend: "Scan to try" page
+**You may edit** `frontend/src/pages/Join/` (new), `frontend/src/App.tsx` (add one public route), `frontend/package.json` (add the `qrcode` dependency; run `npm install`), tests. **Do not touch** other files.
+A public page at **`/join`** for the big screen: Molar Money wordmark, a large QR code that encodes the app's own address (`window.location.origin + "/welcome"`, generated in the browser with the `qrcode` package so the address never leaves the browser; SVG output, high contrast, quiet zone, at least 320 px), the address as readable text underneath, "Scan with your phone's camera to try it", a note that each visitor gets their own demo family (the sandbox feature is being added), a **Copy link** button, and a light projector-friendly layout. An optional `?url=` query parameter overrides the encoded address (for tunnel or hosted addresses), validated to be an http or https URL. Works at any size; no sign-in required (route is outside the shell). Tests: renders the QR (an svg), shows the address text, `?url=` override applied and an invalid value ignored, copy button. `npm run typecheck`, `npm run test`, `npm run build` pass.
+
+## All
+Never run git write commands; do not start or stop servers; never read `backend/.env`. Report in the format in agents/README.md.

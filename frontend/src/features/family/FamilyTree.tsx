@@ -61,10 +61,12 @@ export function FamilyTree({
   onSelect: (id: string) => void
 }) {
   const parents = members.filter((m) => PARTNER.has(m.relationship.toLowerCase()))
-  const kids = members.filter((m) => !PARTNER.has(m.relationship.toLowerCase()))
+  const rest = members.filter((m) => !PARTNER.has(m.relationship.toLowerCase()))
+  const extras = rest.filter((m) => m.relationship.toLowerCase() === "other")
+  const kids = rest.filter((m) => m.relationship.toLowerCase() !== "other")
   const primaryName = (members.find((x) => x.role === "primary")?.name ?? "a parent").split(" ")[0]
   const parentActive = parents.some((m) => m.id === selectedId)
-  const kidActive = kids.some((m) => m.id === selectedId)
+  const kidActive = rest.some((m) => m.id === selectedId)
   const stemOn = parentActive || kidActive
   return (
     <div role="group" aria-label="Family tree" className="flex flex-col items-center" data-testid="family-tree">
@@ -118,6 +120,22 @@ export function FamilyTree({
             })}
           </div>
         </>
+      )}
+      {extras.length > 0 && (
+        <div className="flex flex-col items-center" data-testid="extras">
+          <span
+            aria-hidden="true"
+            data-testid="connector"
+            data-active={extras.some((m) => m.id === selectedId) ? "true" : "false"}
+            className="h-6 w-0 border-l-2 border-dashed border-[var(--line)]"
+          />
+          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Other family</p>
+          <div className="flex flex-wrap justify-center gap-2">
+            {extras.map((m) => (
+              <Node key={m.id} primaryName={primaryName} m={m} selected={m.id === selectedId} onSelect={() => onSelect(m.id)} />
+            ))}
+          </div>
+        </div>
       )}
       <p className="mt-4 max-w-md text-center text-sm text-muted-foreground" data-testid="tree-legend">
         Adults 18 and over can have their own account. Children's profiles are managed by a parent.

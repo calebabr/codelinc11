@@ -1,0 +1,219 @@
+"""Demo sandboxes: a private copy of the template household for each visitor.
+
+The template is the household in the seed file (`database/seeds/demo_household.json`). A sandbox
+is new rows with every id suffixed `.<sid>` (6 lowercase hex characters), listed in the
+`sandboxes` table. Cleanup (expiry by DEMO_SANDBOX_TTL_HOURS, cap by DEMO_MAX_SANDBOXES, oldest
+first) runs whenever a sandbox is created and deletes every dependent row.
+
+Rows are copied from the seed file, not from the live template, so a sandbox always starts
+from the original numbers and `restore` can reset it in place (same ids, tokens stay valid).
+"""
+from __future__ import annotations
+
+import os
+import re
+import secrets
+import sqlite3
+from datetime import datetime, timedelta, timezone
+from typing import Any
+
+from .core import load_seed_file, session
+
+SID_RE = re.compile(r"^[0-9a-f]{6}$")
+DEFAULT_TTL_HOURS = 24.0
+DEFAULT_MAX_SANDBOXES = 300
+
+# Tables copied from the seed (plan_tiers is shared). Insert order respects foreign keys.
+CLONE_TABLES = ["households", "members", "accounts", "member_usage", "visits", "appointments",
+                "member_context", "member_preferences", "saved_plans", "saved_simulations",
+                "notification_prefs"]
+# Child tables keyed by member_id, deleted before the members (chat_memory is never copied: it starts empty).
+MEMBER_CHILD_TABLES = ["outbox", "notifications", "notification_prefs", "chat_memory", "member_preferences", "member_context", "saved_simulations",
+                       "saved_plans", "appointments", "visits", "member_usage"]
+
+
+def _utcnow() -> datetime:
+    """Current UTC time (tests replace this to check expiry)."""
+    return datetime.now(timezone.utc)
+
+
+def _iso(dt: datetime) -> str:
+    return dt.astimezone(timezone.utc).isoformat(timespec="seconds")
+
+
+def ttl_hours() -> float:
+    try:
+        return max(0.0, float(os.environ.get("DEMO_SANDBOX_TTL_HOURS", DEFAULT_TTL_HOURS)))
+    except ValueError:
+        return DEFAULT_TTL_HOURS
+
+
+def max_sandboxes() -> int:
+    try:
+        return max(1, int(os.environ.get("DEMO_MAX_SANDBOXES", DEFAULT_MAX_SANDBOXES)))
+    except ValueError:
+        return DEFAULT_MAX_SANDBOXES
+
+
+def template_household_ids() -> list[str]:
+    return [h["id"] for h in load_seed_file()["households"]]
+
+
+def split_id(some_id: str) -> tuple[str, str | None]:
+    """e.g. ('m-alex', '3f9a1c') for 'm-alex.3f9a1c'; ('m-alex', None) for a plain template id."""
+    base, dot, sid = some_id.rpartition(".")
+    if dot and SID_RE.match(sid):
+        return base, sid
+    return some_id, None
+
+
+def member_in_sandbox(member_id: str, household_id: str) -> str | None:
+    """Map (e.g.) a template id ('m-alex') or an already suffixed id to the sandbox's own id."""
+    _, sid = split_id(household_id)
+    if sid is None:
+        return None
+    base, own = split_id(member_id)
+    if own is not None and own != sid:
+        return None
+    return f"{base}.{sid}"
+
+
+def _suffix(table: str, row: dict[str, Any], sid: str | None, fresh: str) -> dict[str, Any]:
+    row = dict(row)
+    if table == "visits":
+        row["plan_year"] = int(row["visit_date"][:4])
+    if table in ("saved_plans", "saved_simulations"):
+        row["created_at"] = row["updated_at"] = fresh
+    if sid is None:
+        return row
+    s = "." + sid
+    if table == "households":
+        row["id"] += s
+    elif table == "members":
+        row["id"] += s
+        row["household_id"] += s
+    elif table == "accounts":
+        local, _, domain = row["email"].partition("@")
+        row["id"] += s
+        row["member_id"] += s
+        row["email"] = f"{local}{s}@{domain}"
+    elif table in ("saved_plans", "saved_simulations"):
+        row["id"] += s
+        row["member_id"] += s
+    else:  # member_usage, visits, appointments, member_context, member_preferences
+        row["member_id"] += s
+    return row
+
+
+def _insert_rows(conn: sqlite3.Connection, data: dict, template_hh: str, sid: str | None,
+                 with_household: bool) -> None:
+    fresh = _iso(_utcnow())
+    own_members = {m["id"] for m in data["members"] if m["household_id"] == template_hh}
+    for table in CLONE_TABLES:
+        if table == "households" and not with_household:
+            continue
+        for src in data.get(table, []):
+            if table == "households" and src["id"] != template_hh:
+                continue
+            if table == "members" and src["id"] not in own_members:
+                continue
+            if table not in ("households", "members") and src.get("member_id") not in own_members:
+                continue
+            row = _suffix(table, src, sid, fresh)
+            if table == "households":
+                row["plan_tier_id"] = "preferred"
+            cols = ", ".join(row)
+            marks = ", ".join("?" for _ in row)
+            conn.execute(f"INSERT INTO {table} ({cols}) VALUES ({marks})", list(row.values()))
+
+
+def _delete_household_rows(conn: sqlite3.Connection, household_id: str, keep_household: bool) -> None:
+    ids = [r[0] for r in conn.execute("SELECT id FROM members WHERE household_id = ?", (household_id,))]
+    marks = ",".join("?" for _ in ids) or "NULL"
+    conn.execute("DELETE FROM invites WHERE household_id = ?", (household_id,))
+    for table in MEMBER_CHILD_TABLES:
+        conn.execute(f"DELETE FROM {table} WHERE member_id IN ({marks})", ids)
+    conn.execute(f"DELETE FROM invites WHERE member_id IN ({marks}) OR invited_by IN ({marks})", ids + ids)
+    conn.execute(f"DELETE FROM accounts WHERE member_id IN ({marks})", ids)
+    conn.execute("DELETE FROM members WHERE household_id = ?", (household_id,))
+    if not keep_household:
+        conn.execute("DELETE FROM sandboxes WHERE household_id = ?", (household_id,))
+        conn.execute("DELETE FROM households WHERE id = ?", (household_id,))
+
+
+def delete_member_rows(conn: sqlite3.Connection, member_id: str) -> None:
+    """Delete one member and every dependent row (usage, visits, appointments, preferences, context,
+    chat memory, saved plans and comparisons, account, invites)."""
+    for table in MEMBER_CHILD_TABLES:
+        conn.execute(f"DELETE FROM {table} WHERE member_id = ?", (member_id,))
+    conn.execute("DELETE FROM invites WHERE member_id = ? OR invited_by = ?", (member_id, member_id))
+    conn.execute("DELETE FROM accounts WHERE member_id = ?", (member_id,))
+    conn.execute("DELETE FROM members WHERE id = ?", (member_id,))
+
+
+def info(row: sqlite3.Row | dict) -> dict[str, Any]:
+    created = datetime.fromisoformat(row["created_at"])
+    return {"household_id": row["household_id"],
+            "expires_at": _iso(created + timedelta(hours=ttl_hours()))}
+
+
+def cleanup(conn: sqlite3.Connection, reserve: int = 0) -> int:
+    """Delete expired sandboxes, then the oldest until at most (cap - reserve) remain.
+    Returns how many were deleted."""
+    cutoff = _iso(_utcnow() - timedelta(hours=ttl_hours()))
+    doomed = [r[0] for r in conn.execute(
+        "SELECT household_id FROM sandboxes WHERE created_at <= ?", (cutoff,))]
+    remaining = conn.execute("SELECT COUNT(*) FROM sandboxes").fetchone()[0] - len(doomed)
+    surplus = remaining - (max_sandboxes() - reserve)
+    if surplus > 0:
+        doomed += [r[0] for r in conn.execute(
+            "SELECT household_id FROM sandboxes WHERE created_at > ? ORDER BY created_at, rowid LIMIT ?",
+            (cutoff, surplus))]
+    for hid in doomed:
+        _delete_household_rows(conn, hid, keep_household=False)
+    return len(doomed)
+
+
+def create(path, template_hh: str | None = None) -> dict[str, Any]:
+    """Clone the template household into a new sandbox. Returns {household_id, expires_at}."""
+    data = load_seed_file()
+    template_hh = template_hh or data["households"][0]["id"]
+    with session(path) as conn:
+        cleanup(conn, reserve=1)
+        while True:
+            sid = secrets.token_hex(3)
+            if not conn.execute("SELECT 1 FROM sandboxes WHERE sid = ?", (sid,)).fetchone():
+                break
+        _insert_rows(conn, data, template_hh, sid, with_household=True)
+        hid = f"{template_hh}.{sid}"
+        conn.execute("INSERT INTO sandboxes (household_id, sid, created_at) VALUES (?,?,?)",
+                     (hid, sid, _iso(_utcnow())))
+        return info(conn.execute("SELECT * FROM sandboxes WHERE household_id = ?", (hid,)).fetchone())
+
+
+def get(path, household_id: str) -> dict[str, Any] | None:
+    """The sandbox info if it exists and has not expired, else None."""
+    with session(path) as conn:
+        row = conn.execute("SELECT * FROM sandboxes WHERE household_id = ?", (household_id,)).fetchone()
+    if row is None:
+        return None
+    meta = info(row)
+    if datetime.fromisoformat(meta["expires_at"]) <= _utcnow():
+        return None
+    return meta
+
+
+def is_sandbox(conn: sqlite3.Connection, household_id: str) -> bool:
+    return conn.execute("SELECT 1 FROM sandboxes WHERE household_id = ?", (household_id,)).fetchone() is not None
+
+
+def restore(conn: sqlite3.Connection, household_id: str) -> None:
+    """Put a household back to the template state in place (same ids). Chat memory is cleared."""
+    data = load_seed_file()
+    base, sid = split_id(household_id)
+    if base not in template_household_ids():
+        raise ValueError("not a demo household")
+    _delete_household_rows(conn, household_id, keep_household=True)
+    conn.execute("UPDATE households SET plan_tier_id = 'preferred', name = ? WHERE id = ?",
+                 (next(h["name"] for h in data["households"] if h["id"] == base), household_id))
+    _insert_rows(conn, data, base, sid, with_household=False)

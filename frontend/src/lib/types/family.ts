@@ -13,6 +13,28 @@ export interface FamilyMember {
   has_login: boolean
   status: string
   status_note: string | null
+  /** Profile details (demo families). Optional: older servers do not send them. */
+  dob?: string | null
+  email?: string | null
+  /** Digits only, for example "3345550143". */
+  phone?: string | null
+  zip?: string | null
+  notes?: string | null
+  primary_dentist_id?: string | null
+}
+
+export type ProfileField = "name" | "dob" | "email" | "phone" | "zip" | "notes"
+/** Only the changed fields. null clears email, phone, zip and notes. */
+export type ProfilePatch = Partial<Record<ProfileField, string | null>>
+
+export type NewRelationship = "spouse" | "partner" | "child" | "other"
+export interface NewMemberRequest {
+  name: string
+  relationship: NewRelationship
+  dob: string
+  email?: string
+  phone?: string
+  zip?: string
 }
 
 export interface PlanTierSummary {
@@ -45,10 +67,25 @@ export interface DemoAccount {
   status?: string
 }
 
+/** The visitor's own demo family (a sandbox copy of the template household). */
+export interface SandboxInfo {
+  household_id: string
+  /** ISO 8601, UTC. */
+  expires_at: string
+}
+
 export interface DemoLoginResponse {
   token: string
   member: FamilyMember
   household: FamilyHousehold
+  /** Set when the sign-in is to a demo family. */
+  sandbox?: SandboxInfo | null
+}
+
+/** Body of PUT /households/{id}/names. */
+export interface HouseholdNamesRequest {
+  household_name?: string
+  members: { member_id: string; name: string }[]
 }
 
 export interface ServiceEligibility {

@@ -15,11 +15,42 @@ export const DEMO_MONTH = 11
 
 export class ApiError extends Error {
   status?: number
-  constructor(message: string, status?: number) {
+  /** Seconds to wait before trying again. Set on a 429 (too many requests). */
+  retryAfter?: number
+  constructor(message: string, status?: number, retryAfter?: number) {
     super(message)
     this.name = "ApiError"
     this.status = status
+    this.retryAfter = retryAfter
   }
+}
+
+/** A plain sentence for a 429. The wait is rounded up to at least one second. */
+export function waitMessage(seconds: number): string {
+  const s = Math.max(1, Math.ceil(seconds))
+  return `You're going a little fast. Please wait about ${s} ${s === 1 ? "second" : "seconds"} and try again.`
+}
+
+/** Turns a failed response into an ApiError: the server's plain `detail`, or a wait message on a 429. */
+export async function apiFailure(res: Response): Promise<ApiError> {
+  let detail = ""
+  let retry: number | undefined
+  try {
+    const body = await res.json()
+    if (typeof body?.detail === "string") detail = body.detail
+    else if (Array.isArray(body?.detail) && typeof body.detail[0]?.msg === "string") detail = body.detail[0].msg
+    if (typeof body?.retry_after === "number" && Number.isFinite(body.retry_after)) retry = body.retry_after
+  } catch {
+    /* the body is not JSON */
+  }
+  if (res.status === 429) {
+    if (retry === undefined) {
+      const header = Number(res.headers?.get?.("Retry-After"))
+      retry = Number.isFinite(header) && header > 0 ? header : 30
+    }
+    return new ApiError(waitMessage(retry), 429, Math.max(1, Math.ceil(retry)))
+  }
+  return new ApiError(detail || `The server returned an error (${res.status}).`, res.status)
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -29,16 +60,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   } catch {
     throw new ApiError("We can't reach the server right now. Please try again in a moment.")
   }
-  if (!res.ok) {
-    let detail = ""
-    try {
-      const body = await res.json()
-      if (typeof body?.detail === "string") detail = body.detail
-    } catch {
-      /* ignore */
-    }
-    throw new ApiError(detail || `The server returned an error (${res.status}).`, res.status)
-  }
+  if (!res.ok) throw await apiFailure(res)
   return (await res.json()) as T
 }
 

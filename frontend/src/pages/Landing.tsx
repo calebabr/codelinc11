@@ -15,7 +15,7 @@ export default function Landing() {
   const reduce = useReducedMotion()
   const zoom = wide && !reduce
   return (
-    <div className="landing min-h-screen overflow-x-clip bg-white">
+    <div className="landing min-h-dvh overflow-x-clip bg-white">
       <Nav />
       <main>
         {/* key: remount when the layout mode flips, so the scroll tracking restarts cleanly */}

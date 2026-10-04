@@ -10,6 +10,8 @@ import { SavingsBanner, Timeline, WhyThisOrder } from "@/features/planYear/Resul
 import { CalendarReminder, QuestionsCard, SavingsTipsCard } from "@/features/planYear/Extras"
 import { SavedPlans } from "@/features/planYear/SavedPlans"
 import { useSavedPlans } from "@/features/planYear/useSavedPlans"
+import { SavedComparisons } from "@/features/planYear/SavedComparisons"
+import { useSavedSimulations } from "@/features/planYear/useSavedSimulations"
 import { usePlanYear } from "@/features/planYear/usePlanYear"
 
 function useProcedures() {
@@ -41,6 +43,7 @@ export default function PlanYearPage() {
   const { activeMember, household, token } = useSession()
   const py = usePlanYear(activeMember.id, household.planTier, token, household.id)
   const saved = useSavedPlans(activeMember.id, token)
+  const savedSims = useSavedSimulations(activeMember.id, token)
   const location = useLocation()
   const handoff = (location.state as QuoteHandoff | null)?.treatments
   const { loadItems } = py
@@ -106,6 +109,7 @@ export default function PlanYearPage() {
             onOpen={(plan) => py.loadItems(plan.items, plan.id)}
             onSavedAs={(plan) => py.setOpenPlanId(plan.id)}
           />
+          <SavedComparisons memberId={activeMember.id} saved={savedSims} names={names} />
           {py.items.length === 0 && (
             <div className="portal-card text-center">
               <p className="portal-card-title">Your plan will show up here</p>

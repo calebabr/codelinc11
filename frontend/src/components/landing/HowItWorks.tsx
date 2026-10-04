@@ -36,6 +36,8 @@ function Shot({ screen, className }: { screen: (typeof steps)[number]['screen'];
   return (
     <img
       src={screen.src}
+      srcSet={screen.srcSet}
+      sizes="(min-width: 1024px) 560px, 90vw"
       alt={screen.alt}
       width={SCREEN_W}
       height={SCREEN_H}

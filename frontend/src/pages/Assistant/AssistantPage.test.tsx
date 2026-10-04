@@ -192,6 +192,33 @@ describe("Assistant page", () => {
   })
 })
 
+describe("Assistant page layout", () => {
+  it("makes the conversation the hero: a tall card with its own scrolling message list", async () => {
+    renderPage()
+    await screen.findByRole("button", { name: "What will a crown cost me?" })
+    const card = screen.getByTestId("chat-card")
+    expect(card.className).toContain("100dvh")
+    const list = screen.getByTestId("conversation")
+    expect(list.className).toContain("flex-1")
+    expect(list.className).toContain("overflow-y-auto")
+    expect(screen.getByTestId("chip-row").className).toContain("max-h-24")
+  })
+
+  it("collapses 'What Your Assistant Knows' behind a toggle on small screens", async () => {
+    const user = userEvent.setup()
+    renderPage()
+    const toggle = await screen.findByTestId("knows-toggle")
+    const body = screen.getByTestId("knows-body")
+    expect(toggle).toHaveAttribute("aria-expanded", "false")
+    expect(body.className).toContain("hidden")
+    await user.click(toggle)
+    expect(toggle).toHaveAttribute("aria-expanded", "true")
+    expect(body.className).not.toContain("hidden")
+    await user.click(toggle)
+    expect(toggle).toHaveAttribute("aria-expanded", "false")
+  })
+})
+
 describe("Clear chat", () => {
   it("asks first, then deletes this person's saved chat and empties the conversation", async () => {
     const user = userEvent.setup()

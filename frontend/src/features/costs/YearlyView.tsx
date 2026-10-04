@@ -35,7 +35,7 @@ function Slider({
         step={1}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="mt-2 h-8 w-full accent-[var(--orange-dark)]"
+        className="mt-2 h-11 w-full accent-[var(--orange-dark)]"
       />
       <p className="text-xs text-muted-foreground">{hint}</p>
     </div>

@@ -1,13 +1,19 @@
 import { useState } from "react"
+import { useLocation } from "react-router"
 import { useSession } from "@/state/SessionContext"
 import { ApiError } from "@/lib/api/planYear"
 import { usePlans } from "@/features/plans/usePlans"
 import { ConfirmSwitch } from "@/features/plans/PlanSwitch"
+import type { SimulationHandoff } from "@/features/planYear/SavedComparisons"
+import { WhichPlanFits } from "@/features/plans/WhichPlanFits"
 import { CompareTable, CoverageBars, TierCard, frequencyLines, summaryLines } from "@/features/plans/PlanParts"
 
 export default function PlansPage() {
   const { household, user, accounts, changePlan } = useSession()
   const { plans, loading, error, retry } = usePlans()
+  const location = useLocation()
+  const handoff = (location.state as SimulationHandoff | null)?.simulation
+  const preset = handoff ? { key: location.key, request: handoff } : null
   const [picked, setPicked] = useState<string | null>(null)
   const [confirming, setConfirming] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -148,6 +154,8 @@ export default function PlansPage() {
             <h2 className="portal-card-title">Side by side</h2>
             <CompareTable plans={plans} selectedId={selected.id} />
           </section>
+
+          <WhichPlanFits planOrder={plans.map((p) => p.id)} preset={preset} />
         </>
       )}
 

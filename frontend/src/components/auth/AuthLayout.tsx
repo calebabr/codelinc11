@@ -8,9 +8,9 @@ import { rise, stagger } from '@/lib/motion'
 // Form on the left; a burgundy brand panel with the product on the right (wide screens only)
 export default function AuthLayout({ title, subtitle, children }: { title: ReactNode; subtitle: ReactNode; children: ReactNode }) {
   return (
-    <div className="landing grid min-h-screen bg-background lg:grid-cols-[1fr_1.1fr]">
+    <div className="landing grid min-h-dvh bg-background lg:grid-cols-[1fr_1.1fr]">
       <div className="flex flex-col px-6 py-6 md:px-12">
-        <Link to="/welcome" aria-label="bitewise home" className="self-start">
+        <Link to="/welcome" aria-label="Molar Money home" className="self-start">
           <Logo />
         </Link>
 
@@ -47,6 +47,9 @@ export default function AuthLayout({ title, subtitle, children }: { title: React
         </motion.div>
         <motion.img
           src={screens.coverage.src}
+          srcSet={screens.coverage.srcSet}
+          sizes="50vw"
+          loading="lazy"
           alt=""
           initial={{ opacity: 0, y: 60, rotate: -2 }}
           animate={{ opacity: 1, y: 0, rotate: -4 }}

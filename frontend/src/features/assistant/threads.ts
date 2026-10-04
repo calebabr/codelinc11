@@ -10,9 +10,13 @@ export interface Message {
   tools: { name: string; done: boolean }[]
   status: "streaming" | "ok" | "unavailable" | "error"
   note?: string
+  /** Seconds to wait before asking again (set when the server said "too many requests"). */
+  retryAfter?: number
 }
 
 const threads = new Map<string, Message[]>()
+const followups = new Map<string, string[]>()
+const NO_FOLLOWUPS: string[] = []
 const listeners = new Set<() => void>()
 const EMPTY: Message[] = []
 let nextId = 1
@@ -34,8 +38,20 @@ export function updateThread(memberId: string, fn: (t: Message[]) => Message[]) 
   emit()
 }
 
+/** Follow-up questions offered after the latest answer for this member. */
+export function getFollowups(memberId: string): string[] {
+  return followups.get(memberId) ?? NO_FOLLOWUPS
+}
+
+export function setFollowups(memberId: string, list: string[]) {
+  if (list.length) followups.set(memberId, list)
+  else if (!followups.delete(memberId)) return
+  emit()
+}
+
 export function resetThreads() {
   threads.clear()
+  followups.clear()
   emit()
 }
 
@@ -46,5 +62,15 @@ export function useThread(memberId: string): Message[] {
       return () => listeners.delete(cb)
     },
     () => getThread(memberId),
+  )
+}
+
+export function useFollowups(memberId: string): string[] {
+  return useSyncExternalStore(
+    (cb) => {
+      listeners.add(cb)
+      return () => listeners.delete(cb)
+    },
+    () => getFollowups(memberId),
   )
 }

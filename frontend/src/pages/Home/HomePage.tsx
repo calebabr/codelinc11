@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Link } from "react-router"
 import { CalendarDays, CalendarPlus, MessageCircle, Calculator, ArrowRight } from "lucide-react"
 import { useSession } from "@/state/SessionContext"
+import { NameFamilyForm } from "@/features/family/NameFamilyForm"
 import { money, formatDate } from "@/lib/format"
 import { remindersUrl } from "@/lib/api/home"
 import { useHomeData, useLogVisit, useProcedureChips, useResetDemo } from "@/features/home/useHome"
@@ -82,7 +83,7 @@ const LINKS = [
 ]
 
 export default function HomePage() {
-  const { household, activeMember, token, user, refreshHousehold } = useSession()
+  const { household, activeMember, token, user, refreshHousehold, namingPending, dismissNaming } = useSession()
   const { data, loading, error, retry, refresh } = useHomeData(token, activeMember.id, household.planTier)
   const chips = useProcedureChips()
   const visit = useLogVisit(token, activeMember.id, refresh)
@@ -110,6 +111,12 @@ export default function HomePage() {
           {isSelf ? "Viewing your own benefits" : `Viewing ${activeMember.name} (${activeMember.relationship})`}
         </p>
       </section>
+
+      <p className="text-sm text-muted-foreground">
+        This is your own demo family. Changes you make don&apos;t affect anyone else.
+      </p>
+
+      {namingPending && user.role === "primary" && <NameFamilyForm cancelLabel="Skip" onDone={dismissNaming} />}
 
       {loading && (
         <p role="status" className="text-muted-foreground">
@@ -213,12 +220,18 @@ export default function HomePage() {
       {user.role === "primary" && (
         <section aria-label="Demo tools" className="text-sm text-muted-foreground">
           {!confirmReset ? (
-            <button type="button" className="btn btn-outline" onClick={() => setConfirmReset(true)}>
-              Reset demo data
-            </button>
+            <div className="flex flex-wrap items-center gap-3">
+              <button type="button" className="btn btn-outline" onClick={() => setConfirmReset(true)}>
+                Reset demo data
+              </button>
+              <span>This resets your demo family only.</span>
+            </div>
           ) : (
             <div className="note" role="group" aria-label="Confirm reset">
-              <p>This puts all demo visits and plans back to how they started. Reset now?</p>
+              <p>
+                This resets your demo family: all of its visits, plans and names go back to how they started. It does not
+                affect anyone else. Reset now?
+              </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <button
                   type="button"

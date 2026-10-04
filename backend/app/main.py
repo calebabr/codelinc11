@@ -5,10 +5,11 @@ import os
 import uuid
 from datetime import date, datetime, timedelta, timezone
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
+from . import ratelimit
 from .agent.ollama_client import OllamaClient
 from .agent.providers import select_provider
 from .data import load_catalog, load_plans, resolve_plan
@@ -31,26 +32,32 @@ from .routers import auth as auth_router
 from .routers import chat as chat_router
 from .routers import households as households_router
 from .routers import members as members_router
+from .routers import notifications as notifications_router
+from .routers import profiles as profiles_router
 from .routers import questions as questions_router
 from .routers import saved_plans as saved_plans_router
+from .routers import saved_simulations as saved_simulations_router
+from .routers import simulate as simulate_router
 from .routers import tips as tips_router
 from .routers import treatment_plan as treatment_plan_router
 from .search import search_procedures
 
 app = FastAPI(title="Dental Benefits Prototype")
+ratelimit.install(app)
 
-# Allowed browser origins. Defaults to local dev; in deployment set CORS_ORIGINS
-# to a comma-separated list of the deployed frontend URLs (e.g. the Vercel URL).
-_DEFAULT_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
-_cors_origins = [
-    origin.strip()
-    for origin in os.environ.get("CORS_ORIGINS", _DEFAULT_ORIGINS).split(",")
-    if origin.strip()
-]
+
+def cors_settings() -> dict:
+    """CORS options from the environment: CORS_ORIGINS (comma separated) and CORS_ORIGIN_REGEX."""
+    raw = os.environ.get("CORS_ORIGINS", "").strip()
+    origins = [o.strip().rstrip("/") for o in raw.split(",") if o.strip()] or [
+        "http://localhost:5173", "http://127.0.0.1:5173"]
+    regex = os.environ.get("CORS_ORIGIN_REGEX", "").strip() or None
+    return {"allow_origins": origins, "allow_origin_regex": regex}
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_cors_origins,
-    allow_credentials=True,
+    **cors_settings(),
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -62,8 +69,12 @@ app.include_router(auth_router.router)
 app.include_router(chat_router.router)
 app.include_router(households_router.router)
 app.include_router(members_router.router)
+app.include_router(profiles_router.router)
+app.include_router(notifications_router.router)
 app.include_router(saved_plans_router.router)
+app.include_router(saved_simulations_router.router)
 app.include_router(annual_cost_router.router)
+app.include_router(simulate_router.router)
 
 
 def _plan(plan: Plan | None, plan_id: str | None) -> Plan:
@@ -100,7 +111,7 @@ def procedures(q: str = "") -> list[ProcedureMatch]:
     return search_procedures(q, load_catalog())
 
 
-@app.post("/estimate", response_model=EstimateResponse)
+@app.post("/estimate", response_model=EstimateResponse, dependencies=[Depends(ratelimit.limit_compute)])
 def post_estimate(req: EstimateRequest) -> EstimateResponse:
     plan = _plan(req.plan, req.plan_id)
     proc = load_catalog().get(req.code)
@@ -110,7 +121,7 @@ def post_estimate(req: EstimateRequest) -> EstimateResponse:
                             out_of_network=estimate(proc, plan, req.usage, False))
 
 
-@app.post("/schedule", response_model=ScheduleResponse)
+@app.post("/schedule", response_model=ScheduleResponse, dependencies=[Depends(ratelimit.limit_compute)])
 def post_schedule(req: ScheduleRequest) -> ScheduleResponse:
     plan = _plan(req.plan, req.plan_id)
     try:

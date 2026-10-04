@@ -1,12 +1,12 @@
-# Netlify config for the frontend (alternative to Vercel; see docs/DEPLOYMENT.md).
+# Netlify config for the frontend (the live frontend; see docs/DEPLOYMENT.md).
 # It lives at the repo root so Netlify finds it with no dashboard setup: connect the
-# repo and deploy. The backend runs elsewhere (Render, render.yaml).
+# repo and deploy. The backend runs elsewhere (AWS today; render.yaml is an unused alternative).
 #
 # Set these in Netlify (Site configuration > Environment variables). They are read at
 # build time, so redeploy after changing them:
-#   VITE_API_URL                the backend URL, for example https://dental-benefits-api.onrender.com
-#   VITE_CLERK_PUBLISHABLE_KEY  the Clerk publishable key (pk_...). Never the secret key.
-# Then add the Netlify URL to the backend's CORS_ORIGINS and to the allowed origins in Clerk.
+#   VITE_API_URL   the backend's HTTPS address (for example the AWS address)
+# Then add the Netlify URL to the backend's CORS_ORIGINS (and set CORS_ORIGIN_REGEX for Netlify
+# deploy previews). There is no sign-in service: visitors use "Try the demo".
 
 [build]
   base = "frontend"          # the app's package.json is in frontend/

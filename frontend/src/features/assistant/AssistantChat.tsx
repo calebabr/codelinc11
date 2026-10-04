@@ -31,6 +31,21 @@ function Rich({ text }: { text: string }) {
   )
 }
 
+/** "Try again" that waits out a rate limit: disabled with a countdown until the wait is over. */
+function RetryButton({ onRetry, waitSeconds }: { onRetry: () => void; waitSeconds?: number }) {
+  const [left, setLeft] = useState(waitSeconds ?? 0)
+  useEffect(() => {
+    if (left <= 0) return
+    const id = setTimeout(() => setLeft((n) => n - 1), 1000)
+    return () => clearTimeout(id)
+  }, [left])
+  return (
+    <button type="button" className="btn btn-outline mt-2" onClick={onRetry} disabled={left > 0}>
+      {left > 0 ? `Try again in ${left}s` : "Try again"}
+    </button>
+  )
+}
+
 function Bubble({ m, onRetry }: { m: Message; onRetry: () => void }) {
   const mine = m.role === "user"
   const failed = m.status === "unavailable" || m.status === "error"
@@ -39,8 +54,8 @@ function Bubble({ m, onRetry }: { m: Message; onRetry: () => void }) {
       <div
         className={
           mine
-            ? "max-w-[85%] rounded-2xl rounded-br-sm bg-burgundy px-4 py-2 text-sm text-white"
-            : "max-w-[90%] rounded-2xl rounded-bl-sm border border-line bg-white px-4 py-2 text-sm text-ink"
+            ? "max-w-[85%] break-words rounded-2xl rounded-br-sm bg-burgundy px-4 py-2 text-sm text-white md:max-w-3xl"
+            : "max-w-[85%] break-words rounded-2xl rounded-bl-sm border border-line bg-white px-4 py-2 text-sm text-ink md:max-w-3xl"
         }
       >
         {m.tools.length > 0 && (
@@ -62,9 +77,7 @@ function Bubble({ m, onRetry }: { m: Message; onRetry: () => void }) {
         {failed && (
           <div role="alert" className="note">
             <p>{m.note}</p>
-            <button type="button" className="btn btn-outline mt-2" onClick={onRetry}>
-              Try again
-            </button>
+            <RetryButton onRetry={onRetry} waitSeconds={m.retryAfter} />
           </div>
         )}
       </div>
@@ -85,7 +98,7 @@ export function AssistantChat({
   onSent?: () => void
 }) {
   const {
-    thread, busy, send, retry, attach, removeAttachment, attachments, uploading, attachError,
+    thread, followups, busy, send, retry, attach, removeAttachment, attachments, uploading, attachError,
     clear, clearing, clearError,
   } = useChat(token, memberId)
   const [confirmClear, setConfirmClear] = useState(false)
@@ -130,7 +143,7 @@ export function AssistantChat({
 
   return (
     <div className="flex h-full min-h-0 flex-col" data-testid="assistant-chat">
-      <div className="flex min-h-11 items-center justify-end gap-2 border-b border-line px-4 py-1.5 text-xs">
+      <div className="flex min-h-11 flex-wrap items-center justify-end gap-2 border-b border-line px-3 py-0.5 text-xs">
         {clearError && (
           <span role="alert" className="mr-auto text-[var(--warn-ink)]">
             {clearError}
@@ -141,20 +154,20 @@ export function AssistantChat({
             <span className="text-ink">Delete {memberName}&apos;s chat history?</span>
             <button
               type="button"
-              className="btn btn-orange !px-3 !py-1 text-xs"
+              className="btn btn-orange !px-3 !py-1 text-sm"
               disabled={clearing}
               onClick={() => void clear().then(() => setConfirmClear(false))}
             >
               {clearing ? "Clearing…" : "Yes, clear"}
             </button>
-            <button type="button" className="btn btn-outline !px-3 !py-1 text-xs" onClick={() => setConfirmClear(false)}>
+            <button type="button" className="btn btn-outline !px-3 !py-1 text-sm" onClick={() => setConfirmClear(false)}>
               Cancel
             </button>
           </>
         ) : (
           <button
             type="button"
-            className="inline-flex items-center gap-1 font-semibold text-[var(--muted)] hover:text-burgundy disabled:opacity-50"
+            className="inline-flex min-h-11 items-center gap-1 px-1 font-semibold text-[var(--muted)] hover:text-burgundy disabled:opacity-50"
             disabled={busy}
             onClick={() => setConfirmClear(true)}
             title="Delete this person's saved chat so the assistant starts fresh"
@@ -164,7 +177,8 @@ export function AssistantChat({
         )}
       </div>
       <ul
-        className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4"
+        data-testid="conversation"
+        className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3 sm:p-4"
         aria-live="polite"
         aria-label={`Conversation about ${memberName}`}
       >
@@ -179,7 +193,25 @@ export function AssistantChat({
         <li ref={endRef} aria-hidden className="h-0" />
       </ul>
 
-      <div className="border-t border-line bg-soft p-3">
+      <div className="shrink-0 border-t border-line bg-soft p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:p-3">
+        {followups.length > 0 ? (
+          <div className="mb-2" aria-label="Ask next" role="group" data-testid="followups">
+            <p className="mb-1 text-[0.7rem] font-bold uppercase tracking-wide text-[var(--muted)]">Ask next</p>
+            <div className="flex max-h-24 flex-wrap gap-1.5 overflow-y-auto" data-testid="chip-row">
+              {followups.map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => submit(q)}
+                  className="min-h-11 rounded-full border border-line bg-white px-3 py-1 text-left text-[0.8rem] font-semibold leading-snug text-burgundy hover:border-orange disabled:opacity-50 sm:min-h-9"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
         <div className="mb-2" aria-label="Suggested questions" role="group">
           {sugg.loading && <p className="text-xs text-[var(--muted)]">Loading questions…</p>}
           {sugg.error && (
@@ -190,20 +222,21 @@ export function AssistantChat({
               </button>
             </p>
           )}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex max-h-24 flex-wrap gap-1.5 overflow-y-auto" data-testid="chip-row">
             {sugg.data?.map((q) => (
               <button
                 key={q}
                 type="button"
                 disabled={busy}
                 onClick={() => submit(q)}
-                className="rounded-full border border-line bg-white px-3 py-1.5 text-left text-xs font-semibold text-burgundy hover:border-orange disabled:opacity-50"
+                className="min-h-11 rounded-full border border-line bg-white px-3 py-1 text-left text-[0.8rem] font-semibold leading-snug text-burgundy hover:border-orange disabled:opacity-50 sm:min-h-9"
               >
                 {q}
               </button>
             ))}
           </div>
         </div>
+        )}
 
         {(attachments.length > 0 || uploading || attachError) && (
           <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -213,6 +246,7 @@ export function AssistantChat({
                 {a.filename}
                 <button
                   type="button"
+                  className="-mr-2 inline-flex size-11 items-center justify-center"
                   aria-label={`Remove ${a.filename}`}
                   onClick={() => removeAttachment(a.attachment_id)}
                 >
@@ -267,7 +301,7 @@ export function AssistantChat({
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder={speech.listening ? "Listening…" : `Ask about ${memberName}'s plan`}
-              className="h-11 w-full rounded-full border border-line bg-white px-4 text-sm"
+              className="h-11 w-full rounded-full border border-line bg-white px-4 text-base"
             />
           </label>
           {speech.supported && (
@@ -287,7 +321,7 @@ export function AssistantChat({
             <Send className="size-4" aria-hidden />
           </button>
         </form>
-        <p className="mt-2 text-[0.7rem] text-[var(--muted)]">
+        <p className="mt-1.5 text-[0.7rem] leading-tight text-[var(--muted)]">
           PDF only, up to {MAX_PDF_BYTES / 1024 / 1024} MB. Demo only: attach sample documents, not real health records.
         </p>
         <Disclaimer />

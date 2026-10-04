@@ -4,9 +4,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from ..data import load_catalog, resolve_plan
+from ..data import load_catalog, load_plans, resolve_plan
 from ..engine.estimate import estimate
 from ..engine.sequencer import best_schedule
+from ..engine.simulate import LEVELS, UnknownCode, UnknownPlan, simulate
 from ..engine.status import benefits_status
 from ..engine.tips import savings_tips
 from ..models import (
@@ -14,6 +15,9 @@ from ..models import (
     Plan,
     SavingsTipsRequest,
     ScheduleRequest,
+    SimulateKnownCare,
+    SimulateMember,
+    SimulateRequest,
     TreatmentItem,
     Usage,
 )
@@ -175,6 +179,77 @@ def get_dentist_questions(codes: Any = None, ctx: ToolContext | None = None) -> 
     return out
 
 
+COMPARE_N, COMPARE_SEED = 5000, 42      # same defaults as the Plans page
+
+
+def compare_plans(care_levels: Any = None, known_codes: Any = None, ctx: ToolContext | None = None,
+                  known_care_by_member: Any = None, in_network: Any = True) -> dict:
+    """Which plan costs the household least over many simulated years (the Plans page numbers).
+
+    Covers the people the viewer may see (a primary sees everyone, an adult only themself). Every
+    person defaults to average care; `care_levels` maps a member id, full name or first name to
+    low, average or high. `known_codes` are added to every simulated year of the active member only;
+    `known_care_by_member` ({member id or name: [codes]}) adds known care to the named people only.
+    `in_network` (default True) prices everything out of network when False.
+    """
+    c = _ctx(ctx)
+    people = c.household or ([c.member] if c.member else [])
+    if not people:
+        return {"error": "No household members are available to compare plans for."}
+
+    def keys_of(p: dict) -> list[str]:
+        return [str(k).lower() for k in (p["id"], p["name"], p["name"].split()[0])]
+
+    overrides: dict[str, str] = {}
+    for k, v in (care_levels.items() if isinstance(care_levels, dict) else []):
+        level = str(v).strip().lower()
+        if level not in LEVELS:
+            return {"error": f"Care level must be low, average or high, not '{v}'."}
+        overrides[str(k).strip().lower()] = level
+    active = (c.member or people[0])["id"]
+    known: dict[str, list[str]] = {}
+    for k, v in (known_care_by_member.items() if isinstance(known_care_by_member, dict) else []):
+        person = next((p for p in people if str(k).strip().lower() in keys_of(p)), None)
+        if person is None:
+            return {"error": f"I can only compare plans for people on this household, not '{k}'."}
+        known.setdefault(person["id"], [])
+        known[person["id"]] += [x for x in _codes(v) if x not in known[person["id"]]]
+    shared = _codes(known_codes)
+    if shared:
+        known.setdefault(active, [])
+        known[active] += [x for x in shared if x not in known[active]]
+    net = in_network if isinstance(in_network, bool) else str(in_network).strip().lower() not in (
+        "false", "no", "0", "out", "out of network")
+
+    def level_for(p: dict) -> str:
+        return next((overrides[k] for k in keys_of(p) if k in overrides), "average")
+
+    try:
+        members = [SimulateMember(
+            id=p["id"], name=p["name"], age=int(p["age"]), care_level=level_for(p),
+            known_care=[SimulateKnownCare(code=x) for x in known.get(p["id"], [])])
+            for p in people]
+        res = simulate(SimulateRequest(members=members, n=COMPARE_N, seed=COMPARE_SEED,
+                                       in_network=net), load_plans(), load_catalog())
+    except UnknownCode as exc:
+        return {"error": f"Unknown procedure code {exc}. Use find_procedure first."}
+    except (UnknownPlan, ValueError) as exc:
+        return {"error": f"Could not compare plans: {exc}"}
+    out = res.model_dump()
+    out["members"] = [{"name": m.name, "age": m.age, "care_level": m.care_level,
+                       "known_care": [k.code for k in m.known_care]} for m in members]
+    out["plan_terms"] = [{
+        "plan_id": pl.id, "name": pl.name, "monthly_premium": pl.monthly_premium,
+        "deductible": pl.deductible, "deductible_waived_for": list(pl.deductible_waived_for),
+        "annual_max": pl.annual_max,
+        "plan_pays_percent": {k: round(v * 100) for k, v in pl.coinsurance.items()},
+        "frequency_limits_per_year": dict(pl.frequency)}
+        for pl in (load_plans()[r.plan_id] for r in res.plans)]
+    out["note"] = ("Based on simulated years with synthetic odds, not a prediction for this family. "
+                   "Totals are premiums plus what the family pays.")
+    return out
+
+
 TOOL_SCHEMAS: list[dict] = [
     {"type": "function", "function": {
         "name": "find_procedure",
@@ -228,6 +303,22 @@ TOOL_SCHEMAS: list[dict] = [
         "parameters": {"type": "object", "properties": {
             "codes": {"type": "array", "items": {"type": "string"},
                       "description": "CDT codes, e.g. ['D3330']"}}}}},
+    {"type": "function", "function": {
+        "name": "compare_plans",
+        "description": ("Which dental plan (Basic, Preferred, Premium) costs the household the least, from 5,000 "
+                        "simulated years: share of years each plan is cheapest, typical and bad-year totals, and "
+                        "reasons. Covers the people the signed-in person may see. Everyone defaults to average care."),
+        "parameters": {"type": "object", "properties": {
+            "care_levels": {"type": "object", "additionalProperties": {"type": "string", "enum": list(LEVELS)},
+                            "description": "Optional care level by member id or name, e.g. {'Alex': 'high'}"},
+            "known_codes": {"type": "array", "items": {"type": "string"},
+                            "description": "CDT codes of care the active member already knows they need, e.g. ['D2740']"},
+            "known_care_by_member": {"type": "object", "additionalProperties": {
+                "type": "array", "items": {"type": "string"}},
+                "description": ("Known care for specific people only, by member id or name, "
+                                "e.g. {'Alex': ['D2740']}. Other people are not affected.")},
+            "in_network": {"type": "boolean",
+                           "description": "false to price everything out of network (default true)"}}}}},
 ]
 
 
@@ -248,6 +339,10 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
                                     args.get("urgent_codes"), ctx)
         if name == "get_dentist_questions":
             return get_dentist_questions(args.get("codes"), ctx)
+        if name == "compare_plans":
+            return compare_plans(args.get("care_levels"), args.get("known_codes"), ctx,
+                                 known_care_by_member=args.get("known_care_by_member"),
+                                 in_network=args.get("in_network", True))
         if name == "get_member_eligibility":
             return get_member_eligibility(ctx)
         if name == "get_household_coverage":

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from .context import MemberContext
 
-MAX_SUGGESTIONS = 5
+MAX_SUGGESTIONS = 7
 
 
 def suggest_questions(mc: MemberContext) -> list[str]:
@@ -28,6 +28,10 @@ def suggest_questions(mc: MemberContext) -> list[str]:
         if mc.usage.max_used > 0 or mc.current_month >= 9:
             out.append("What if I wait until January?")
         out.append("What will a crown cost me?")
+        if m["role"] == "primary":
+            out.append("Which plan should we pick?")
+        out.append("Summarize the plan simulations")
+        out.append("How are the simulations calculated?")
         out.append("How can I save on this?")
         out.append("What should I ask my dentist?")
         if "D1110" not in mc.usage.history or mc.usage.history.count("D1110") < 2:

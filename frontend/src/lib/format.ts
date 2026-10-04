@@ -16,10 +16,12 @@ const usd2 = new Intl.NumberFormat("en-US", {
 
 /** Format money. Shows cents only when the value isn't whole. */
 export function money(n: number): string {
+  if (typeof n !== "number" || !Number.isFinite(n)) return "—"
   return Number.isInteger(n) ? usd0.format(n) : usd2.format(n)
 }
 
 export function percent(fraction: number): string {
+  if (typeof fraction !== "number" || !Number.isFinite(fraction)) return "—"
   return `${Math.round(fraction * 100)}%`
 }
 

@@ -9,10 +9,10 @@
     {"id": "hh-rivera", "name": "Rivera household", "plan_tier_id": "preferred"}
   ],
   "members": [
-    {"id": "m-jordan", "household_id": "hh-rivera", "name": "Jordan Rivera", "relationship": "self", "age": 41, "full_time_student": 0, "status": "active", "role": "primary", "has_login": 1},
-    {"id": "m-alex", "household_id": "hh-rivera", "name": "Alex Rivera", "relationship": "spouse", "age": 39, "full_time_student": 0, "status": "active", "role": "adult", "has_login": 1},
-    {"id": "m-maya", "household_id": "hh-rivera", "name": "Maya Rivera", "relationship": "child", "age": 9, "full_time_student": 0, "status": "active", "role": "managed", "has_login": 0},
-    {"id": "m-noah", "household_id": "hh-rivera", "name": "Noah Rivera", "relationship": "child", "age": 23, "full_time_student": 1, "status": "pending", "status_note": "Over age 19. Covered to age 26 only as a full-time student; enrollment verification needed.", "role": "adult", "has_login": 1}
+    {"id": "m-jordan", "household_id": "hh-rivera", "name": "Jordan Rivera", "relationship": "self", "age": 41, "full_time_student": 0, "status": "active", "role": "primary", "has_login": 1, "dob": "1985-03-14", "email": "jordan.rivera@example.test", "phone": "3345550142", "zip": "36830"},
+    {"id": "m-alex", "household_id": "hh-rivera", "name": "Alex Rivera", "relationship": "spouse", "age": 39, "full_time_student": 0, "status": "active", "role": "adult", "has_login": 1, "dob": "1987-07-22", "email": "alex.rivera@example.test", "phone": "3345550143", "zip": "36830"},
+    {"id": "m-maya", "household_id": "hh-rivera", "name": "Maya Rivera", "relationship": "child", "age": 9, "full_time_student": 0, "status": "active", "role": "managed", "has_login": 0, "dob": "2017-05-09", "email": null, "phone": null, "zip": "36830"},
+    {"id": "m-noah", "household_id": "hh-rivera", "name": "Noah Rivera", "relationship": "child", "age": 23, "full_time_student": 1, "status": "pending", "status_note": "Over age 19. Covered to age 26 only as a full-time student; enrollment verification needed.", "role": "adult", "has_login": 1, "dob": "2003-09-30", "email": "noah.rivera@example.test", "phone": "3345550147", "zip": "36849"}
   ],
   "accounts": [
     {"id": "acct-jordan", "member_id": "m-jordan", "email": "jordan.rivera@example.test", "display_name": "Jordan Rivera"},
@@ -53,5 +53,11 @@
   ],
   "saved_plans": [
     {"id": "sp-alex-s2", "member_id": "m-alex", "name": "Root canal, crown and two fillings", "items_json": "[{\"id\": \"t1\", \"code\": \"D3330\", \"urgency\": \"urgent\", \"after\": null}, {\"id\": \"t2\", \"code\": \"D2740\", \"urgency\": \"flexible\", \"after\": \"t1\"}, {\"id\": \"t3\", \"code\": \"D2392\", \"urgency\": \"flexible\", \"after\": null}, {\"id\": \"t4\", \"code\": \"D2392\", \"urgency\": \"flexible\", \"after\": null}]", "created_at": "2026-09-15T09:00:00+00:00", "updated_at": "2026-09-15T09:00:00+00:00"}
+  ],
+  "notification_prefs": [
+    {"member_id": "m-jordan", "app": 1, "email": 0, "sms": 0, "types_json": null},
+    {"member_id": "m-alex", "app": 1, "email": 0, "sms": 0, "types_json": null},
+    {"member_id": "m-maya", "app": 1, "email": 0, "sms": 0, "types_json": null},
+    {"member_id": "m-noah", "app": 1, "email": 0, "sms": 0, "types_json": null}
   ]
 }
