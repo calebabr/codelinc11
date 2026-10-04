@@ -57,7 +57,9 @@ flowchart LR
 | `GET` / `PUT /members/{id}/notification-prefs` | In-app (default on), email and text (default off), and which kinds. Email or text needs a valid contact on the profile (plain 422 otherwise). PUT: demo families only (403 for the template) |
 | `POST /members/{id}/notifications/test` | `{channel: app\|email\|sms}`: a sample in-app notification, or a delivery preview to the stored contact. Demo families only; rate limited (compute bucket) |
 | `GET /members/{id}/outbox` | Delivery previews, newest first. Status is always `preview`: no email or text is ever sent (`Notifier` interface, default `PreviewNotifier`, in `backend/app/notifier.py`) |
-| `PATCH /members/{id}/profile` | Edit name, date of birth, email, phone, ZIP, notes (primary: anyone in the household; adult: self; demo families only, 403 for the shared template; plain 422 messages) |
+| `GET /providers?zip=&radius_mi=25&network=all\|in\|out&specialty=&accepting=&q=&code=&member_id=` | Synthetic dentists near a ZIP, nearest first (max 50, radius 1 to 100 miles). Each has `distance_mi` (haversine between approximate ZIP centres), `in_network` for the household's CURRENT plan, and with `code` an `estimate` `{you_pay, plan_pays, in_network, balance_bill, note}` from the engine for that member's current usage (in-network or out-of-network pricing; provider specific fees are not modeled). No `zip`: the member's profile ZIP; unknown ZIP is 422 with a plain message. `member_id` defaults to the signed-in person (same visibility rules: 403 for someone you may not see). Rate limited (compute bucket) |
+| `GET /providers/{id}` | One provider (same fields; `distance_mi` when a ZIP is given or on the member's profile; `estimate` with `code`). 404 unknown id |
+| `PATCH /members/{id}/profile` | Edit name, date of birth, email, phone, ZIP, notes, `primary_dentist_id` (a provider id; null or empty clears; 422 if the provider does not exist) (primary: anyone in the household; adult: self; demo families only, 403 for the shared template; plain 422 messages) |
 | `POST /households/{id}/members` | Add a person (primary, demo family only, max 8; under 18 becomes a managed member) |
 | `DELETE /households/{id}/members/{member_id}` | Remove a person and every row stored for them (primary, demo family only, never the primary) |
 | `GET /households/{id}` | Household and members (what the viewer may see) |
@@ -88,7 +90,7 @@ The API contract is `backend/app/models.py`. Live docs: http://localhost:8000/do
 | Path | What is there |
 |---|---|
 | `backend/app/main.py` | FastAPI app, core routes, CORS |
-| `backend/app/routers/` | `auth`, `households`, `members`, `saved_plans`, `saved_simulations`, `notifications`, `profiles`, `annual_cost`, `simulate`, `chat`, `session`, `tips`, `questions`, `treatment_plan` |
+| `backend/app/routers/` | `auth`, `households`, `members`, `saved_plans`, `saved_simulations`, `notifications`, `profiles`, `providers`, `annual_cost`, `simulate`, `chat`, `session`, `tips`, `questions`, `treatment_plan` |
 | `backend/app/engine/` | `estimate.py`, `annual.py`, `sequencer.py`, `status.py`, `tips.py`, `simulate.py` |
 | `backend/app/agent/` | `providers.py` (Anthropic, Ollama), `loop.py`, `tools.py`, `guard.py`, `context.py`, `suggestions.py` |
 | `backend/app/db/` | `core.py`, `store.py`, `sandbox.py` (per-visitor demo families), `__main__.py` (SQLite access layer, `python -m app.db --reset`) |

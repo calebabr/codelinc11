@@ -66,7 +66,38 @@ def migrate(path: str | Path) -> list[str]:
             conn.executescript(f.read_text(encoding="utf-8"))
             conn.execute("INSERT INTO schema_migrations (name) VALUES (?)", (f.name,))
             applied_now.append(f.name)
+    seed_reference(path)
     return applied_now
+
+
+def seed_reference(path: str | Path) -> None:
+    """Load the global reference data (providers and ZIP centroids) into empty tables.
+
+    This data is shared by every family: it is not part of the household seed, is never cloned
+    into a demo sandbox and is not touched by a family reset. Existing databases get it when
+    migration 008 is applied (this runs after every migrate).
+    """
+    f = SEEDS_DIR / "providers.json"
+    if not f.exists():
+        return
+    with session(path) as conn:
+        have = {r["name"] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+        if "providers" not in have or "zip_centroids" not in have:
+            return
+        data = json.loads(f.read_text(encoding="utf-8"))
+        if conn.execute("SELECT COUNT(*) FROM providers").fetchone()[0] == 0:
+            for p in data["providers"]:
+                row = dict(p)
+                row["languages"] = json.dumps(row["languages"])
+                row["network_plan_ids"] = json.dumps(row["network_plan_ids"])
+                row["accepting_new"] = 1 if row["accepting_new"] else 0
+                cols = ", ".join(row)
+                conn.execute(f"INSERT INTO providers ({cols}) VALUES ({', '.join('?' for _ in row)})",
+                             list(row.values()))
+        if conn.execute("SELECT COUNT(*) FROM zip_centroids").fetchone()[0] == 0:
+            for z in data["zip_centroids"]:
+                conn.execute("INSERT INTO zip_centroids (zip, city, state, lat, lon) VALUES (?,?,?,?,?)",
+                             (z["zip"], z["city"], z["state"], z["lat"], z["lon"]))
 
 
 def load_seed_file() -> dict:
@@ -85,6 +116,7 @@ def seed(path: str | Path) -> None:
                 cols = ", ".join(row)
                 marks = ", ".join("?" for _ in row)
                 conn.execute(f"INSERT INTO {table} ({cols}) VALUES ({marks})", list(row.values()))
+    seed_reference(path)
 
 
 def reset(path: str | Path) -> None:

@@ -329,6 +329,7 @@ class ProfilePatch(BaseModel):
     phone: str | None = Field(default=None, max_length=60)
     zip: str | None = Field(default=None, max_length=40)
     notes: str | None = Field(default=None, max_length=1000)
+    primary_dentist_id: str | None = Field(default=None, max_length=64)   # a provider id; null or "" clears
 
 
 class NewMember(BaseModel):
@@ -633,3 +634,34 @@ class TestNotificationResponse(BaseModel):
     channel: Literal["app", "email", "sms"]
     notification: Notification | None = None           # for channel "app"
     outbox: OutboxMessage | None = None                 # for "email" and "sms" (a preview, not sent)
+
+
+# ---------- Providers (sprint 2, B3) ----------
+
+class ProviderEstimate(BaseModel):
+    """What one procedure would cost this member at this provider (engine numbers)."""
+    you_pay: float
+    plan_pays: float
+    in_network: bool
+    balance_bill: float                                 # 0 in network
+    note: str                                           # plain language, says fees are not provider specific
+
+
+class ProviderOut(BaseModel):
+    id: str
+    practice_name: str
+    dentist_name: str
+    specialty: Literal["general", "pediatric", "orthodontics", "oral_surgery", "endodontics", "periodontics"]
+    address: str
+    city: str
+    state: str
+    zip: str
+    lat: float
+    lon: float
+    phone: str
+    accepting_new: bool
+    languages: list[str]
+    network_plan_ids: list[str]
+    distance_mi: float | None = None                    # miles from the searched ZIP, one decimal
+    in_network: bool                                    # for the household's CURRENT plan
+    estimate: ProviderEstimate | None = None           # only when `code` is given

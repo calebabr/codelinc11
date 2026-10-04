@@ -1,6 +1,6 @@
 """Profiles and family members (sprint 2, B1), demo family only.
 
-PATCH  /members/{id}/profile                    edit name, dob, email, phone, zip, notes
+PATCH  /members/{id}/profile                    edit name, dob, email, phone, zip, notes, primary_dentist_id
 POST   /households/{id}/members                 add a person (primary only)
 DELETE /households/{id}/members/{member_id}     remove a person and all their data (primary only)
 
@@ -113,6 +113,8 @@ def patch_profile(member_id: str, req: ProfilePatch, viewer: Viewer, store: Stor
                     ("notes", clean_notes)):
         if key in sent:
             changes[key] = fn(getattr(req, key))
+    if "primary_dentist_id" in sent:
+        changes["primary_dentist_id"] = (req.primary_dentist_id or "").strip() or None
     return member_model(guarded(lambda: store.update_member_profile(viewer, member_id, changes)))
 
 

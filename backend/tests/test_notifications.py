@@ -596,7 +596,8 @@ def test_migration_006_applies_to_an_older_database(tmp_path):
         core.migrate(path)
     finally:
         core.MIGRATIONS_DIR = real
-    assert core.migrate(path) == ["006_notifications.sql", "007_notification_reminder_kind.sql"]
+    assert core.migrate(path) == ["006_notifications.sql", "007_notification_reminder_kind.sql",
+                                  "008_providers.sql"]
     with connect(path) as c:
         names = {r[0] for r in c.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
         assert {"notification_prefs", "notifications", "outbox"} <= names

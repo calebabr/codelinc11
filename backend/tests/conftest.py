@@ -57,6 +57,7 @@ _FILE_MARKERS: list[tuple[str, tuple[str, ...]]] = [
     ("test_ratelimit.py", ("api",)),
     ("test_household_plan.py", ("api", "db")),
     ("test_profiles.py", ("api", "db")),
+    ("test_providers.py", ("api", "db")),
     ("test_notifications.py", ("api", "db")),
     ("test_t25.py", ("api", "db")),
     ("test_demo_accounts_status.py", ("api", "db")),

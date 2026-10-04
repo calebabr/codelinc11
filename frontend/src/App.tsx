@@ -16,6 +16,7 @@ const PlansPage = lazy(() => import('@/pages/Plans/PlansPage'))
 const CostsPage = lazy(() => import('@/pages/Costs/CostsPage'))
 const PlanYearPage = lazy(() => import('@/pages/PlanYear/PlanYearPage'))
 const NotificationsPage = lazy(() => import('@/pages/Notifications/NotificationsPage'))
+const ProvidersPage = lazy(() => import('@/pages/Providers/ProvidersPage'))
 const AssistantPage = lazy(() => import('@/pages/Assistant/AssistantPage'))
 
 // Routes: /, /plans, /family, /costs, /plan-year, /assistant. /login is the demo sign-in. /welcome is the public landing page.
@@ -33,6 +34,7 @@ export function AppRoutes() {
         <Route path="family" element={<FamilyPage />} />
         <Route path="costs" element={<CostsPage />} />
         <Route path="plan-year" element={<PlanYearPage />} />
+        <Route path="providers" element={<ProvidersPage />} />
         <Route path="assistant" element={<AssistantPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="style" element={<StyleGuide />} />

@@ -8,3 +8,5 @@ _Updated 2026-10-03_
 **Commands:** `python -m app.db` and `python -m app.db --reset` from `backend/`. Full reference: `database/README.md`.
 
 **Stand-in:** one SQLite file on one server. Plans and fees for the engine still come from JSON in `backend/data/`. D8 (where stored data lives) is still marked open in the decision log.
+
+**Added (B3, sprint 2):** migration `008_providers.sql` (`providers`, `zip_centroids`), seeds in `database/seeds/providers.json` (31 fictional practices, 51 approximate ZIP centres) loaded by `core.seed_reference()` after every migrate and seed (so older databases get them). Global reference data: not cloned into sandboxes, kept by reset and expiry. `members.primary_dentist_id` has no foreign key (documented in `database/README.md`); the store validates it.

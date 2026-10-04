@@ -1,0 +1,1016 @@
+{
+ "_note": "Synthetic providers (fictional practices and dentists) and approximate public ZIP centroids, for demo distances only.",
+ "providers": [
+  {
+   "id": "prv-001",
+   "practice_name": "Plainsman Family Dental",
+   "dentist_name": "Dr. Priya Nair",
+   "specialty": "general",
+   "address": "1204 Heartwood Lane",
+   "city": "Auburn",
+   "state": "AL",
+   "zip": "36830",
+   "lat": 32.584,
+   "lon": -85.498,
+   "phone": "334-555-0101",
+   "accepting_new": true,
+   "languages": [
+    "English"
+   ],
+   "network_plan_ids": [
+    "basic",
+    "preferred",
+    "premium"
+   ]
+  },
+  {
+   "id": "prv-002",
+   "practice_name": "Loblolly Smiles",
+   "dentist_name": "Dr. Marcus Tolliver",
+   "specialty": "general",
+   "address": "88 Cypress Mill Road",
+   "city": "Auburn",
+   "state": "AL",
+   "zip": "36832",
+   "lat": 32.636,
+   "lon": -85.486,
+   "phone": "334-555-0102",
+   "accepting_new": true,
+   "languages": [
+    "English",
+    "Spanish"
+   ],
+   "network_plan_ids": [
+    "preferred",
+    "premium"
+   ]
+  },
+  {
+   "id": "prv-003",
+   "practice_name": "Samford Corner Pediatric Dentistry",
+   "dentist_name": "Dr. Hannah Okafor",
+   "specialty": "pediatric",
+   "address": "410 Willow Bend Drive",
+   "city": "Auburn",
+   "state": "AL",
+   "zip": "36849",
+   "lat": 32.61,
+   "lon": -85.486,
+   "phone": "334-555-0103",
+   "accepting_new": true,
+   "languages": [
+    "English"
+   ],
+   "network_plan_ids": [
+    "basic",
+    "preferred",
+    "premium"
+   ]
+  },
+  {
+   "id": "prv-004",
+   "practice_name": "Red Clay Orthodontics",
+   "dentist_name": "Dr. Evan Castellano",
+   "specialty": "orthodontics",
+   "address": "2250 Pecan Grove Court",
+   "city": "Opelika",
+   "state": "AL",
+   "zip": "36801",
+   "lat": 32.652,
+   "lon": -85.384,
+   "phone": "334-555-0104",
+   "accepting_new": false,
+   "languages": [
+    "English"
+   ],
+   "network_plan_ids": [
+    "preferred",
+    "premium"
+   ]
+  },
+  {
+   "id": "prv-005",
+   "practice_name": "Magnolia Row Oral Surgery",
+   "dentist_name": "Dr. Lena Whitfield",
+   "specialty": "oral_surgery",
+   "address": "73 Fenwick Street",
+   "city": "Opelika",
+   "state": "AL",
+   "zip": "36804",
+   "lat": 32.594,
+   "lon": -85.364,
+   "phone": "334-555-0105",
+   "accepting_new": true,
+   "languages": [
+    "English"
+   ],
+   "network_plan_ids": []
+  },
+  {
+   "id": "prv-006",
+   "practice_name": "Fairhaven Endodontics",
+   "dentist_name": "Dr. Samir Qureshi",
+   "specialty": "endodontics",
+   "address": "519 Dogwood Terrace",
+   "city": "Auburn",
+   "state": "AL",
+   "zip": "36830",
+   "lat": 32.588,
+   "lon": -85.502,
+   "phone": "334-555-0106",
+   "accepting_new": true,
+   "languages": [
+    "English",
+    "Hindi"
+   ],
+   "network_plan_ids": [
+    "basic",
+    "preferred",
+    "premium"
+   ]
+  },
+  {
+   "id": "prv-007",
+   "practice_name": "Capitol Hollow Dental Group",
+   "dentist_name": "Dr. Rosalind Pierce",
+   "specialty": "general",
+   "address": "3300 Brookline Avenue",
+   "city": "Montgomery",
+   "state": "AL",
+   "zip": "36106",
+   "lat": 32.35,
+   "lon": -86.252,
+   "phone": "334-555-0107",
+   "accepting_new": true,
+   "languages": [
+    "English",
+    "Spanish"
+   ],
+   "network_plan_ids": [
+    "basic",
+    "preferred",
+    "premium"
+   ]
+  },
+  {
+   "id": "prv-008",
+   "practice_name": "Riverbend Periodontics",
+   "dentist_name": "Dr. Declan Moriarty",
+   "specialty": "periodontics",
+   "address": "1470 Alder Park Road",
+   "city": "Montgomery",
+   "state": "AL",
+   "zip": "36117",
+   "lat": 32.362,
+   "lon": -86.16,
+   "phone": "334-555-0108",
+   "accepting_new": false,
+   "languages": [
+    "English"
+   ],
+   "network_plan_ids": [
+    "preferred",
+    "premium"
+   ]
+  },
+  {
+   "id": "prv-009",
+   "practice_name": "Little Acorns Dental",
+   "dentist_name": "Dr. Tasha Brennan",
+   "specialty": "pediatric",
+   "address": "95 Sweetgum Circle",
+   "city": "Montgomery",
+   "state": "AL",
+   "zip": "36104",
+   "lat": 32.376,
+   "lon": -86.308,
+   "phone": "334-555-0109",
+   "accepting_new": true,
+   "languages": [
+    "English",
+    "Spanish"
+   ],
+   "network_plan_ids": []
+  },
+  {
+   "id": "prv-010",
+   "practice_name": "Peachbud Family Dentistry",
+   "dentist_name": "Dr. Andre Lockhart",
+   "specialty": "general",
+   "address": "742 Larkspur Way NE",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30305",
+   "lat": 33.828,
+   "lon": -84.378,
+   "phone": "404-555-0110",
+   "accepting_new": true,
+   "languages": [
+    "English",
+    "Spanish"
+   ],
+   "network_plan_ids": [
+    "basic",
+    "preferred",
+    "premium"
+   ]
+  },
+  {
+   "id": "prv-011",
+   "practice_name": "Midtown Bellwether Dental",
+   "dentist_name": "Dr. Mei-Ling Chao",
+   "specialty": "general",
+   "address": "1618 Juniper Street",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30309",
+   "lat": 33.79,
+   "lon": -84.396,
+   "phone": "404-555-0111",
+   "accepting_new": true,
+   "languages": [
+    "English",
+    "Mandarin"
+   ],
+   "network_plan_ids": [
+    "preferred",
+    "premium"
+   ]
+  },
+  {
+   "id": "prv-012",
+   "practice_name": "Fernbank Orthodontic Studio",
+   "dentist_name": "Dr. Julian Rowe",
+   "specialty": "orthodontics",
+   "address": "305 Ashbury Lane",
+   "city": "Decatur",
+   "state": "GA",
+   "zip": "30030",
+   "lat": 33.774,
+   "lon": -84.286,
+   "phone": "404-555-0112",
+   "accepting_new": true,
+   "languages": [
+    "English"
+   ],
+   "network_plan_ids": [
+    "basic",
+    "preferred",
+    "premium"
+   ]
+  },
+  {
+   "id": "prv-013",
+   "practice_name": "Southern Lantern Oral Surgery",
+   "dentist_name": "Dr. Beatriz Montoya",
+   "specialty": "oral_surgery",
+   "address": "2901 Piedmont Mews",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30318",
+   "lat": 33.786,
+   "lon": -84.444,
+   "phone": "404-555-0113",
+   "accepting_new": false,
+   "languages": [
+    "English",
+    "Spanish"
+   ],
+   "network_plan_ids": []
+  },
+  {
+   "id": "prv-014",
+   "practice_name": "Westside Root and Canal Care",
+   "dentist_name": "Dr. Oliver Banerjee",
+   "specialty": "endodontics",
+   "address": "450 Marietta Rail Road",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30303",
+   "lat": 33.76,
+   "lon": -84.384,
+   "phone": "404-555-0114",
+   "accepting_new": true,
+   "languages": [
+    "English"
+   ],
+   "network_plan_ids": [
+    "preferred",
+    "premium"
+   ]
+  },
+  {
+   "id": "prv-015",
+   "practice_name": "Dunwoody Gentle Periodontal",
+   "dentist_name": "Dr. Camille Fontaine",
+   "specialty": "periodontics",
+   "address": "6120 Sablewood Drive",
+   "city": "Dunwoody",
+   "state": "GA",
+   "zip": "30338",
+   "lat": 33.942,
+   "lon": -84.312,
+   "phone": "404-555-0115",
+   "accepting_new": true,
+   "languages": [
+    "English"
+   ],
+   "network_plan_ids": []
+  },
+  {
+   "id": "prv-016",
+   "practice_name": "Mainline Meadow Dental",
+   "dentist_name": "Dr. Grace Ellison",
+   "specialty": "general",
+   "address": "27 Tuckaway Road",
+   "city": "Wayne",
+   "state": "PA",
+   "zip": "19087",
+   "lat": 40.034,
+   "lon": -75.382,
+   "phone": "610-555-0116",
+   "accepting_new": true,
+   "languages": [
+    "English"
+   ],
+   "network_plan_ids": [
+    "basic",
+    "preferred",
+    "premium"
+   ]
+  },
+  {
+   "id": "prv-017",
+   "practice_name": "Radnor Green Pediatric Dental",
+   "dentist_name": "Dr. Nikhil Desai",
+   "specialty": "pediatric",
+   "address": "812 Quillen Avenue",
+   "city": "Radnor",
+   "state": "PA",
+   "zip": "19087",
+   "lat": 40.048,
+   "lon": -75.39,
+   "phone": "610-555-0117",
+   "accepting_new": true,
+   "languages": [
+    "English",
+    "Gujarati"
+   ],
+   "network_plan_ids": [
+    "preferred",
+    "premium"
+   ]
+  },
+  {
+   "id": "prv-018",
+   "practice_name": "Bluestone Orthodontics",
+   "dentist_name": "Dr. Theodora Kline",
+   "specialty": "orthodontics",
+   "address": "140 Harwick Lane",
+   "city": "Villanova",
+   "state": "PA",
+   "zip": "19085",
+   "lat": 40.04,
+   "lon": -75.348,
+   "phone": "610-555-0118",
+   "accepting_new": false,
+   "languages": [
+    "English"
+   ],
+   "network_plan_ids": [
+    "basic",
+    "preferred",
+    "premium"
+   ]
+  },
+  {
+   "id": "prv-019",
+   "practice_name": "Ardmore Quill Dental",
+   "dentist_name": "Dr. Peter Valdez",
+   "specialty": "general",
+   "address": "33 Pinewick Place",
+   "city": "Ardmore",
+   "state": "PA",
+   "zip": "19003",
+   "lat": 39.992,
+   "lon": -75.288,
+   "phone": "610-555-0119",
+   "accepting_new": true,
+   "languages": [
+    "English",
+    "Spanish"
+   ],
+   "network_plan_ids": []
+  },
+  {
+   "id": "prv-020",
+   "practice_name": "Schuylkill Valley Oral Surgery",
+   "dentist_name": "Dr. Fiona McAllister",
+   "specialty": "oral_surgery",
+   "address": "601 Birchfield Road",
+   "city": "Bryn Mawr",
+   "state": "PA",
+   "zip": "19010",
+   "lat": 40.026,
+   "lon": -75.326,
+   "phone": "610-555-0120",
+   "accepting_new": true,
+   "languages": [
+    "English"
+   ],
+   "network_plan_ids": [
+    "preferred",
+    "premium"
+   ]
+  },
+  {
+   "id": "prv-021",
+   "practice_name": "Three Rivers Family Dental",
+   "dentist_name": "Dr. Walter Nguyen",
+   "specialty": "general",
+   "address": "1950 Wabash Heights Drive",
+   "city": "Fort Wayne",
+   "state": "IN",
+   "zip": "46802",
+   "lat": 41.068,
+   "lon": -85.126,
+   "phone": "260-555-0121",
+   "accepting_new": true,
+   "languages": [
+    "English",
+    "Vietnamese"
+   ],
+   "network_plan_ids": [
+    "basic",
+    "preferred",
+    "premium"
+   ]
+  },
+  {
+   "id": "prv-022",
+   "practice_name": "Maplecrest Smiles",
+   "dentist_name": "Dr. Ingrid Sorensen",
+   "specialty": "general",
+   "address": "477 Cedar Fold Road",
+   "city": "Fort Wayne",
+   "state": "IN",
+   "zip": "46805",
+   "lat": 41.09,
+   "lon": -85.104,
+   "phone": "260-555-0122",
+   "accepting_new": true,
+   "languages": [
+    "English"
+   ],
+   "network_plan_ids": [
+    "preferred",
+    "premium"
+   ]
+  },
+  {
+   "id": "prv-023",
+   "practice_name": "Summit Park Pediatric Dentistry",
+   "dentist_name": "Dr. Kareem Alvarado",
+   "specialty": "pediatric",
+   "address": "28 Teasel Court",
+   "city": "Fort Wayne",
+   "state": "IN",
+   "zip": "46804",
+   "lat": 41.024,
+   "lon": -85.224,
+   "phone": "260-555-0123",
+   "accepting_new": true,
+   "languages": [
+    "English",
+    "Spanish"
+   ],
+   "network_plan_ids": [
+    "basic",
+    "preferred",
+    "premium"
+   ]
+  },
+  {
+   "id": "prv-024",
+   "practice_name": "Lakeshore Endodontic Partners",
+   "dentist_name": "Dr. Yolanda Prescott",
+   "specialty": "endodontics",
+   "address": "3660 Marlow Street",
+   "city": "Fort Wayne",
+   "state": "IN",
+   "zip": "46815",
+   "lat": 41.096,
+   "lon": -85.062,
+   "phone": "260-555-0124",
+   "accepting_new": false,
+   "languages": [
+    "English"
+   ],
+   "network_plan_ids": []
+  },
+  {
+   "id": "prv-025",
+   "practice_name": "Old Fort Periodontal Care",
+   "dentist_name": "Dr. Bennett Aldridge",
+   "specialty": "periodontics",
+   "address": "105 Coldwater Mill Road",
+   "city": "Fort Wayne",
+   "state": "IN",
+   "zip": "46818",
+   "lat": 41.16,
+   "lon": -85.192,
+   "phone": "260-555-0125",
+   "accepting_new": true,
+   "languages": [
+    "English"
+   ],
+   "network_plan_ids": [
+    "preferred",
+    "premium"
+   ]
+  },
+  {
+   "id": "prv-026",
+   "practice_name": "Piedmont Porch Dental",
+   "dentist_name": "Dr. Simone Achebe",
+   "specialty": "general",
+   "address": "2210 Linden Brook Road",
+   "city": "Greensboro",
+   "state": "NC",
+   "zip": "27408",
+   "lat": 36.102,
+   "lon": -79.81,
+   "phone": "336-555-0126",
+   "accepting_new": true,
+   "languages": [
+    "English"
+   ],
+   "network_plan_ids": [
+    "basic",
+    "preferred",
+    "premium"
+   ]
+  },
+  {
+   "id": "prv-027",
+   "practice_name": "Gatefold Orthodontics",
+   "dentist_name": "Dr. Tobias Wren",
+   "specialty": "orthodontics",
+   "address": "716 Hollowbrook Avenue",
+   "city": "Greensboro",
+   "state": "NC",
+   "zip": "27405",
+   "lat": 36.104,
+   "lon": -79.768,
+   "phone": "336-555-0127",
+   "accepting_new": true,
+   "languages": [
+    "English"
+   ],
+   "network_plan_ids": [
+    "preferred",
+    "premium"
+   ]
+  },
+  {
+   "id": "prv-028",
+   "practice_name": "Cone Hollow Pediatric Dental",
+   "dentist_name": "Dr. Alicia Ferreira",
+   "specialty": "pediatric",
+   "address": "59 Rosemont Square",
+   "city": "Greensboro",
+   "state": "NC",
+   "zip": "27410",
+   "lat": 36.108,
+   "lon": -79.848,
+   "phone": "336-555-0128",
+   "accepting_new": true,
+   "languages": [
+    "English",
+    "Portuguese"
+   ],
+   "network_plan_ids": [
+    "basic",
+    "preferred",
+    "premium"
+   ]
+  },
+  {
+   "id": "prv-029",
+   "practice_name": "Elmstead Oral Surgery",
+   "dentist_name": "Dr. Gordon Hale",
+   "specialty": "oral_surgery",
+   "address": "1387 Wexford Pike",
+   "city": "Greensboro",
+   "state": "NC",
+   "zip": "27401",
+   "lat": 36.07,
+   "lon": -79.796,
+   "phone": "336-555-0129",
+   "accepting_new": false,
+   "languages": [
+    "English"
+   ],
+   "network_plan_ids": []
+  },
+  {
+   "id": "prv-030",
+   "practice_name": "Tarheel Crossing Dental Arts",
+   "dentist_name": "Dr. Naomi Castellanos",
+   "specialty": "general",
+   "address": "4040 Millrace Drive",
+   "city": "Greensboro",
+   "state": "NC",
+   "zip": "27455",
+   "lat": 36.162,
+   "lon": -79.776,
+   "phone": "336-555-0130",
+   "accepting_new": true,
+   "languages": [
+    "English",
+    "Spanish"
+   ],
+   "network_plan_ids": []
+  },
+  {
+   "id": "prv-031",
+   "practice_name": "Auburn Hollow Smile Studio",
+   "dentist_name": "Dr. Jerome Whitaker",
+   "specialty": "general",
+   "address": "672 Chewacla Bend",
+   "city": "Auburn",
+   "state": "AL",
+   "zip": "36849",
+   "lat": 32.606,
+   "lon": -85.494,
+   "phone": "334-555-0131",
+   "accepting_new": true,
+   "languages": [
+    "English"
+   ],
+   "network_plan_ids": [
+    "preferred",
+    "premium"
+   ]
+  }
+ ],
+ "zip_centroids": [
+  {
+   "zip": "36830",
+   "city": "Auburn",
+   "state": "AL",
+   "lat": 32.58,
+   "lon": -85.5
+  },
+  {
+   "zip": "36832",
+   "city": "Auburn",
+   "state": "AL",
+   "lat": 32.64,
+   "lon": -85.48
+  },
+  {
+   "zip": "36849",
+   "city": "Auburn University",
+   "state": "AL",
+   "lat": 32.6,
+   "lon": -85.49
+  },
+  {
+   "zip": "36801",
+   "city": "Opelika",
+   "state": "AL",
+   "lat": 32.65,
+   "lon": -85.38
+  },
+  {
+   "zip": "36804",
+   "city": "Opelika",
+   "state": "AL",
+   "lat": 32.6,
+   "lon": -85.37
+  },
+  {
+   "zip": "36083",
+   "city": "Tuskegee",
+   "state": "AL",
+   "lat": 32.43,
+   "lon": -85.69
+  },
+  {
+   "zip": "36106",
+   "city": "Montgomery",
+   "state": "AL",
+   "lat": 32.35,
+   "lon": -86.26
+  },
+  {
+   "zip": "36117",
+   "city": "Montgomery",
+   "state": "AL",
+   "lat": 32.37,
+   "lon": -86.16
+  },
+  {
+   "zip": "36104",
+   "city": "Montgomery",
+   "state": "AL",
+   "lat": 32.37,
+   "lon": -86.3
+  },
+  {
+   "zip": "36067",
+   "city": "Prattville",
+   "state": "AL",
+   "lat": 32.46,
+   "lon": -86.46
+  },
+  {
+   "zip": "30303",
+   "city": "Atlanta",
+   "state": "GA",
+   "lat": 33.75,
+   "lon": -84.39
+  },
+  {
+   "zip": "30305",
+   "city": "Atlanta",
+   "state": "GA",
+   "lat": 33.83,
+   "lon": -84.38
+  },
+  {
+   "zip": "30309",
+   "city": "Atlanta",
+   "state": "GA",
+   "lat": 33.8,
+   "lon": -84.39
+  },
+  {
+   "zip": "30318",
+   "city": "Atlanta",
+   "state": "GA",
+   "lat": 33.79,
+   "lon": -84.44
+  },
+  {
+   "zip": "30030",
+   "city": "Decatur",
+   "state": "GA",
+   "lat": 33.77,
+   "lon": -84.29
+  },
+  {
+   "zip": "30338",
+   "city": "Dunwoody",
+   "state": "GA",
+   "lat": 33.94,
+   "lon": -84.31
+  },
+  {
+   "zip": "30060",
+   "city": "Marietta",
+   "state": "GA",
+   "lat": 33.95,
+   "lon": -84.55
+  },
+  {
+   "zip": "19087",
+   "city": "Wayne",
+   "state": "PA",
+   "lat": 40.04,
+   "lon": -75.39
+  },
+  {
+   "zip": "19085",
+   "city": "Villanova",
+   "state": "PA",
+   "lat": 40.04,
+   "lon": -75.34
+  },
+  {
+   "zip": "19010",
+   "city": "Bryn Mawr",
+   "state": "PA",
+   "lat": 40.02,
+   "lon": -75.32
+  },
+  {
+   "zip": "19003",
+   "city": "Ardmore",
+   "state": "PA",
+   "lat": 40.0,
+   "lon": -75.29
+  },
+  {
+   "zip": "19004",
+   "city": "Bala Cynwyd",
+   "state": "PA",
+   "lat": 40.01,
+   "lon": -75.23
+  },
+  {
+   "zip": "19312",
+   "city": "Berwyn",
+   "state": "PA",
+   "lat": 40.05,
+   "lon": -75.44
+  },
+  {
+   "zip": "46802",
+   "city": "Fort Wayne",
+   "state": "IN",
+   "lat": 41.07,
+   "lon": -85.13
+  },
+  {
+   "zip": "46804",
+   "city": "Fort Wayne",
+   "state": "IN",
+   "lat": 41.02,
+   "lon": -85.23
+  },
+  {
+   "zip": "46805",
+   "city": "Fort Wayne",
+   "state": "IN",
+   "lat": 41.1,
+   "lon": -85.1
+  },
+  {
+   "zip": "46807",
+   "city": "Fort Wayne",
+   "state": "IN",
+   "lat": 41.04,
+   "lon": -85.12
+  },
+  {
+   "zip": "46815",
+   "city": "Fort Wayne",
+   "state": "IN",
+   "lat": 41.1,
+   "lon": -85.06
+  },
+  {
+   "zip": "46818",
+   "city": "Fort Wayne",
+   "state": "IN",
+   "lat": 41.15,
+   "lon": -85.2
+  },
+  {
+   "zip": "27401",
+   "city": "Greensboro",
+   "state": "NC",
+   "lat": 36.07,
+   "lon": -79.79
+  },
+  {
+   "zip": "27405",
+   "city": "Greensboro",
+   "state": "NC",
+   "lat": 36.11,
+   "lon": -79.76
+  },
+  {
+   "zip": "27408",
+   "city": "Greensboro",
+   "state": "NC",
+   "lat": 36.1,
+   "lon": -79.81
+  },
+  {
+   "zip": "27410",
+   "city": "Greensboro",
+   "state": "NC",
+   "lat": 36.1,
+   "lon": -79.85
+  },
+  {
+   "zip": "27455",
+   "city": "Greensboro",
+   "state": "NC",
+   "lat": 36.17,
+   "lon": -79.78
+  },
+  {
+   "zip": "27403",
+   "city": "Greensboro",
+   "state": "NC",
+   "lat": 36.06,
+   "lon": -79.82
+  },
+  {
+   "zip": "36854",
+   "city": "Valley",
+   "state": "AL",
+   "lat": 32.8,
+   "lon": -85.17
+  },
+  {
+   "zip": "36869",
+   "city": "Phenix City",
+   "state": "AL",
+   "lat": 32.47,
+   "lon": -85.0
+  },
+  {
+   "zip": "36078",
+   "city": "Tallassee",
+   "state": "AL",
+   "lat": 32.53,
+   "lon": -85.89
+  },
+  {
+   "zip": "36093",
+   "city": "Wetumpka",
+   "state": "AL",
+   "lat": 32.54,
+   "lon": -86.21
+  },
+  {
+   "zip": "36116",
+   "city": "Montgomery",
+   "state": "AL",
+   "lat": 32.31,
+   "lon": -86.2
+  },
+  {
+   "zip": "30306",
+   "city": "Atlanta",
+   "state": "GA",
+   "lat": 33.79,
+   "lon": -84.35
+  },
+  {
+   "zip": "30308",
+   "city": "Atlanta",
+   "state": "GA",
+   "lat": 33.77,
+   "lon": -84.37
+  },
+  {
+   "zip": "30316",
+   "city": "Atlanta",
+   "state": "GA",
+   "lat": 33.72,
+   "lon": -84.33
+  },
+  {
+   "zip": "30080",
+   "city": "Smyrna",
+   "state": "GA",
+   "lat": 33.86,
+   "lon": -84.5
+  },
+  {
+   "zip": "19104",
+   "city": "Philadelphia",
+   "state": "PA",
+   "lat": 39.96,
+   "lon": -75.2
+  },
+  {
+   "zip": "19081",
+   "city": "Swarthmore",
+   "state": "PA",
+   "lat": 39.9,
+   "lon": -75.35
+  },
+  {
+   "zip": "46835",
+   "city": "Fort Wayne",
+   "state": "IN",
+   "lat": 41.13,
+   "lon": -85.04
+  },
+  {
+   "zip": "46825",
+   "city": "Fort Wayne",
+   "state": "IN",
+   "lat": 41.12,
+   "lon": -85.17
+  },
+  {
+   "zip": "27406",
+   "city": "Greensboro",
+   "state": "NC",
+   "lat": 36.0,
+   "lon": -79.8
+  },
+  {
+   "zip": "27407",
+   "city": "Greensboro",
+   "state": "NC",
+   "lat": 36.03,
+   "lon": -79.88
+  },
+  {
+   "zip": "27409",
+   "city": "Greensboro",
+   "state": "NC",
+   "lat": 36.07,
+   "lon": -79.92
+  }
+ ]
+}

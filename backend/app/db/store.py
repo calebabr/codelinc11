@@ -177,6 +177,12 @@ class Store:
             target = self._editable_target(conn, viewer_id, member_id)
             sets: dict[str, Any] = {k: v for k, v in changes.items()
                                     if k in ("name", "email", "phone", "zip", "notes")}
+            if "primary_dentist_id" in changes:
+                # No foreign key (SQLite cannot add one to an existing column): checked here.
+                pid = changes["primary_dentist_id"]
+                if pid is not None and conn.execute("SELECT 1 FROM providers WHERE id = ?", (pid,)).fetchone() is None:
+                    raise ValueError("We could not find that dentist in the directory.")
+                sets["primary_dentist_id"] = pid
             if "dob" in changes:
                 age = age_on(date.fromisoformat(changes["dob"]))
                 sets["dob"], sets["age"] = changes["dob"], age
@@ -201,6 +207,23 @@ class Store:
                 conn.execute("UPDATE accounts SET display_name = ? WHERE member_id = ?",
                              (sets["name"], member_id))
             return _row(conn.execute("SELECT * FROM members WHERE id = ?", (member_id,)).fetchone())  # type: ignore[return-value]
+
+    # ---- providers (global reference data, read only) -----------------------
+    def list_providers(self) -> list[dict[str, Any]]:
+        with session(self.path) as conn:
+            return [_provider(r) for r in conn.execute("SELECT * FROM providers ORDER BY id")]
+
+    def get_provider(self, provider_id: str) -> dict[str, Any]:
+        with session(self.path) as conn:
+            r = conn.execute("SELECT * FROM providers WHERE id = ?", (provider_id,)).fetchone()
+        if r is None:
+            raise NotFound(f"provider {provider_id}")
+        return _provider(r)
+
+    def zip_centroid(self, zip_code: str) -> dict[str, Any] | None:
+        with session(self.path) as conn:
+            r = conn.execute("SELECT * FROM zip_centroids WHERE zip = ?", (zip_code,)).fetchone()
+        return dict(r) if r else None
 
     def add_member(self, viewer_id: str, household_id: str, name: str, relationship: str, dob: str,
                    email: str | None = None, phone: str | None = None,
@@ -752,6 +775,14 @@ def _saved_simulation(r: sqlite3.Row) -> dict[str, Any]:
 def _saved_plan(r: sqlite3.Row) -> dict[str, Any]:
     d = dict(r)
     d["items"] = json.loads(d.pop("items_json"))
+    return d
+
+
+def _provider(r: sqlite3.Row) -> dict[str, Any]:
+    d = dict(r)
+    d["accepting_new"] = bool(d["accepting_new"])
+    d["languages"] = json.loads(d["languages"])
+    d["network_plan_ids"] = json.loads(d["network_plan_ids"])
     return d
 
 

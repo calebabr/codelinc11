@@ -25,7 +25,10 @@ export interface FamilyMember {
 
 export type ProfileField = "name" | "dob" | "email" | "phone" | "zip" | "notes"
 /** Only the changed fields. null clears email, phone, zip and notes. */
-export type ProfilePatch = Partial<Record<ProfileField, string | null>>
+export type ProfilePatch = Partial<Record<ProfileField, string | null>> & {
+  /** "My dentist": a provider id, or null to clear it. */
+  primary_dentist_id?: string | null
+}
 
 export type NewRelationship = "spouse" | "partner" | "child" | "other"
 export interface NewMemberRequest {
