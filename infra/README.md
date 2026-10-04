@@ -44,4 +44,13 @@ Keep `.env.example` in step with this table.
 End-to-end tests are not in CI; run them locally before checkpoints.
 
 ## Deployment
-Not decided. Anything that creates cloud resources, costs money or changes repository settings needs the user's explicit approval first. Nothing in the product should send health data to a third party unless the decision log says so. Using the Anthropic provider sends chat content to a third party, so which data may be sent is an open decision (F5).
+Config is ready (not yet provisioned): **Render** for the backend (`render.yaml` +
+`backend/Dockerfile`, with a persistent disk for the SQLite DB) and **Vercel** for
+the frontend (`frontend/vercel.json`; `frontend/netlify.toml` as an alternative).
+Full step-by-step: [`docs/DEPLOYMENT.md`](../docs/DEPLOYMENT.md).
+
+Creating the actual services is done by the user in each provider's dashboard.
+Anything that creates cloud resources, costs money or changes repository settings
+needs the user's explicit approval first. Nothing in the product should send health
+data to a third party unless the decision log says so. Using the Anthropic provider
+sends chat content to a third party, so which data may be sent is an open decision (F5).
