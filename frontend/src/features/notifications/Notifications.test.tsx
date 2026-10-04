@@ -373,7 +373,7 @@ describe("Notifications page", () => {
       await user.click(await screen.findByRole("button", { name: /^Email/ }))
       expect(await screen.findByText(/shared demo family can't be edited/)).toBeInTheDocument()
       expect(screen.getByRole("button", { name: /^Email/ })).toBeDisabled()
-      expect(screen.getByRole("button", { name: /Send me a test email/ })).toBeDisabled()
+      expect(await screen.findByRole("button", { name: /Send me a test email/ })).toBeDisabled()
     })
 
     it("sends a test for each channel and lists the delivery preview with the banner", async () => {
@@ -383,11 +383,12 @@ describe("Notifications page", () => {
       outbox = [
         { id: 1, member_id: "m-jordan", channel: "email", to_address: "jordan@example.test", subject: "Test email", body: "Hello there", created_at: "2026-11-02T09:00:00", status: "preview" },
       ]
-      await user.click(screen.getByRole("button", { name: /Send me a test email/ }))
+      // Wait for each control: on a slow machine the settings can still be drawing when the banner appears.
+      await user.click(await screen.findByRole("button", { name: /Send me a test email/ }))
       expect(await screen.findByTestId("outbox-item")).toHaveTextContent("jordan@example.test")
-      expect(screen.getByTestId("outbox-item")).toHaveTextContent("Test email")
-      await user.click(screen.getByRole("button", { name: /Send me a test notification/ }))
-      await user.click(screen.getByRole("button", { name: /Send me a test text/ }))
+      expect(await screen.findByTestId("outbox-item")).toHaveTextContent("Test email")
+      await user.click(await screen.findByRole("button", { name: /Send me a test notification/ }))
+      await user.click(await screen.findByRole("button", { name: /Send me a test text/ }))
       await waitFor(() => {
         const sent = calls.filter((c) => c.url.endsWith("/notifications/test")).map((c) => (c.body as { channel: string }).channel)
         expect(sent).toEqual(["email", "app", "sms"])
