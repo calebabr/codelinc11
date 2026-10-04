@@ -1,4 +1,6 @@
-import { Navigate, Outlet } from "react-router"
+import { Navigate, Outlet, useLocation } from "react-router"
+import { motion } from "motion/react"
+import { ease } from "@/lib/motion"
 import { useSessionGate } from "@/state/SessionContext"
 import { UtilityBar } from "./UtilityBar"
 import { NavBar } from "./NavBar"
@@ -7,6 +9,7 @@ import { AssistantButton } from "./AssistantButton"
 
 export function Shell() {
   const gate = useSessionGate()
+  const { pathname } = useLocation()
 
   // Signed in to Clerk (RequireClerk) but no household profile picked yet
   if (gate.status === "signed-out") return <Navigate to="/choose-profile" replace />
@@ -36,7 +39,16 @@ export function Shell() {
       <UtilityBar />
       <NavBar />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
-        <Outlet />
+        {/* key: replay the entrance on every page change. Its sections stagger in via .page-motion (index.css). */}
+        <motion.div
+          key={pathname}
+          className="page-motion"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease }}
+        >
+          <Outlet />
+        </motion.div>
       </main>
       <Footer />
       <AssistantButton />
