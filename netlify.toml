@@ -2,11 +2,14 @@
 # It lives at the repo root so Netlify finds it with no dashboard setup: connect the
 # repo and deploy. The backend runs elsewhere (AWS today; render.yaml is an unused alternative).
 #
-# Set these in Netlify (Site configuration > Environment variables). They are read at
-# build time, so redeploy after changing them:
-#   VITE_API_URL   the backend's HTTPS address (for example the AWS address)
-# Then add the Netlify URL to the backend's CORS_ORIGINS (and set CORS_ORIGIN_REGEX for Netlify
-# deploy previews). There is no sign-in service: visitors use "Try the demo".
+# Set this in Netlify (Site configuration > Environment variables). It is read at build
+# time, so redeploy ("Clear cache and deploy") after changing it:
+#   VITE_API_URL = /api
+# The browser then calls https://<this site>/api/..., and Netlify forwards it to the AWS
+# backend (the /api/* rule below). Same origin and HTTPS, so there is no mixed-content
+# block and no CORS. The backend must set TRUST_PROXY=1 so its per-visitor rate limits
+# read the visitor's address from X-Forwarded-For instead of seeing only Netlify's.
+# There is no sign-in service: visitors use "Try the demo".
 
 [build]
   base = "frontend"          # the app's package.json is in frontend/
@@ -15,6 +18,15 @@
 
 [build.environment]
   NODE_VERSION = "20"        # same as CI
+
+# API: forward /api/* to the backend on AWS (Elastic IP, so it survives restarts).
+# Must stay above the single-page-app rule. Netlify gives up on a forwarded request
+# after about 26 seconds, so very slow assistant answers can time out.
+[[redirects]]
+  from = "/api/*"
+  to = "http://3.149.89.171:8000/:splat"
+  status = 200
+  force = true
 
 # Single-page app: every route (/plans, /login/factor-one ...) serves index.html.
 # Real files such as /assets/*.js are served first, so this only catches app routes.

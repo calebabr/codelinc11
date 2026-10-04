@@ -28,7 +28,7 @@ The full list with defaults is in [`.env.example`](../.env.example).
 ## Frontend settings (Netlify, build time)
 | Variable | Value |
 |---|---|
-| `VITE_API_URL` | the backend's **HTTPS** address (an HTTPS page cannot call an HTTP backend) |
+| `VITE_API_URL` | `/api`. Netlify forwards `/api/*` to the AWS backend (`netlify.toml`, Elastic IP `3.149.89.171`, port 8000), so the browser only talks HTTPS to the Netlify site. Needs `TRUST_PROXY=1` on the backend and port 8000 open in its security group |
 
 Changing it needs a redeploy, because Vite bakes it into the build. The old `VITE_CLERK_PUBLISHABLE_KEY` setting is no longer used and can be deleted.
 
