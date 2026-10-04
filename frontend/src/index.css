@@ -453,3 +453,46 @@ input[type='range'] {
     scroll-behavior: auto;
   }
 }
+
+/*
+  Motion for the six portal pages. Calm and quick, never bouncy, off for Reduce Motion.
+  Numbers are never animated through in-between values (dollar amounts come from the API only).
+*/
+@keyframes portal-rise {
+  from { opacity: 0; transform: translateY(14px); }
+}
+@keyframes portal-fill {
+  from { width: 0; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  /* Each page's sections rise in one after another (Shell wraps the page in .page-motion) */
+  .page-motion > * > * {
+    animation: portal-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .page-motion > * > *:nth-child(2) { animation-delay: 0.06s; }
+  .page-motion > * > *:nth-child(3) { animation-delay: 0.12s; }
+  .page-motion > * > *:nth-child(4) { animation-delay: 0.18s; }
+  .page-motion > * > *:nth-child(5) { animation-delay: 0.24s; }
+  .page-motion > * > *:nth-child(n + 6) { animation-delay: 0.3s; }
+
+  /* Bars fill from empty when they first appear, then glide on updates (.coverage > i has a width transition) */
+  .coverage > i {
+    animation: portal-fill 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+  }
+
+  /* A new result (estimate, visit, schedule) rises in when it appears */
+  .result-panel {
+    animation: portal-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Small touches: the nav underline and buttons ease instead of snapping */
+  .nav-link {
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .btn {
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s, transform 0.15s;
+  }
+  .btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+}

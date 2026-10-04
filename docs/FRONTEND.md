@@ -108,7 +108,7 @@ frontend/src/
 ```
 
 **State:** the selected plan and usage live in `PlanContext` (React context, saved to `localStorage`) and are sent with every request. No global state library.
-**Sign-in (Clerk):** `src/state/AuthProvider.tsx` wraps the app in `ClerkProvider` (key: `VITE_CLERK_PUBLISHABLE_KEY` in `frontend/.env.local`; never the secret key). `/login` and `/signup` render Clerk's `<SignIn />` / `<SignUp />` inside our `AuthLayout`, styled in `components/auth/clerk-appearance.ts`. `/app` is behind `RequireAuth`. The nav shows Log in / Get started or Open Molar Money + `<UserButton />`. Pages only: the API doesn't check sign-in yet (that needs the backend to verify Clerk tokens).
+**Sign-in (demo):** there is no account system. "Try the demo" (landing page and `/login`) creates the visitor's own demo family through `POST /auth/demo-login` with `sandbox: true`, and the session code in `src/state/SessionContext.tsx` keeps the bearer token in memory and the family id in `localStorage`. Clerk sign-in was tried and removed for the demo (the original work stays on the `fe/clerk-login` branch).
 **Server data:** TanStack Query for every API call (`useQuery` for reads, `useMutation` for estimate/schedule).
 
 ---

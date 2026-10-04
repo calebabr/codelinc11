@@ -1,0 +1,54 @@
+name: Deploy
+
+# Deploy only after CI succeeds on main, so a broken build never ships.
+# Triggering is done with per-service "deploy hook" URLs stored as repository
+# secrets (never in the repo):
+#   RENDER_DEPLOY_HOOK_URL  — Render service > Settings > Deploy Hook
+#   VERCEL_DEPLOY_HOOK_URL  — Vercel project > Settings > Git > Deploy Hooks
+# If a secret is absent, that leg is skipped (so the workflow is harmless until
+# the hooks are configured).
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    # Only when the CI run that triggered this actually passed.
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger backend deploy (Render)
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "RENDER_DEPLOY_HOOK_URL not set — skipping backend deploy."
+            exit 0
+          fi
+          echo "Triggering Render deploy…"
+          code=$(curl -sS -o /dev/null -w "%{http_code}" -X POST "$HOOK")
+          echo "Render responded: HTTP $code"
+          case "$code" in 2*) : ;; *) echo "Render deploy trigger failed"; exit 1 ;; esac
+
+      - name: Trigger frontend deploy (Vercel)
+        env:
+          HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "VERCEL_DEPLOY_HOOK_URL not set — skipping frontend deploy."
+            exit 0
+          fi
+          echo "Triggering Vercel deploy…"
+          code=$(curl -sS -o /dev/null -w "%{http_code}" -X POST "$HOOK")
+          echo "Vercel responded: HTTP $code"
+          case "$code" in 2*) : ;; *) echo "Vercel deploy trigger failed"; exit 1 ;; esac
