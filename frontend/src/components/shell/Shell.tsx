@@ -1,5 +1,7 @@
 import { Suspense } from "react"
-import { Navigate, Outlet } from "react-router"
+import { Navigate, Outlet, useLocation } from "react-router"
+import { motion } from "motion/react"
+import { ease } from "@/lib/motion"
 import { PageLoading } from "./PageLoading"
 import { useSessionGate } from "@/state/SessionContext"
 import { UtilityBar } from "./UtilityBar"
@@ -9,6 +11,7 @@ import { AssistantButton } from "./AssistantButton"
 
 export function Shell() {
   const gate = useSessionGate()
+  const { pathname } = useLocation()
 
   if (gate.status === "signed-out") return <Navigate to="/login" replace />
   if (gate.status === "loading") {
@@ -37,9 +40,18 @@ export function Shell() {
       <UtilityBar />
       <NavBar />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
-        <Suspense fallback={<PageLoading />}>
-          <Outlet />
-        </Suspense>
+        {/* key: replay the entrance on every page change; its sections stagger in via .page-motion (index.css) */}
+        <motion.div
+          key={pathname}
+          className="page-motion"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease }}
+        >
+          <Suspense fallback={<PageLoading />}>
+            <Outlet />
+          </Suspense>
+        </motion.div>
       </main>
       <Footer />
       <AssistantButton />

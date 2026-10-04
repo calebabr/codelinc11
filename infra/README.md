@@ -46,7 +46,11 @@ Keep `.env.example` in step with this table.
 End-to-end tests are not in CI; run them locally before checkpoints.
 
 ## Deployment
-AWS kit (CloudFront, private S3 for the frontend, one EC2 server for the backend): [aws/RUNBOOK.md](aws/RUNBOOK.md). On AWS the frontend is built with `VITE_API_URL=/api`, and secrets (`ANTHROPIC_API_KEY`, `SESSION_SECRET`) come from SSM Parameter Store and the instance, never from the repo. Nothing has been created in AWS yet. Anything that creates cloud resources, costs money or changes repository settings needs the user's explicit approval first. Using the Anthropic provider sends chat content to a third party, so which data may be sent is an open decision (F5).
+**Live setup:** the backend runs on AWS and the frontend on Netlify (`netlify.toml` at the repo root). Both deploy from `main`, so a change merged to `main` reaches the live site. Settings and the checklist after a release are in [`docs/DEPLOYMENT.md`](../docs/DEPLOYMENT.md).
+
+Other options that are configured but not provisioned: Render for the backend (`render.yaml` and `backend/Dockerfile`, with a persistent disk for the SQLite database) and Vercel for the frontend (`frontend/vercel.json`). A full AWS kit (CloudFront, private S3 for the frontend, one EC2 server for the backend) is in [aws/RUNBOOK.md](aws/RUNBOOK.md); it is a reference, and the live AWS backend was set up by a teammate.
+
+Secrets (`ANTHROPIC_API_KEY`, `SESSION_SECRET`) come from the host's secret store, never from the repo. Anything that creates cloud resources, costs money or changes repository settings needs the user's explicit approval first. Nothing in the product should send health data to a third party unless the decision log says so. Using the Anthropic provider sends chat content to a third party, so which data may be sent is an open decision (F5).
 
 ## Phones and the QR code demo
 Three ways to let a phone reach the app (same Wi-Fi, a tunnel from the laptop, or public hosting) and the QR script: [../docs/DEMO-PHONES.md](../docs/DEMO-PHONES.md).

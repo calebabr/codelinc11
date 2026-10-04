@@ -86,7 +86,13 @@ The **golden numbers** (cleaning $0, crown in a fresh year $625, crown late in t
 - The work is run as a multi-agent build: one orchestrator plans, role agents (design, frontend, backend, database, AI, tests, docs) each edit only their own folders, and every result is checked by running the tests. Rules: [agents/README.md](agents/README.md). Story: [docs/PROJECT-STORY.md](docs/PROJECT-STORY.md).
 
 ## Team
-Caleb Abrantes (engine, API and the dental prototype), Wrigley Taylor (personalized chatbot prototype), Sai (benefits portal prototype), Ulisses Molina-Becerra (navigation shell, theme and the sign-in page), and a design lead. Listed without ranking.
+Built by a five-person team (listed in the order given, without ranking):
+
+- Marc Halog
+- Sai Sarva
+- Caleb Abrantes
+- Wrigley Taylor
+- Ulisses Molina-Becerra
 
 ## Limitations
 - Plan values, fees and members are placeholders or fictional (decision D7 is open).
