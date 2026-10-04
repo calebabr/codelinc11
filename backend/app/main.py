@@ -1,6 +1,7 @@
 """FastAPI app for the dental prototype."""
 from __future__ import annotations
 
+import os
 import uuid
 from datetime import date, datetime, timedelta, timezone
 
@@ -37,9 +38,19 @@ from .routers import treatment_plan as treatment_plan_router
 from .search import search_procedures
 
 app = FastAPI(title="Dental Benefits Prototype")
+
+# Allowed browser origins. Defaults to local dev; in deployment set CORS_ORIGINS
+# to a comma-separated list of the deployed frontend URLs (e.g. the Vercel URL).
+_DEFAULT_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
+_cors_origins = [
+    origin.strip()
+    for origin in os.environ.get("CORS_ORIGINS", _DEFAULT_ORIGINS).split(",")
+    if origin.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=_cors_origins,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
