@@ -37,7 +37,27 @@ export interface ParsedTreatment {
   source_line: string
 }
 
+/** Which dentist the quote came from, matched against the plan's directory (backend B4). */
+export interface ProviderMatch {
+  matched: boolean
+  provider_id?: string | null
+  name?: string | null
+  dentist?: string | null
+  address?: string | null
+  in_network?: boolean | null
+  network_note?: string | null
+  source?: string | null
+}
+
+export interface QuoteSample {
+  id: string
+  title: string
+  text: string
+}
+
 export interface TreatmentPlanParseResponse {
+  /** Missing on older servers. */
+  provider_match?: ProviderMatch | null
   items: ParsedTreatment[]
   unmatched_lines: string[]
   notes: string[]

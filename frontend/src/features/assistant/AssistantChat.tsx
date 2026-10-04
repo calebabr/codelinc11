@@ -5,6 +5,7 @@ import { MAX_PDF_BYTES } from "@/lib/api/assistant"
 import { Disclaimer } from "@/components/Disclaimer"
 import { useChat, useSuggestions } from "./useAssistant"
 import type { Message } from "./threads"
+import type { ChatScope } from "@/lib/types/assistant"
 
 const TOOL_LABELS: Record<string, string> = {
   find_procedure: "Finding the procedure…",
@@ -13,6 +14,8 @@ const TOOL_LABELS: Record<string, string> = {
   get_benefits_status: "Checking your benefits…",
   get_member_eligibility: "Checking who is covered…",
   get_household_coverage: "Checking the household…",
+  get_reports: "Looking at your reports…",
+  explain_report: "Reading that document…",
 }
 const toolLabel = (name: string) => TOOL_LABELS[name] ?? "Looking that up…"
 
@@ -91,18 +94,24 @@ export function AssistantChat({
   memberId,
   memberName,
   onSent,
+  scope,
+  suggestions,
 }: {
   token: string
   memberId: string
   memberName: string
   onSent?: () => void
+  /** Narrow the assistant to one topic (for example "reports"). */
+  scope?: ChatScope
+  /** Fixed question chips for a scoped page. Without it the server suggests questions. */
+  suggestions?: string[]
 }) {
   const {
     thread, followups, busy, send, retry, attach, removeAttachment, attachments, uploading, attachError,
     clear, clearing, clearError,
-  } = useChat(token, memberId)
+  } = useChat(token, memberId, scope)
   const [confirmClear, setConfirmClear] = useState(false)
-  const sugg = useSuggestions(token, memberId)
+  const sugg = useSuggestions(token, memberId, suggestions)
   const [text, setText] = useState("")
   const fileRef = useRef<HTMLInputElement>(null)
   const endRef = useRef<HTMLLIElement>(null)

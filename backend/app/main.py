@@ -36,6 +36,7 @@ from .routers import notifications as notifications_router
 from .routers import profiles as profiles_router
 from .routers import providers as providers_router
 from .routers import questions as questions_router
+from .routers import reports as reports_router
 from .routers import saved_plans as saved_plans_router
 from .routers import saved_simulations as saved_simulations_router
 from .routers import simulate as simulate_router
@@ -72,6 +73,7 @@ app.include_router(households_router.router)
 app.include_router(members_router.router)
 app.include_router(profiles_router.router)
 app.include_router(providers_router.router)
+app.include_router(reports_router.router)
 app.include_router(notifications_router.router)
 app.include_router(saved_plans_router.router)
 app.include_router(saved_simulations_router.router)

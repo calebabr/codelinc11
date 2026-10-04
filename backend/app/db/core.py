@@ -27,6 +27,7 @@ SEED_TABLES = [
     "member_preferences",
     "saved_plans",
     "notification_prefs",
+    "report_items",
 ]
 
 
@@ -67,6 +68,7 @@ def migrate(path: str | Path) -> list[str]:
             conn.execute("INSERT INTO schema_migrations (name) VALUES (?)", (f.name,))
             applied_now.append(f.name)
     seed_reference(path)
+    backfill_template_reports(path)
     return applied_now
 
 
@@ -100,6 +102,23 @@ def seed_reference(path: str | Path) -> None:
                              (z["zip"], z["city"], z["state"], z["lat"], z["lon"]))
 
 
+def backfill_template_reports(path: str | Path) -> None:
+    """Give an older database (migrated to 009 after it was seeded) the template family's synthetic
+    reports. Only fills an empty report_items table, and only for template members that exist, so
+    a fresh database (seeded right after migrate) and a database where the table is already filled
+    are untouched. Demo sandboxes get their reports from the seed file when they are cloned."""
+    with session(path) as conn:
+        have = {r["name"] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+        if "report_items" not in have or conn.execute("SELECT COUNT(*) FROM report_items").fetchone()[0]:
+            return
+        members = {r["id"] for r in conn.execute("SELECT id FROM members")}
+        for row in load_seed_file().get("report_items", []):
+            if row["member_id"] in members:
+                cols = ", ".join(row)
+                conn.execute(f"INSERT INTO report_items ({cols}) VALUES ({', '.join('?' for _ in row)})",
+                             list(row.values()))
+
+
 def load_seed_file() -> dict:
     return json.loads((SEEDS_DIR / "demo_household.json").read_text(encoding="utf-8"))
 
@@ -108,7 +127,10 @@ def seed(path: str | Path) -> None:
     """Load the demo household. Only call on an empty database (see reset)."""
     data = load_seed_file()
     with session(path) as conn:
+        have = {r["name"] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
         for table in SEED_TABLES:
+            if table not in have:      # a database not yet migrated to the newest tables
+                continue
             for row in data.get(table, []):
                 row = dict(row)
                 if table == "visits":

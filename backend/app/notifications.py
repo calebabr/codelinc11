@@ -5,9 +5,9 @@ money. Each notification has a `dedupe_key` (plan year, appointment id or saved 
 generating again never creates a duplicate, even after the person has read the first one.
 
 Kinds generated today: benefits_expiring, preventive_unused, upcoming_appointment, reminder,
-procedure_planned, deductible_met. Appointments and reminders show up to `NOTIFY_WINDOW_DAYS`
-(default 45) ahead of the demo clock; anything due in 7 days or fewer is a warning. `claim_update` and `eob_ready` are defined for the reports work
-and are not generated yet. Members whose coverage is pending get no benefit notifications.
+procedure_planned, deductible_met, claim_update, eob_ready. Appointments and reminders show up to `NOTIFY_WINDOW_DAYS`
+(default 45) ahead of the demo clock; anything due in 7 days or fewer is a warning. `claim_update` (a denied or pending claim) and `eob_ready` (an EOB with an
+unpaid balance) come from the person's stored reports and are keyed per document. Members whose coverage is pending get no benefit notifications.
 Wording is calm and plain, never tells anyone to put off urgent care, and carries the estimate
 disclaimer wherever an amount appears.
 """
@@ -27,7 +27,7 @@ from .notifier import OutboundMessage, get_notifier
 KINDS = ["benefits_expiring", "preventive_unused", "upcoming_appointment", "reminder",
          "procedure_planned", "deductible_met", "claim_update", "eob_ready", "test"]
 GENERATED_KINDS = ["benefits_expiring", "preventive_unused", "upcoming_appointment", "reminder",
-                   "procedure_planned", "deductible_met"]
+                   "procedure_planned", "deductible_met", "claim_update", "eob_ready"]
 DEFAULT_NOTIFY_WINDOW_DAYS = 45   # appointments and reminders this many days ahead (or fewer) get a notification
 SOON_DAYS = 7                     # due within this many days: severity "warning"
 EXPIRY_MONTHS = 3          # "plan year ending soon": this many months left or fewer
@@ -54,7 +54,7 @@ def _days_phrase(days: int) -> str:
 
 def build_notifications(*, member: dict[str, Any], plan_id: str, usage_row: dict[str, Any],
                         appointments: list[dict[str, Any]], saved_plans: list[dict[str, Any]],
-                        today: date = DEMO_TODAY) -> list[dict[str, Any]]:
+                        reports: list[dict[str, Any]] | None = None, today: date = DEMO_TODAY) -> list[dict[str, Any]]:
     """The notifications this person should have right now (a pure function of the data)."""
     out: list[dict[str, Any]] = []
     year = today.year
@@ -125,6 +125,27 @@ def build_notifications(*, member: dict[str, Any], plan_id: str, usage_row: dict
             "title": f"Planned treatment: {sp['name']}",
             "body": (f"You saved {what}. Open Plan My Year to see when to schedule each one to pay the "
                      f"least. {URGENT} {DISCLAIMER}")})
+    for r in reports or []:
+        d = r["data"]
+        if r["kind"] == "claim" and d.get("status") in ("denied", "pending"):
+            denied = d["status"] == "denied"
+            out.append({
+                "kind": "claim_update", "severity": "warning" if denied else "info", "link": "/reports",
+                "dedupe_key": f"claim_update:{r['id']}",
+                "title": f"Claim {'denied' if denied else 'still pending'}: {r['description']}",
+                "body": (f"Your plan {'did not pay' if denied else 'is still reviewing'} the claim from "
+                         f"{r['provider_name']} on {_short_date(date.fromisoformat(r['service_date']))}. "
+                         "Open Reports to see what it means and what you can do. "
+                         f"{URGENT} This is made-up demo data. {DISCLAIMER}")})
+        elif r["kind"] == "eob" and r["paid_status"] == "unpaid" and d.get("you_owe_cents", 0) > 0:
+            owed = money(d["you_owe_cents"] / 100)
+            out.append({
+                "kind": "eob_ready", "severity": "info", "link": "/reports",
+                "dedupe_key": f"eob_ready:{r['id']}",
+                "title": f"Your EOB is ready: you owe {owed}",
+                "body": (f"The explanation of benefits for {r['description'].lower()} at {r['provider_name']} "
+                         f"shows you owe {owed}. Open Reports to see how it was worked out. "
+                         f"This is made-up demo data. {DISCLAIMER}")})
     return out
 
 
@@ -138,7 +159,8 @@ def sync_notifications(store: Store, viewer: str, member_id: str) -> list[dict[s
         member=member, plan_id=store.household_plan_id(viewer, member_id),
         usage_row=store.get_member_usage(viewer, member_id),
         appointments=store.list_upcoming_schedule(viewer, member_id),
-        saved_plans=store.list_saved_plans(viewer, member_id))
+        saved_plans=store.list_saved_plans(viewer, member_id),
+        reports=store.list_report_items(viewer, member_id))
     if prefs["types"] is not None:
         wanted = [n for n in wanted if n["kind"] in prefs["types"]]
     created = store.add_notifications(viewer, member_id, wanted)

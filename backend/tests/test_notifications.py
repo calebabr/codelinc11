@@ -117,7 +117,8 @@ def test_amounts_carry_the_disclaimer_and_never_say_delay(client):
 def test_other_members_get_their_own_notifications(client):
     _hid, ids, heads = family(client)
     jordan = get_list(client, ids["jordan"], heads["jordan"])
-    assert set(kinds(jordan)) == {"benefits_expiring", "preventive_unused", "upcoming_appointment"}
+    assert set(kinds(jordan)) == {"benefits_expiring", "preventive_unused", "upcoming_appointment",
+                           "eob_ready"}               # eob_ready: Jordan has an unpaid synthetic EOB (B4)
     assert "$1,290 of your yearly maximum is left" in [n["title"] for n in jordan["notifications"]]
     noah = get_list(client, ids["noah"], heads["noah"])
     assert kinds(noah) == ["reminder"]       # coverage is pending: no benefit notifications, his reminder shows
@@ -348,7 +349,7 @@ def test_app_channel_off_hides_the_list_and_the_overview_count(client):
 def test_overview_has_unread_count(client):
     _hid, ids, heads = family(client)
     ov = client.get(f"/members/{ids['jordan']}/overview", headers=heads["jordan"]).json()
-    assert ov["notifications_unread"] == 3
+    assert ov["notifications_unread"] == 4   # includes eob_ready (B4)
     client.post(f"/members/{ids['jordan']}/notifications/read-all", headers=heads["jordan"])
     assert client.get(f"/members/{ids['jordan']}/overview", headers=heads["jordan"]).json()["notifications_unread"] == 0
 
@@ -597,7 +598,7 @@ def test_migration_006_applies_to_an_older_database(tmp_path):
     finally:
         core.MIGRATIONS_DIR = real
     assert core.migrate(path) == ["006_notifications.sql", "007_notification_reminder_kind.sql",
-                                  "008_providers.sql"]
+                                  "008_providers.sql", "009_reports.sql"]
     with connect(path) as c:
         names = {r[0] for r in c.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
         assert {"notification_prefs", "notifications", "outbox"} <= names

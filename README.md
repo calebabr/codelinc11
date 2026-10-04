@@ -69,9 +69,9 @@ npm run dev:lan                                             # same, but reachabl
 ## Tests (verified 2026-10-03)
 | Suite | Command | Result |
 |---|---|---|
-| Backend (engine, API, auth and access rules, database, assistant, sandboxes, rate limits) | `cd backend && .venv/Scripts/python -m pytest -q` | 523 passed |
+| Backend (engine, API, auth and access rules, database, assistant, sandboxes, rate limits) | `cd backend && .venv/Scripts/python -m pytest -q` | 633 passed |
 | Backend lint | `cd backend && .venv/Scripts/python -m ruff check .` | clean |
-| Frontend (pages, session, demo family, switcher, notifications, API clients; 20 test files) | `cd frontend && npm run test` | 205 tests |
+| Frontend (pages, session, demo family, switcher, notifications, API clients; 23 test files) | `cd frontend && npm run test` | 240 tests |
 | Frontend types and build | `npm run typecheck && npm run build` | clean |
 | Browser end-to-end | `tests/` | not written yet (the demo flow is covered at the API level) |
 

@@ -52,7 +52,7 @@ flowchart LR
 | `GET /health` | Server up, `chat_mode` (`anthropic`, `ollama` or `unavailable`) |
 | `GET /auth/demo-accounts[?household_id=]`, `POST /auth/demo-login` | Demo sign-in; `sandbox: true` gives each visitor their own copy of the demo family (`hh-rivera.<sid>`), reused by `household_id`, 410 when expired |
 | `PUT /households/{id}/names` | Rename people and the family (primary, sandbox families only) |
-| `GET /members/{id}/notifications?unread=1` | Makes any new notifications from the person's data (benefits expiring, unused checkups and cleanings, appointments and reminders within `NOTIFY_WINDOW_DAYS` (default 45) days, warning when due in 7 days or fewer, saved treatment plans, deductible met; amounts from the benefits engine; idempotent through `dedupe_key`), then lists them newest first with `unread_count`. Same visibility as the overview. Allowed in the shared template family |
+| `GET /members/{id}/notifications?unread=1` | Makes any new notifications from the person's data (benefits expiring, unused checkups and cleanings, appointments and reminders within `NOTIFY_WINDOW_DAYS` (default 45) days, warning when due in 7 days or fewer, saved treatment plans, deductible met, a denied or pending claim, an EOB with a balance owed; amounts from the benefits engine or the stored document; idempotent through `dedupe_key`), then lists them newest first with `unread_count`. Same visibility as the overview. Allowed in the shared template family |
 | `POST /members/{id}/notifications/{nid}/read` · `POST /members/{id}/notifications/read-all` | Mark one or all read |
 | `GET` / `PUT /members/{id}/notification-prefs` | In-app (default on), email and text (default off), and which kinds. Email or text needs a valid contact on the profile (plain 422 otherwise). PUT: demo families only (403 for the template) |
 | `POST /members/{id}/notifications/test` | `{channel: app\|email\|sms}`: a sample in-app notification, or a delivery preview to the stored contact. Demo families only; rate limited (compute bucket) |
@@ -78,10 +78,17 @@ flowchart LR
 | `POST /simulate` | Monte Carlo plan comparison for a household ("Which plan fits us?") |
 | `POST /benefits-status`, `GET /reminders.ics` | What is left; calendar reminder |
 | `POST /savings-tips`, `POST /questions` | Ways to save; questions to ask your dentist |
-| `POST /treatment-plan/parse` | Read pasted dentist-quote text into treatments |
+| `POST /treatment-plan/parse` | Read pasted dentist-quote text into treatments. The response also has `provider_match` (which directory practice the quote header names; `in_network` for `plan_id` when it is a plan tier; unmatched is priced out of network) |
+| `GET /reports/samples` | Five synthetic sample documents (a paid claim, an EOB with a deductible, an out-of-network EOB with balance billing, a denied claim, a copay visit), each with `id`, `title`, `kind`, `description` and `text` in the template that upload accepts |
+| `POST /members/{id}/reports/samples/{sample_id}` | Add a sample to a person's reports (demo family only; max 100 per person) |
+| `POST /members/{id}/reports/upload?kind=&filename=` | Save a document from a raw `text/plain` body (max 20 KB) in the sample template. Anything else: 422 "Demo accepts the sample documents only." Demo family only |
+| `GET /members/{id}/reports?kind=&from=&to=&order=asc\|desc` | The person's synthetic claims, EOBs and copay visits by service date, with `totals {billed, allowed, plan_paid, you_paid, you_owe_open}` added up in code from the stored values. Same visibility as the overview |
+| `GET /members/{id}/reports/{item_id}` · `GET .../{item_id}/explain` | One document; its plain-language explanation built in code (steps billed, allowed, deductible, plan paid, you owe; what to do next; a balance billing note when out of network). No model |
+| `POST /members/{id}/reports/{item_id}/mark-paid` · `DELETE /members/{id}/reports/{item_id}` | Mark what you owe as paid; remove a document (demo family only) |
+| `GET /treatment-plan/samples` | Three synthetic dentist quotes (in-network practice, out-of-network practice, unknown practice) whose headers use directory names, phones and ZIPs |
 | `POST /chat`, `GET /chat/suggestions`, `POST /chat/attachments`, `GET /members/{id}/assistant-context`, `DELETE /members/{id}/chat` | Assistant (streamed), suggested questions (up to 7), PDF upload, context, clear a person's saved chat |
 
-36 routes in all. Any route can answer 429 with a `Retry-After` header when a rate limit is hit (see below).
+57 routes in all. Any route can answer 429 with a `Retry-After` header when a rate limit is hit (see below).
 
 The API contract is `backend/app/models.py`. Live docs: http://localhost:8000/docs.
 
@@ -90,11 +97,12 @@ The API contract is `backend/app/models.py`. Live docs: http://localhost:8000/do
 | Path | What is there |
 |---|---|
 | `backend/app/main.py` | FastAPI app, core routes, CORS |
-| `backend/app/routers/` | `auth`, `households`, `members`, `saved_plans`, `saved_simulations`, `notifications`, `profiles`, `providers`, `annual_cost`, `simulate`, `chat`, `session`, `tips`, `questions`, `treatment_plan` |
-| `backend/app/engine/` | `estimate.py`, `annual.py`, `sequencer.py`, `status.py`, `tips.py`, `simulate.py` |
+| `backend/app/routers/` | `auth`, `households`, `members`, `saved_plans`, `saved_simulations`, `notifications`, `profiles`, `providers`, `reports`, `annual_cost`, `simulate`, `chat`, `session`, `tips`, `questions`, `treatment_plan` |
+| `backend/app/engine/` | `estimate.py`, `annual.py`, `sequencer.py`, `status.py`, `tips.py`, `simulate.py`, `reports.py` (totals and line checks for claims and EOBs) |
 | `backend/app/agent/` | `providers.py` (Anthropic, Ollama), `loop.py`, `tools.py`, `guard.py`, `context.py`, `suggestions.py` |
 | `backend/app/db/` | `core.py`, `store.py`, `sandbox.py` (per-visitor demo families), `__main__.py` (SQLite access layer, `python -m app.db --reset`) |
 | `backend/data/` | `plans/{basic,preferred,premium}.json`, `cdt_codes.json` |
+| `backend/app/reports.py`, `quote_match.py` | Sample documents, template parser and plain-language explanation for the Reports page; matching a pasted quote to a directory practice |
 | `backend/app/notifications.py`, `notifier.py` | Makes notifications from a person's data; `Notifier` interface (email and text are previews only) |
 | `backend/app/ratelimit.py` | In-memory rate limits (see "Rate limiting" below) |
 | `backend/tests/` | 391 tests (about 2 minutes) |

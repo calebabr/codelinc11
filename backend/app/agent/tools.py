@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import date
 from typing import Any
 
 from ..data import load_catalog, load_plans, resolve_plan
 from ..engine.estimate import estimate
+from ..engine.reports import to_dollars, totals
 from ..engine.sequencer import best_schedule
 from ..engine.simulate import LEVELS, UnknownCode, UnknownPlan, simulate
 from ..engine.status import benefits_status
@@ -22,6 +24,8 @@ from ..models import (
     Usage,
 )
 from ..questions import build_questions
+from ..reports import KINDS as REPORT_KINDS
+from ..reports import explain as explain_row
 from ..search import search_procedures
 
 
@@ -32,6 +36,9 @@ class ToolContext:
     current_month: int = 11
     member: dict | None = None            # the active member (None for stateless chat)
     household: list[dict] = field(default_factory=list)  # people the viewer may discuss
+    # Stored report rows (amounts in cents) of the active member, loaded through the access layer by
+    # the chat router; None outside the reports scope.
+    reports: list[dict] | None = None
 
     @classmethod
     def from_member(cls, mc: Any) -> ToolContext:
@@ -250,6 +257,101 @@ def compare_plans(care_levels: Any = None, known_codes: Any = None, ctx: ToolCon
     return out
 
 
+_AMOUNT_FIELDS = (("billed_cents", "billed"), ("allowed_cents", "allowed"),
+                  ("deductible_applied_cents", "deductible_applied"), ("coinsurance_cents", "coinsurance_amount"),
+                  ("copay_cents", "copay_amount"), ("plan_paid_cents", "plan_paid"),
+                  ("balance_billing_cents", "balance_billing"), ("you_owe_cents", "you_owe"))
+
+
+def _report_view(row: dict) -> dict:
+    """What the model may see of one stored report: names, dates, status and amounts in dollars.
+    Never contact details, never raw uploaded text."""
+    d = row["data"]
+    out: dict[str, Any] = {
+        "id": row["id"], "kind": row["kind"], "service_date": row["service_date"],
+        "title": row["title"], "provider_name": row["provider_name"], "code": row["code"],
+        "description": row["description"], "paid_status": row["paid_status"]}
+    if d.get("status"):
+        out["claim_status"] = d["status"]
+    if d.get("remark"):
+        out["remark"] = d["remark"]
+    for cents_key, name in _AMOUNT_FIELDS:
+        if cents_key in d:
+            out[name] = to_dollars(d[cents_key])
+    return out
+
+
+def _iso_or_none(value: Any) -> str | None | bool:
+    """None for no value, an ISO date string for a good one, False for a bad one."""
+    if value in (None, ""):
+        return None
+    try:
+        return date.fromisoformat(str(value)).isoformat()
+    except ValueError:
+        return False
+
+
+def get_reports(kind: Any = None, from_: Any = None, to: Any = None,
+                ctx: ToolContext | None = None) -> dict:
+    """The active member's saved claims, EOBs and copay visits, with totals added up in code from the
+    stored values of exactly the items listed (the same totals as the Reports page)."""
+    c = _ctx(ctx)
+    rows = list(c.reports or [])
+    if kind not in (None, ""):
+        k = str(kind).strip().lower()
+        if k not in REPORT_KINDS:
+            return {"error": f"kind must be one of: {', '.join(REPORT_KINDS)}."}
+        rows = [r for r in rows if r["kind"] == k]
+    d_from, d_to = _iso_or_none(from_), _iso_or_none(to)
+    if d_from is False or d_to is False:
+        return {"error": "Dates must look like 2026-09-30."}
+    if d_from:
+        rows = [r for r in rows if r["service_date"] >= d_from]
+    if d_to:
+        rows = [r for r in rows if r["service_date"] <= d_to]
+    rows.sort(key=lambda r: r["service_date"])
+    t = totals(rows)
+    unpaid = [{"id": r["id"], "title": r["title"], "service_date": r["service_date"],
+               "you_owe": to_dollars(r["data"].get("you_owe_cents", 0))}
+              for r in rows if r["paid_status"] == "unpaid"]
+    return {"count": len(rows), "items": [_report_view(r) for r in rows],
+            "report_totals": {k: to_dollars(v) for k, v in t.items()},
+            "unpaid_items": unpaid,
+            "note": "Made-up sample documents for a demo. Amounts are exactly as stored."}
+
+
+def explain_report(id: Any = None, ctx: ToolContext | None = None) -> dict:
+    """The plain-language explanation of one saved document (built in code, the same text as the
+    Reports page). Only the active member's own documents can be found."""
+    c = _ctx(ctx)
+    row = next((r for r in (c.reports or []) if r["id"] == str(id or "")), None)
+    if row is None:
+        return {"error": "No saved document with that id. Call get_reports to see the ids."}
+    return explain_row(row).model_dump()
+
+
+REPORT_TOOL_NAMES = {"get_reports", "explain_report"}
+
+REPORT_TOOL_SCHEMAS: list[dict] = [
+    {"type": "function", "function": {
+        "name": "get_reports",
+        "description": ("The person's saved claims, EOBs (explanation of benefits) and copay visits, with "
+                        "totals: billed, allowed, plan_paid, you_paid and you_owe_open (what is still owed). "
+                        "Also unpaid_items. All amounts come from the stored documents."),
+        "parameters": {"type": "object", "properties": {
+            "kind": {"type": "string", "enum": list(REPORT_KINDS),
+                     "description": "Only this kind of document (optional)"},
+            "from": {"type": "string", "description": "Earliest service date, like 2026-01-01 (optional)"},
+            "to": {"type": "string", "description": "Latest service date, like 2026-12-31 (optional)"}}}}},
+    {"type": "function", "function": {
+        "name": "explain_report",
+        "description": ("Plain-language explanation of one saved document: what it is, each line, the "
+                        "steps, what to do next, and a balance billing note. Use an id from get_reports."),
+        "parameters": {"type": "object", "properties": {
+            "id": {"type": "string", "description": "The document id from get_reports"}},
+            "required": ["id"]}}},
+]
+
 TOOL_SCHEMAS: list[dict] = [
     {"type": "function", "function": {
         "name": "find_procedure",
@@ -343,6 +445,10 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
             return compare_plans(args.get("care_levels"), args.get("known_codes"), ctx,
                                  known_care_by_member=args.get("known_care_by_member"),
                                  in_network=args.get("in_network", True))
+        if name == "get_reports":
+            return get_reports(args.get("kind"), args.get("from"), args.get("to"), ctx)
+        if name == "explain_report":
+            return explain_report(args.get("id"), ctx)
         if name == "get_member_eligibility":
             return get_member_eligibility(ctx)
         if name == "get_household_coverage":

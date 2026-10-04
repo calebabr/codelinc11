@@ -75,7 +75,7 @@ export function AssistantButton() {
     }
   }, [open])
 
-  if (pathname === "/assistant") return null
+  if (pathname === "/assistant" || pathname === "/reports/ask") return null
 
   return (
     <>

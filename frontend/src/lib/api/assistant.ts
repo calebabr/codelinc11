@@ -1,6 +1,6 @@
 import { API_URL, ApiError, apiFailure, DEMO_MONTH } from "@/lib/api/planYear"
 import { MAX_FOLLOWUPS } from "@/lib/types/assistant"
-import type { AssistantContext, AttachmentInfo, ChatTurn, StreamEvent, SuggestionsResponse } from "@/lib/types/assistant"
+import type { AssistantContext, ChatScope, AttachmentInfo, ChatTurn, StreamEvent, SuggestionsResponse } from "@/lib/types/assistant"
 
 export { errorMessage } from "@/lib/api/planYear"
 
@@ -89,11 +89,18 @@ export async function streamChat(
   attachmentIds: string[],
   onEvent: (e: StreamEvent) => void,
   signal?: AbortSignal,
+  scope?: ChatScope,
 ): Promise<void> {
   const res = await authedFetch(token, "/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages, member_id: memberId, attachment_ids: attachmentIds, current_month: DEMO_MONTH }),
+    body: JSON.stringify({
+      messages,
+      member_id: memberId,
+      attachment_ids: attachmentIds,
+      current_month: DEMO_MONTH,
+      ...(scope ? { scope } : {}),
+    }),
     signal,
   })
   if (!res.ok) throw await failure(res)

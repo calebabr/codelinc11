@@ -10,7 +10,7 @@ import {
   uploadAttachment,
 } from "@/lib/api/assistant"
 import { ApiError } from "@/lib/api/planYear"
-import type { AssistantContext, AttachmentInfo, ChatTurn, StreamEvent } from "@/lib/types/assistant"
+import type { AssistantContext, AttachmentInfo, ChatScope, ChatTurn, StreamEvent } from "@/lib/types/assistant"
 import { getThread, newId, setFollowups, updateThread, useFollowups, useThread, type Message } from "./threads"
 
 const UNAVAILABLE = "The assistant is not available right now. The rest of the app still works."
@@ -39,8 +39,9 @@ function useLoaded<T>(load: () => Promise<T>, key: string): Loaded<T> & { retry:
   return { ...state, retry: () => setAttempt((n) => n + 1) }
 }
 
-export const useSuggestions = (token: string, memberId: string) =>
-  useLoaded(() => getSuggestions(token, memberId), `${token}|${memberId}`)
+/** The server's suggested questions, or a fixed list when a scoped page supplies its own. */
+export const useSuggestions = (token: string, memberId: string, fixed?: string[]) =>
+  useLoaded(() => (fixed ? Promise.resolve(fixed) : getSuggestions(token, memberId)), `${token}|${memberId}|${fixed ? "fixed" : "server"}`)
 
 export const useAssistantContext = (token: string, memberId: string, refreshKey = 0) =>
   useLoaded<AssistantContext>(() => getAssistantContext(token, memberId), `${token}|${memberId}|${refreshKey}`)
@@ -52,9 +53,11 @@ function turnsOf(thread: Message[]): ChatTurn[] {
 }
 
 /** Chat state for one member. Switching the member shows that person's own thread. */
-export function useChat(token: string, memberId: string) {
-  const thread = useThread(memberId)
-  const followups = useFollowups(memberId)
+export function useChat(token: string, memberId: string, scope?: ChatScope) {
+  // A scoped chat (for example reports) keeps its own conversation, apart from the general one.
+  const threadKey = scope ? `${scope}:${memberId}` : memberId
+  const thread = useThread(threadKey)
+  const followups = useFollowups(threadKey)
   const [attachments, setAttachments] = useState<AttachmentInfo[]>([])
   const [uploading, setUploading] = useState(false)
   const [attachError, setAttachError] = useState<string | null>(null)
@@ -70,12 +73,12 @@ export function useChat(token: string, memberId: string) {
     async (history: ChatTurn[], ids: string[]) => {
       const answerId = newId()
       const patch = (fn: (m: Message) => Message) =>
-        updateThread(memberId, (t) => t.map((m) => (m.id === answerId ? fn(m) : m)))
-      updateThread(memberId, (t) => [
+        updateThread(threadKey, (t) => t.map((m) => (m.id === answerId ? fn(m) : m)))
+      updateThread(threadKey, (t) => [
         ...t,
         { id: answerId, role: "assistant", content: "", tools: [], status: "streaming" },
       ])
-      setFollowups(memberId, [])
+      setFollowups(threadKey, [])
       let unavailable = false
       let nextFollowups: string[] = []
       let failed = false
@@ -95,43 +98,43 @@ export function useChat(token: string, memberId: string) {
         else if (e.event === "error") failed = true
       }
       try {
-        await streamChat(token, memberId, history, ids, onEvent)
+        await streamChat(token, memberId, history, ids, onEvent, undefined, scope)
         if (unavailable) patch((m) => ({ ...m, status: "unavailable", note: UNAVAILABLE }))
         else if (failed)
           patch((m) => ({ ...m, status: "error", note: "Something went wrong while answering. Please try again." }))
         else {
           patch((m) => ({ ...m, status: "ok" }))
-          setFollowups(memberId, nextFollowups)
+          setFollowups(threadKey, nextFollowups)
         }
       } catch (e) {
         const wait = e instanceof ApiError && e.status === 429 ? e.retryAfter : undefined
         patch((m) => ({ ...m, status: "error", note: errorMessage(e), retryAfter: wait }))
       }
     },
-    [token, memberId],
+    [token, memberId, threadKey, scope],
   )
 
   const send = useCallback(
     async (text: string) => {
       const clean = text.trim()
-      if (!clean || getThread(memberId).some((m) => m.status === "streaming")) return
-      const history = [...turnsOf(getThread(memberId)), { role: "user" as const, content: clean }]
+      if (!clean || getThread(threadKey).some((m) => m.status === "streaming")) return
+      const history = [...turnsOf(getThread(threadKey)), { role: "user" as const, content: clean }]
       const ids = attachments.map((a) => a.attachment_id)
-      updateThread(memberId, (t) => [...t, { id: newId(), role: "user", content: clean, tools: [], status: "ok" }])
+      updateThread(threadKey, (t) => [...t, { id: newId(), role: "user", content: clean, tools: [], status: "ok" }])
       setAttachments([])
       await run(history, ids)
     },
-    [memberId, attachments, run],
+    [threadKey, attachments, run],
   )
 
   /** Ask the last question again after an error or an unavailable answer. */
   const retry = useCallback(async () => {
-    const t = getThread(memberId)
+    const t = getThread(threadKey)
     const last = t[t.length - 1]
     if (!last || last.role !== "assistant" || (last.status !== "error" && last.status !== "unavailable")) return
-    updateThread(memberId, (x) => x.slice(0, -1))
-    await run(turnsOf(getThread(memberId)), [])
-  }, [memberId, run])
+    updateThread(threadKey, (x) => x.slice(0, -1))
+    await run(turnsOf(getThread(threadKey)), [])
+  }, [threadKey, run])
 
   const attach = useCallback(
     async (file: File) => {
@@ -172,15 +175,15 @@ export function useChat(token: string, memberId: string) {
     setClearing(true)
     try {
       await clearChat(token, memberId)
-      updateThread(memberId, () => [])
-      setFollowups(memberId, [])
+      updateThread(threadKey, () => [])
+      setFollowups(threadKey, [])
       setAttachments([])
     } catch (e) {
       setClearError(errorMessage(e))
     } finally {
       setClearing(false)
     }
-  }, [token, memberId])
+  }, [token, memberId, threadKey])
 
   return {
     thread, followups, busy, send, retry, attach, removeAttachment, attachments, uploading, attachError,

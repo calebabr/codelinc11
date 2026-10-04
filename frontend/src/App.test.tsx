@@ -23,6 +23,7 @@ describe('portal routes', () => {
     ['/costs', 'Costs', 'Costs'],
     ['/plan-year', 'Plan My Year', 'Plan My Year'],
     ['/providers', 'Find a dentist near you', 'Providers'],
+    ['/reports', 'Reports', 'Reports'],
     ['/assistant', 'Assistant', 'Assistant'],
   ]
   it.each(cases)('renders %s with heading %s and highlights its nav item', async (path, heading, navLabel) => {

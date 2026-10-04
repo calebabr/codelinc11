@@ -1,5 +1,5 @@
 import { API_URL, ApiError, apiFailure, DEMO_MONTH } from "@/lib/api/planYear"
-import type { AnnualCostRequest, AnnualCostResponse, EstimateResponse, TreatmentPlanParseResponse } from "@/lib/types/costs"
+import type { AnnualCostRequest, AnnualCostResponse, EstimateResponse, QuoteSample, TreatmentPlanParseResponse } from "@/lib/types/costs"
 import type { SavingsTipsResponse, TreatmentItem, Usage } from "@/lib/types/planYear"
 
 async function post<T>(path: string, body: unknown): Promise<T> {
@@ -34,3 +34,27 @@ export const postAnnualCost = (req: AnnualCostRequest) => post<AnnualCostRespons
 
 /** The three plan tiers shown side by side on the Yearly cost view. */
 export const TIER_IDS = ["basic", "preferred", "premium"] as const
+
+/** Synthetic dentist quotes to try (GET /treatment-plan/samples). */
+export async function getQuoteSamples(): Promise<QuoteSample[]> {
+  let res: Response
+  try {
+    res = await fetch(`${API_URL}/treatment-plan/samples`)
+  } catch {
+    throw new ApiError("We can't reach the server right now. Please try again in a moment.")
+  }
+  if (!res.ok) throw await apiFailure(res)
+  const body = (await res.json()) as unknown
+  const rows: unknown[] = Array.isArray(body)
+    ? body
+    : body && typeof body === "object" && Array.isArray((body as { samples?: unknown }).samples)
+      ? (body as { samples: unknown[] }).samples
+      : []
+  return rows
+    .filter((r): r is Record<string, unknown> => typeof r === "object" && r !== null)
+    .map((r, i) => ({
+      id: String(r.id ?? r.sample_id ?? i),
+      title: typeof r.title === "string" && r.title ? r.title : `Sample quote ${i + 1}`,
+      text: typeof r.text === "string" ? r.text : "",
+    }))
+}

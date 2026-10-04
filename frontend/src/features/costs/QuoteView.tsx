@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react"
-import { useNavigate } from "react-router"
+import { Link, useNavigate } from "react-router"
 import { money } from "@/lib/format"
 import { useSession } from "@/state/SessionContext"
 import { errorMessage, getMemberUsage } from "@/lib/api/planYear"
-import { postParseQuote, postSavingsTipsWithQuotes } from "@/lib/api/costs"
+import { getQuoteSamples, postParseQuote, postSavingsTipsWithQuotes } from "@/lib/api/costs"
 import type { SavingsTip, TreatmentItem, Usage } from "@/lib/types/planYear"
-import type { ParsedTreatment, TreatmentPlanParseResponse } from "@/lib/types/costs"
+import type { ParsedTreatment, ProviderMatch, QuoteSample, TreatmentPlanParseResponse } from "@/lib/types/costs"
 import { useLoad } from "./useLoad"
 
 export const SAMPLE_QUOTE = `Treatment plan: Phase 1 (urgent)
@@ -66,6 +66,35 @@ function QuoteCard({ item, flag }: { item: ParsedTreatment; flag: SavingsTip | u
   )
 }
 
+/** Who the quote is from, found in the plan's directory. When we can't find them, the price is for out of network care. */
+export function ProviderMatchCard({ match }: { match: ProviderMatch }) {
+  if (!match.matched) {
+    return (
+      <div className="note" data-testid="provider-match-none">
+        <p className="text-sm font-semibold">
+          We could not find this dentist in your plan's directory, so this is priced as out of network.
+        </p>
+        {match.network_note && <p className="mt-1 text-sm">{match.network_note}</p>}
+        <Link to="/providers" className="mt-1 inline-flex min-h-11 items-center font-semibold text-burgundy underline">
+          Find a dentist in your network
+        </Link>
+      </div>
+    )
+  }
+  const who = [match.name, match.dentist, match.address].filter((x): x is string => !!x).join(", ")
+  return (
+    <div className="portal-card" data-testid="provider-match">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <p className="portal-card-title !mb-0 break-words">This quote is from: {who}</p>
+        {match.in_network === true && <span className="chip chip-ok">In network</span>}
+        {match.in_network === false && <span className="chip chip-warn">Out of network</span>}
+      </div>
+      {match.network_note && <p className="mt-1 text-sm">{match.network_note}</p>}
+      <p className="mt-1 text-xs text-muted-foreground">Source: {match.source ?? "insurer directory"}</p>
+    </div>
+  )
+}
+
 interface Props {
   memberId: string
   planId: string
@@ -78,6 +107,17 @@ export function QuoteView({ memberId, planId }: Props) {
   const [reading, setReading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [parsed, setParsed] = useState<TreatmentPlanParseResponse | null>(null)
+  const [samples, setSamples] = useState<QuoteSample[]>([])
+  useEffect(() => {
+    let cancelled = false
+    getQuoteSamples().then(
+      (l) => !cancelled && setSamples(l),
+      () => undefined, // The samples are optional; the page works without them.
+    )
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const [usage, setUsage] = useState<Usage | null>(null)
   useEffect(() => {
@@ -93,11 +133,11 @@ export function QuoteView({ memberId, planId }: Props) {
     }
   }, [memberId, token])
 
-  async function read() {
+  async function read(quote: string = text) {
     setReading(true)
     setError(null)
     try {
-      setParsed(await postParseQuote(planId, text))
+      setParsed(await postParseQuote(planId, quote))
     } catch (e) {
       setParsed(null)
       setError(errorMessage(e))
@@ -131,13 +171,37 @@ export function QuoteView({ memberId, planId }: Props) {
           placeholder="Tooth 19  Crown, porcelain  D2740  $1,200"
         />
         <div className="mt-3 flex flex-wrap gap-2">
-          <button type="button" className="btn btn-orange" disabled={reading || text.trim() === ""} onClick={read}>
+          <button type="button" className="btn btn-orange" disabled={reading || text.trim() === ""} onClick={() => void read()}>
             {reading ? "Reading..." : "Read my quote"}
           </button>
           <button type="button" className="btn btn-outline" onClick={() => setText(SAMPLE_QUOTE)}>
             Use a sample quote
           </button>
         </div>
+        {samples.length > 0 && (
+          <div className="mt-4">
+            <p className="text-sm font-semibold">Or try a sample quote</p>
+            <ul className="mt-2 grid gap-2 sm:grid-cols-3" aria-label="Sample quotes">
+              {samples.map((s) => (
+                <li key={s.id}>
+                  <button
+                    type="button"
+                    disabled={reading}
+                    aria-label={`Try a sample quote: ${s.title}`}
+                    className="portal-card-select min-h-11 w-full rounded-2xl border border-line bg-white p-3 text-left"
+                    onClick={() => {
+                      setText(s.text)
+                      void read(s.text)
+                    }}
+                  >
+                    <span className="block font-semibold text-burgundy">{s.title}</span>
+                    <span className="block text-xs text-muted-foreground">Made-up quote</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <p className="mt-2 text-xs text-muted-foreground">Please do not paste names or other personal details. To upload a PDF, ask the Assistant.</p>
       </section>
 
@@ -153,6 +217,7 @@ export function QuoteView({ memberId, planId }: Props) {
               {matchedCount} matched to a known procedure.
             </p>
           )}
+          {parsed.provider_match && <ProviderMatchCard match={parsed.provider_match} />}
           {parsed.notes.map((n, i) => (
             <p key={i} className="note text-sm">{n}</p>
           ))}

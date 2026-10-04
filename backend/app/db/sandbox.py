@@ -26,9 +26,9 @@ DEFAULT_MAX_SANDBOXES = 300
 # Tables copied from the seed (plan_tiers is shared). Insert order respects foreign keys.
 CLONE_TABLES = ["households", "members", "accounts", "member_usage", "visits", "appointments",
                 "member_context", "member_preferences", "saved_plans", "saved_simulations",
-                "notification_prefs"]
+                "notification_prefs", "report_items"]
 # Child tables keyed by member_id, deleted before the members (chat_memory is never copied: it starts empty).
-MEMBER_CHILD_TABLES = ["outbox", "notifications", "notification_prefs", "chat_memory", "member_preferences", "member_context", "saved_simulations",
+MEMBER_CHILD_TABLES = ["report_items", "outbox", "notifications", "notification_prefs", "chat_memory", "member_preferences", "member_context", "saved_simulations",
                        "saved_plans", "appointments", "visits", "member_usage"]
 
 
@@ -84,6 +84,8 @@ def _suffix(table: str, row: dict[str, Any], sid: str | None, fresh: str) -> dic
         row["plan_year"] = int(row["visit_date"][:4])
     if table in ("saved_plans", "saved_simulations"):
         row["created_at"] = row["updated_at"] = fresh
+    if table == "report_items":
+        row["created_at"] = fresh
     if sid is None:
         return row
     s = "." + sid
@@ -97,7 +99,7 @@ def _suffix(table: str, row: dict[str, Any], sid: str | None, fresh: str) -> dic
         row["id"] += s
         row["member_id"] += s
         row["email"] = f"{local}{s}@{domain}"
-    elif table in ("saved_plans", "saved_simulations"):
+    elif table in ("saved_plans", "saved_simulations", "report_items"):
         row["id"] += s
         row["member_id"] += s
     else:  # member_usage, visits, appointments, member_context, member_preferences
@@ -143,7 +145,7 @@ def _delete_household_rows(conn: sqlite3.Connection, household_id: str, keep_hou
 
 def delete_member_rows(conn: sqlite3.Connection, member_id: str) -> None:
     """Delete one member and every dependent row (usage, visits, appointments, preferences, context,
-    chat memory, saved plans and comparisons, account, invites)."""
+    chat memory, saved plans and comparisons, reports, account, invites)."""
     for table in MEMBER_CHILD_TABLES:
         conn.execute(f"DELETE FROM {table} WHERE member_id = ?", (member_id,))
     conn.execute("DELETE FROM invites WHERE member_id = ? OR invited_by = ?", (member_id, member_id))

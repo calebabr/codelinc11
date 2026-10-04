@@ -51,3 +51,6 @@ export interface ChatBody {
   attachment_ids: string[]
   current_month: number
 }
+
+/** Narrows what the assistant talks about. Omitted means the general assistant. */
+export type ChatScope = "reports"

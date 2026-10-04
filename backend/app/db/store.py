@@ -25,6 +25,7 @@ CLEANING_CODES = {"D1110", "D1120"}
 
 
 MAX_MEMBERS = 8
+MAX_REPORT_ITEMS = 100
 
 
 def age_on(dob: date, today: date = DEMO_TODAY) -> int:
@@ -557,6 +558,74 @@ class Store:
         with session(self.path) as conn:
             self._editable_target(conn, viewer_id, member_id)
 
+    # ---- reports: synthetic claims, EOBs and copay visits (migration 009) --------------------
+    def list_report_items(self, viewer_id: str, member_id: str, kind: str | None = None,
+                          date_from: str | None = None, date_to: str | None = None,
+                          newest_first: bool = False) -> list[dict[str, Any]]:
+        """One person's report items by service date (oldest first unless `newest_first`). `data`
+        holds the stored fields, amounts in integer cents. Same visibility as the person's other data."""
+        sql, args = "SELECT * FROM report_items WHERE member_id = ?", [member_id]
+        if kind:
+            sql, args = sql + " AND kind = ?", args + [kind]
+        if date_from:
+            sql, args = sql + " AND service_date >= ?", args + [date_from]
+        if date_to:
+            sql, args = sql + " AND service_date <= ?", args + [date_to]
+        sql += " ORDER BY service_date DESC, rowid DESC" if newest_first else " ORDER BY service_date, rowid"
+        with session(self.path) as conn:
+            self._target(conn, viewer_id, member_id)
+            rows = conn.execute(sql, args).fetchall()
+        return [_report_item(r) for r in rows]
+
+    def get_report_item(self, viewer_id: str, member_id: str, item_id: str) -> dict[str, Any]:
+        with session(self.path) as conn:
+            self._target(conn, viewer_id, member_id)
+            r = conn.execute("SELECT * FROM report_items WHERE id = ? AND member_id = ?",
+                             (item_id, member_id)).fetchone()
+        if r is None:
+            raise NotFound(f"report {item_id}")
+        return _report_item(r)
+
+    def add_report_item(self, viewer_id: str, member_id: str, item: dict[str, Any]) -> dict[str, Any]:
+        """Save an already validated document (keys: kind, service_date, title, provider_id,
+        provider_name, code, description, data in cents, paid_status). Demo family only; at most
+        MAX_REPORT_ITEMS per person (ValueError with a plain message)."""
+        with session(self.path) as conn:
+            self._editable_target(conn, viewer_id, member_id)
+            n = conn.execute("SELECT COUNT(*) FROM report_items WHERE member_id = ?", (member_id,)).fetchone()[0]
+            if n >= MAX_REPORT_ITEMS:
+                raise ValueError(f"You can keep up to {MAX_REPORT_ITEMS} documents per person. Delete one first.")
+            sid = sandbox.split_id(member_id)[1]
+            item_id = "ri-" + secrets.token_hex(5) + (f".{sid}" if sid else "")
+            conn.execute(
+                "INSERT INTO report_items (id, member_id, kind, service_date, title, provider_id, "
+                "provider_name, code, description, data_json, paid_status, created_at) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                (item_id, member_id, item["kind"], item["service_date"], item["title"], item.get("provider_id"),
+                 item["provider_name"], item.get("code"), item.get("description", ""),
+                 json.dumps(item["data"]), item["paid_status"], _now_iso()))
+            return _report_item(conn.execute("SELECT * FROM report_items WHERE id = ?", (item_id,)).fetchone())
+
+    def mark_report_paid(self, viewer_id: str, member_id: str, item_id: str) -> dict[str, Any]:
+        """Mark what you owe on a document as paid (demo family only). Already paid is fine."""
+        with session(self.path) as conn:
+            self._editable_target(conn, viewer_id, member_id)
+            r = conn.execute("SELECT * FROM report_items WHERE id = ? AND member_id = ?",
+                             (item_id, member_id)).fetchone()
+            if r is None:
+                raise NotFound(f"report {item_id}")
+            if r["paid_status"] == "not_applicable":
+                raise ValueError("There is nothing to pay on this document.")
+            conn.execute("UPDATE report_items SET paid_status = 'paid' WHERE id = ?", (item_id,))
+            return _report_item(conn.execute("SELECT * FROM report_items WHERE id = ?", (item_id,)).fetchone())
+
+    def delete_report_item(self, viewer_id: str, member_id: str, item_id: str) -> None:
+        with session(self.path) as conn:
+            self._editable_target(conn, viewer_id, member_id)
+            cur = conn.execute("DELETE FROM report_items WHERE id = ? AND member_id = ?", (item_id, member_id))
+            if cur.rowcount == 0:
+                raise NotFound(f"report {item_id}")
+
     # ---- invites -------------------------------------------------------
     def create_invite(
         self, viewer_id: str, email: str, member_id: str | None = None
@@ -775,6 +844,12 @@ def _saved_simulation(r: sqlite3.Row) -> dict[str, Any]:
 def _saved_plan(r: sqlite3.Row) -> dict[str, Any]:
     d = dict(r)
     d["items"] = json.loads(d.pop("items_json"))
+    return d
+
+
+def _report_item(r: sqlite3.Row) -> dict[str, Any]:
+    d = dict(r)
+    d["data"] = json.loads(d.pop("data_json"))
     return d
 
 

@@ -9,6 +9,7 @@ export const NAV_ITEMS = [
   { to: "/costs", label: "Costs" },
   { to: "/plan-year", label: "Plan My Year" },
   { to: "/providers", label: "Providers" },
+  { to: "/reports", label: "Reports" },
   { to: "/assistant", label: "Assistant" },
 ]
 

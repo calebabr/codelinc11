@@ -19,7 +19,7 @@ import os
 import secrets
 from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
@@ -44,6 +44,7 @@ SAVED_MODES = {"anthropic", "ollama", "template"}
 class MemberChatRequest(ChatRequest):
     member_id: str | None = None      # the person the chat is about (default: stateless chat)
     attachment_ids: list[str] = Field(default_factory=list)    # ids from POST /chat/attachments
+    scope: Literal["reports"] | None = None   # "reports": questions about saved claims, EOBs, copays
 
 
 @dataclass
@@ -137,6 +138,13 @@ def chat(req: MemberChatRequest, store: StoreDep, provider: ProviderDep,
             raise HTTPException(status_code=404, detail="Attachment not found.")
         documents.append({"media_type": "application/pdf",
                           "data": base64.b64encode(att.data).decode()})
+
+    if req.scope == "reports":
+        # Same visibility rule as the Reports page; the rows (cents) stay on the server and only
+        # the tool results reach the model. A reports chat is not saved to the general chat memory.
+        rows = guarded(lambda: store.list_report_items(viewer, req.member_id))
+        events = run_chat(plain, client=client, context=ctx, scope="reports", reports=rows)
+        return StreamingResponse(_sse(events), media_type="text/event-stream", headers=headers)
 
     last_user = next((m.content for m in reversed(req.messages) if m.role == "user"), "")
     events = run_chat(plain, client=client, context=ctx, documents=documents or None)

@@ -217,11 +217,34 @@ class TreatmentPlanParseRequest(BaseModel):
     plan: Plan | None = None
 
 
+class ProviderMatch(BaseModel):
+    """Which directory practice a pasted dentist quote came from (sprint 2, B4), found by matching the
+    quote's header (practice name, phone, dentist and ZIP) against the providers table."""
+    matched: bool
+    provider_id: str | None = None
+    name: str | None = None                             # practice name
+    dentist: str | None = None
+    address: str | None = None                          # "street, city, ST zip"
+    in_network: bool | None = None                      # for plan_id when it is a plan tier; False when unmatched
+    network_note: str                                   # plain language; says so when we priced out of network
+    source: Literal["insurer directory"] = "insurer directory"
+
+
 class TreatmentPlanParseResponse(BaseModel):
     items: list[ParsedTreatment]
     unmatched_lines: list[str] = []                     # lines that looked like treatments but could not be matched
     notes: list[str] = []                               # plain-English notes for the user
     mode: Literal["rules", "ollama"] = "rules"
+    provider_match: ProviderMatch | None = None         # always set by POST /treatment-plan/parse
+
+
+class TreatmentPlanSample(BaseModel):
+    """A synthetic dentist quote to try (GET /treatment-plan/samples)."""
+    id: str
+    title: str
+    description: str                                    # one plain sentence about what it shows
+    expected_network: Literal["in", "out", "unknown"]   # for the Preferred plan
+    text: str
 
 
 # ---------- Questions to ask your dentist ----------
@@ -665,3 +688,91 @@ class ProviderOut(BaseModel):
     distance_mi: float | None = None                    # miles from the searched ZIP, one decimal
     in_network: bool                                    # for the household's CURRENT plan
     estimate: ProviderEstimate | None = None           # only when `code` is given
+
+
+# ---------- Reports: claims, EOBs, copays (sprint 2, B4). SYNTHETIC documents only ----------
+
+ReportKind = Literal["claim", "eob", "copay", "other"]
+PaidStatus = Literal["unpaid", "paid", "not_applicable"]
+
+
+class ReportSample(BaseModel):
+    id: str                                             # e.g. "sample-eob-deductible"
+    title: str
+    kind: ReportKind
+    description: str                                    # one plain sentence about what it shows
+    text: str                                           # the sample template; also what upload accepts
+
+
+class ReportData(BaseModel):
+    """Fields of one document, exactly as stored (dollars). Only the ones that apply are filled."""
+    claim_number: str | None = None
+    eob_number: str | None = None
+    status: Literal["paid", "denied", "pending"] | None = None   # claims
+    billed: float | None = None
+    allowed: float | None = None
+    deductible_applied: float | None = None
+    coinsurance_amount: float | None = None
+    copay_amount: float | None = None
+    plan_paid: float | None = None
+    you_owe: float | None = None
+    balance_billing: float | None = None
+    remark: str | None = None
+
+
+class ReportItem(BaseModel):
+    id: str
+    member_id: str
+    kind: ReportKind
+    service_date: str                                   # ISO date
+    title: str
+    provider_id: str | None = None                      # set when the practice is in the directory
+    provider_name: str
+    code: str | None = None
+    description: str = ""
+    data: ReportData
+    paid_status: PaidStatus
+    created_at: str
+
+
+class ReportTotals(BaseModel):
+    """Sums of stored values over the listed items (see engine/reports.py)."""
+    billed: float
+    allowed: float
+    plan_paid: float
+    you_paid: float                                     # you owe on items marked paid
+    you_owe_open: float                                 # you owe on items not yet marked paid
+
+
+class ReportList(BaseModel):
+    items: list[ReportItem]
+    totals: ReportTotals
+    count: int
+
+
+class ReportLine(BaseModel):
+    label: str                                          # e.g. "Billed"
+    amount: float | None = None
+    plain: str                                          # what the line means, in plain words
+
+
+class ReportStep(BaseModel):
+    key: Literal["billed", "allowed", "deductible", "plan_paid", "you_owe"]
+    label: str
+    amount: float
+    plain: str
+
+
+class ReportExplanation(BaseModel):
+    """Built in code from the stored fields. No model is involved and no amount is recomputed."""
+    id: str
+    kind: ReportKind
+    title: str
+    what_it_is: str
+    lines: list[ReportLine]
+    steps: list[ReportStep]                             # billed, allowed, deductible, plan paid, you owe (EOB, copay)
+    what_to_do_next: list[str]
+    balance_billing_note: str | None = None             # only when the dentist is out of network
+    lines_add_up: bool
+    synthetic_notice: str
+    disclaimer: str
