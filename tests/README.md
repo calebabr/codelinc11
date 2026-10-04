@@ -37,6 +37,20 @@ These run with the normal backend and frontend commands (no extra setup, no serv
 | `backend/tests/test_contract_demo.py` | Demo flow: sign in as Alex, $400 left, Plan My Year golden numbers, assistant (scripted fake model) says only tool-sourced dollar amounts; "model unavailable" path invents no numbers |
 | `frontend/src/routes.smoke.test.tsx` | The six routes render for a signed-in session with a mocked API and write nothing to `console.error` or `console.warn` |
 
+## Other tests that guard the demo (run 2026-10-03)
+These also run with the normal commands:
+
+| File | What it proves |
+|---|---|
+| `backend/tests/test_sandboxes.py` | Every visitor gets their own demo family (ids suffixed, 24 hour expiry, cap, 410 for expired); resetting or renaming one family never touches another; the shared template cannot be renamed |
+| `backend/tests/test_ratelimit.py` | Limits answer 429 with `Retry-After` and a plain sentence; counts are per household or per address; the global chat cap |
+| `backend/tests/test_simulate.py`, `test_simulate_api.py`, `test_saved_simulations.py` | The plan comparison is repeatable with a seed, shares add to 100, saved comparisons are recomputed by the server |
+| `backend/tests/test_agent_compare_plans.py`, `test_agent_sim_followups.py` | The `compare_plans` tool, follow-up chips and the percentage guard, with a scripted fake model |
+| `backend/tests/test_cors.py`, `test_demo_accounts_status.py` | CORS settings for phones and tunnels; demo accounts carry member status |
+| `frontend/src/state/DemoFamily.test.tsx`, `frontend/src/pages/Join/JoinPage.test.tsx`, `frontend/src/components/shell/mobile.test.tsx` | One-tap demo, naming the family, the QR page, and the phone rules (viewport meta, manifest, 16 px inputs, 44 px chips) |
+
+Counts: backend 391 passed, frontend 151 tests (17 files). All suites need no network or key. One frontend test (`SessionContext.test.tsx`, "sends a signed-out visitor to the login page...") timed out once on a full run under load and passes alone.
+
 ## Commands
 - Backend: `cd backend && .venv/Scripts/python -m pytest -q` and `ruff check .`
 - Frontend: `cd frontend && npm run test`

@@ -9,7 +9,7 @@ database/
 ├── migrations/   001_households.sql ... applied in filename order
 ├── seeds/        demo_household.json (synthetic Rivera household)
 └── README.md
-backend/app/db/   core.py (connect, migrate, seed, reset), store.py (access layer), __main__.py (CLI)
+backend/app/db/   core.py (connect, migrate, seed, reset), store.py (access layer), sandbox.py (per-visitor demo families), __main__.py (CLI)
 ```
 
 ## Create or reset the database
@@ -20,7 +20,7 @@ python -m app.db            # creates database/benefits.db if missing; seeds it 
 python -m app.db --reset    # deletes it and rebuilds from the seeds
 ```
 
-The API also seeds an empty database on startup. `POST /demo/reset` (primary only) puts the data back to the original demo state in place (`core.reseed`); member ids do not change, so signed-in sessions stay valid. The session signing secret is kept in `database/.session_secret` (git-ignored) unless `SESSION_SECRET` is set.
+The API also seeds an empty database on startup. `POST /demo/reset` (primary only) puts the caller's own household back to the original demo state in place (`sandbox.restore`); member ids do not change, so signed-in sessions stay valid, and other families (sandboxes) are not touched. `core.reseed` still rebuilds everything and is used by tests and the CLI. The session signing secret is kept in `database/.session_secret` (git-ignored) unless `SESSION_SECRET` is set.
 
 Set `BENEFITS_DB_PATH` to use another file. `*.db` is git-ignored. Every schema change is a new `NNN_name.sql` file in `migrations/`; `Store(...)` applies any that are missing.
 
@@ -29,7 +29,7 @@ Set `BENEFITS_DB_PATH` to use another file. `*.db` is git-ignored. Every schema 
 |---|---|
 | `plan_tiers` | Basic, Preferred, Premium: premium, yearly maximum, deductible, coverage percentages (cents) |
 | `households` | A household and its plan tier |
-| `members` | Name, relationship (self, spouse, child), age, student flag, status (active, pending), role (primary, adult, managed), has_login. A check rule allows a login only for adults 18+, never for managed members |
+| `members` | Name, relationship (self, spouse, partner, child, other), age, student flag, status (active, pending), role (primary, adult, managed), has_login. A check rule allows a login only for adults 18+, never for managed members. Profile columns (migration 005): `dob` (ISO date; `age` is kept in sync from it with the demo clock `DEMO_TODAY`), `email`, `phone` (digits only), `zip`, `notes` (max 200), `primary_dentist_id` (nullable, used by the providers feature). Contact details are never sent to the assistant |
 | `accounts` | Demo logins (email, display name), one per member with a login |
 | `invites` | Primary invites an adult by email; token; pending, accepted or cancelled |
 | `member_usage` | Maximum used, deductible met, visits, cleanings used, **per member per plan year** |
@@ -38,6 +38,8 @@ Set `BENEFITS_DB_PATH` to use another file. `*.db` is git-ignored. Every schema 
 | `member_context` | Plan highlights text per member |
 | `member_preferences` | Preferences and must-haves per member |
 | `chat_memory` | The assistant's saved chat turns per member |
+| `sandboxes` | Which households are per-visitor demo sandboxes (migration 004): household id, 6-hex `sid`, created time. Used for expiry and the cap |
+| `saved_simulations` | Saved "Which plan fits us?" comparisons per member (migration 003): name, request (JSON: the choices), summary (JSON: the headline the server computed with `simulate()` when saving), created and updated times. Max 20 per member |
 | `saved_plans` | Saved Plan My Year plans per member: name, items (JSON: id, code, urgency, after; no dollar amounts), created and updated times. Alex has one seeded (the S2 case) |
 | `schema_migrations` | Which migrations have run |
 
@@ -65,9 +67,20 @@ Jordan Rivera (41, primary), Alex Rivera (39, spouse), Maya Rivera (9, managed, 
 | `list_upcoming_schedule(viewer_id, member_id=None, today=None)` | Appointments and reminders from today on |
 | `create_invite(viewer_id, email, member_id=None)` | Primary only; adults 18+ only |
 | `list_invites(viewer_id)` / `accept_invite(token)` | Primary lists; accepting gives the adult profile a login |
+| `list/create/get/update/delete_saved_simulation(...)`, `household_plan_id(...)` | Saved comparisons, newest first; same access rules as saved plans |
 | `list_saved_plans(viewer_id, member_id)` | Saved Plan My Year plans, newest first |
 | `create_saved_plan(viewer_id, member_id, name, items)` | Saves a plan, returns it |
 | `update_saved_plan(viewer_id, member_id, plan_id, name=None, items=None)` | Renames or replaces items; unknown id raises `NotFound` |
 | `delete_saved_plan(viewer_id, member_id, plan_id)` | Deletes one plan; unknown id raises `NotFound` |
 
 Tests: `backend/tests/test_db.py` (temporary database).
+
+## Demo sandboxes (T36)
+
+`POST /auth/demo-login` with `sandbox: true` copies the template household (rows from `seeds/demo_household.json`) into new rows: household, members, accounts, usage, visits, appointments, assistant context, preferences, saved plans and saved comparisons. Every id gets a `.<sid>` suffix (`hh-rivera.3f9a1c`, `m-alex.3f9a1c`, `acct-alex.3f9a1c`, `sp-alex-s2.3f9a1c`; emails become `alex.rivera.3f9a1c@example.test`). Chat memory starts empty, plan tier starts as Preferred, `created_at` is fresh. Foreign keys and CHECK constraints hold (the managed child has no login; logins only for 18 and over).
+
+- **Expiry:** `DEMO_SANDBOX_TTL_HOURS` (default 24) counts from creation. Cleanup runs when a sandbox is created and deletes expired ones, then the oldest beyond `DEMO_MAX_SANDBOXES` (default 300). It deletes every dependent row (chat memory, preferences, context, saved plans and comparisons, appointments, visits, usage, invites, accounts, members, the household, the `sandboxes` row).
+- **Reset:** `Store.reset_household` restores a household in place (same ids, names back to the defaults).
+- **Profiles and family (migration 005, sandbox families only):** `Store.update_member_profile`, `add_member` and `remove_member` edit the profile, add a person (max 8, zeroed usage) or delete one with every dependent row (`sandbox.delete_member_rows`: usage, visits, appointments, preferences, context, chat memory, saved plans and comparisons, account, invites). Migration 005 rebuilds `members` (SQLite cannot change a CHECK) to allow `partner` and `other`, and backfills the four demo people's synthetic profile. The clone copies every seed column and `reset` re-inserts the seed rows, so edits, added people and deleted people all go back to the seed. Crossing the 18 boundary changes the role: a managed child who turns 18 becomes an adult (no login); an adult without a login who becomes under 18 becomes managed; an adult with a login or the primary can't become under 18 (`ValueError`, plain message).
+- **Names:** `Store.rename_household` (sandbox only) changes member names and the household display name.
+- **Size:** about 4.4 KB per sandbox in the SQLite file (50 sandboxes grew the file by 216 KB; the default cap of 300 is about 1.3 MB). Chat and logged visits add a little more.

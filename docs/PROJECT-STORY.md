@@ -1,12 +1,12 @@
 # PROJECT STORY
 
-A factual build story for resumes and interviews. Facts as of 2026-10-03 (the integrated product on `integration/main-product`, ready for the 2026-10-04 demo). Numbers were checked by running the tests that day. No claim here goes beyond what exists.
+A factual build story for resumes and interviews. Facts as of 2026-10-03 (the integrated product on branch `feature/choose-a-plan`, which is not pushed or merged yet; `main` is production; ready for the 2026-10-04 demo). Numbers were checked by running the tests that day. No claim here goes beyond what exists.
 
 ## The problem
 People with employer dental plans rarely know what a procedure will cost, and they lose unused benefits when the plan year resets. The hackathon challenge (codeLinc 11, Path 1, dental) asks for a tool that helps with that.
 
 ## The product
-A dental benefits copilot for a household: estimate a procedure's cost with a step-by-step explanation, plan treatments across two plan years to pay the least, and see what is left. An AI assistant explains the results, but a tested engine does all the math. Plan and member data is synthetic.
+Molar Money, a dental benefits copilot for a household: estimate a procedure's cost with a step-by-step explanation, plan treatments across two plan years to pay the least, and see what is left. An AI assistant explains the results, but a tested engine does all the math. Plan and member data is synthetic.
 
 ## The four prototypes and how they were merged
 Four teammates built prototypes in parallel (see [prototypes/README.md](prototypes/README.md)):
@@ -29,20 +29,23 @@ Family, not one person (D1); a sign-in on a real household data model (D2, F1); 
 ## Measurable outcomes (2026-10-03)
 | Measure | Value |
 |---|---|
-| Backend tests | 262 passing |
-| Frontend tests | 75 passing (typecheck and production build clean) |
+| Backend tests | 391 passing (on `feature/choose-a-plan`; 262 before the Monte Carlo plan comparison, demo sandboxes and rate limits) |
+| Frontend tests | 151 across 17 test files (151 passed on the orchestrator run; one sign-in test timed out once on a full run under load and passes alone). Typecheck and production build clean |
+| First page load on a phone | about 162 kB of JavaScript, gzipped (other pages load on demand) |
 | Golden scenarios | G1 to G6 and S2 pass (S2: $2,300 to $1,405, saves $895) |
-| API endpoints built | 30 routes (engine, demo sign-in, household, member overview, visits, saved plans, plan switching, assistant) |
-| Frontend routes | Landing (`/welcome`), demo sign-in (`/login`), six pages (Home, Plans, Family, Costs, Plan My Year, Assistant) |
-| Database tables | 12 across two migrations, including per-person usage, visits, saved plans and assistant memory |
+| API endpoints built | 36 routes on `feature/choose-a-plan` (engine, plan simulation, demo sign-in with per-visitor families, household and renaming, member overview, visits, saved plans, saved plan comparisons, plan switching, assistant) |
+| Frontend routes | Landing (`/welcome`), demo sign-in (`/login`), Scan to try (`/join`), six pages (Home, Plans, Family, Costs, Plan My Year, Assistant) |
+| Database tables | 14 across four migrations, including per-person usage, visits, saved plans, saved plan comparisons, demo sandboxes and assistant memory |
 | Procedure codes | 16 |
 | Plan tiers | 3 |
 | Lint | `ruff check .` clean |
 
-Not done: browser end-to-end tests (Playwright), and the CI workflow has not run on GitHub yet.
+Not done: browser end-to-end tests (Playwright); the CI workflow has not run on GitHub yet; the AWS kit in `infra/aws/` has not been run in AWS (a teammate deploys `main`); an access code for the demo is an idea, not built.
 
 ## What I would say honestly
+- Every visitor gets their own private demo family (a clone of the seeded household, 24 hours, cap of 300), so a public demo is not spoiled by one person. In-memory rate limits protect the Anthropic key. The app was made to work on phones, with a QR page to join.
+- On `feature/choose-a-plan` (not yet merged) the Plans page can also simulate 5,000 possible years for the household and show how often each plan is cheapest. It prices through the same engine; the odds are synthetic placeholders, not claims data.
 - The engine, database, API and all six pages are real, connected and tested; each person in the household sees their own numbers.
 - The assistant runs on Anthropic (`claude-haiku-4-5`) and calls the engine through tools; a number guard checks every dollar figure. It needs internet and a key.
-- Sign-in is a demo "choose your account" screen, not real passwords.
+- Sign-in is a demo with no passwords, and anyone with the link can start a demo family. Rate limits are in memory on one server, and the data is one SQLite file.
 - All plan values, fees and members are synthetic placeholders.

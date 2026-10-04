@@ -41,7 +41,7 @@ export default function PlainEnglish() {
         <motion.div variants={rise} className="rounded-[20px] border-2 border-primary/15 bg-blush p-7">
           <p className="eyebrow flex items-center gap-1.5 text-[11px] text-primary">
             <LogoMark className="size-4" />
-            bitewise says
+            Molar Money says
           </p>
           <p className="mt-4 font-display text-[32px] leading-[1.1]" style={{ letterSpacing: '-0.02em' }}>
             Crowns are covered at 50% after your $50 deductible.

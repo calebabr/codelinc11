@@ -2,9 +2,9 @@
 // m-alex, m-noah, m-maya). No network calls. The token is `tok-<signed-in id>`.
 
 import { useCallback, useMemo, useState, type ReactNode } from "react"
-import { putHouseholdPlan } from "@/lib/api/family"
+import { deleteHouseholdMember, patchMemberProfile, postHouseholdMember, putHouseholdNames, putHouseholdPlan } from "@/lib/api/family"
 import { SessionGateContext, toHousehold, type SessionGateState, type SessionState } from "@/state/SessionContext"
-import type { DemoAccount, FamilyHousehold, FamilyMember, PlanTierSummary } from "@/lib/types/family"
+import type { DemoAccount, FamilyHousehold, FamilyMember, HouseholdNamesRequest, PlanTierSummary, SandboxInfo } from "@/lib/types/family"
 
 export const TIER: PlanTierSummary = {
   id: "preferred",
@@ -40,7 +40,7 @@ export const ALL_MEMBERS: FamilyMember[] = [MEMBERS.jordan, MEMBERS.alex, MEMBER
 export const ACCOUNTS: DemoAccount[] = [
   { account_id: "acct-jordan", email: "jordan.rivera@example.test", display_name: "Jordan Rivera", member_id: "m-jordan", role: "primary", household_id: "hh-rivera" },
   { account_id: "acct-alex", email: "alex.rivera@example.test", display_name: "Alex Rivera", member_id: "m-alex", role: "adult", household_id: "hh-rivera" },
-  { account_id: "acct-noah", email: "noah.rivera@example.test", display_name: "Noah Rivera", member_id: "m-noah", role: "adult", household_id: "hh-rivera" },
+  { account_id: "acct-noah", email: "noah.rivera@example.test", display_name: "Noah Rivera", member_id: "m-noah", role: "adult", household_id: "hh-rivera", status: "pending" },
 ]
 
 /** What the backend returns for this person: the primary sees everyone, others only themselves. */
@@ -59,6 +59,8 @@ export function TestSessionProvider({
   signedInId = "m-jordan",
   activeId,
   members = ALL_MEMBERS,
+  namingPending = false,
+  sandbox = null,
 }: {
   children: ReactNode
   /** Who is signed in. */
@@ -67,10 +69,15 @@ export function TestSessionProvider({
   activeId?: string
   /** Replace the household members (for example to give Noah no login). */
   members?: FamilyMember[]
+  /** Show the "Name your family" card (first sign-in in a new demo family). */
+  namingPending?: boolean
+  /** The demo family info; set it to show the Rename family entry. */
+  sandbox?: SandboxInfo | null
 }) {
   const [signed, setSigned] = useState(signedInId)
   const [active, setActive] = useState(activeId ?? signedInId)
   const [fresh, setFresh] = useState<FamilyHousehold | null>(null)
+  const [naming, setNaming] = useState(namingPending)
   const signIn = useCallback(async (id: string) => {
     setSigned(id)
     setFresh(null)
@@ -94,11 +101,42 @@ export function TestSessionProvider({
       accounts: ACCOUNTS,
       signIn,
       signOut: () => undefined,
+      sandbox,
+      namingPending: naming,
+      dismissNaming: () => setNaming(false),
+      renameFamily: async (body: HouseholdNamesRequest) => {
+        await apply(await putHouseholdNames(household.id, body, `tok-${signed}`))
+        setNaming(false)
+      },
       refreshHousehold: async () => undefined,
+      updateMember: async (id, patch) => {
+        const saved = await patchMemberProfile(id, patch, `tok-${signed}`)
+        await apply({ ...household, members: household.members.map((m) => (m.id === saved.id ? saved : m)) })
+        return saved
+      },
+      addMember: async (body) => {
+        const saved = await postHouseholdMember(household.id, body, `tok-${signed}`)
+        await apply({ ...household, members: [...household.members, saved] })
+        return saved
+      },
+      removeMember: async (id) => {
+        await deleteHouseholdMember(household.id, id, `tok-${signed}`)
+        await apply({ ...household, members: household.members.filter((m) => m.id !== id) })
+      },
       changePlan: async (tierId) => apply(await putHouseholdPlan(household.id, tierId, `tok-${signed}`)),
     }
-    return { status: "ready", error: null, retry: () => undefined, accounts: ACCOUNTS, signIn, session }
-  }, [signed, active, signIn, members, fresh])
+    return {
+      status: "ready",
+      error: null,
+      retry: () => undefined,
+      accounts: ACCOUNTS,
+      signIn,
+      tryDemo: async () => undefined,
+      hasFamily: false,
+      forgetFamily: async () => undefined,
+      session,
+    }
+  }, [signed, active, signIn, members, fresh, naming, sandbox])
 
   return <SessionGateContext.Provider value={value}>{children}</SessionGateContext.Provider>
 }

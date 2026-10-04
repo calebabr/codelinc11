@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
 
-// The bitewise tooth mark. Color comes from currentColor (burgundy by default via text-primary).
+// The Molar Money tooth mark. Color comes from currentColor (burgundy by default via text-primary).
 export function LogoMark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 48 48" className={className} aria-hidden>
@@ -22,7 +22,7 @@ export default function Logo({ className, inverted = false }: { className?: stri
         className={cn('font-heading text-[26px] leading-none font-bold', inverted ? 'text-white' : 'text-foreground')}
         style={{ letterSpacing: '-0.04em' }}
       >
-        bitewise
+        Molar Money
       </span>
     </span>
   )

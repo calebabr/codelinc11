@@ -33,3 +33,7 @@ Thumbs.db
 
 # Session signing secret (generated locally)
 database/.session_secret
+
+# Generated QR codes for the demo
+qr-demo.png
+qr-demo.svg

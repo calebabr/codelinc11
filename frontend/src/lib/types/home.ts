@@ -64,19 +64,21 @@ export interface ScheduleEntry {
   note: string | null
 }
 
+/** Flat EstimateResult from the engine (mirrors backend models.EstimateResult). `in_network` is a boolean flag, not a wrapper. */
 export interface VisitEstimate {
   code: string
   name: string
+  category: string
+  in_network: boolean
   covered: boolean
+  billed: number
+  allowed: number
   deductible_applied: number
   plan_pays: number
   you_pay: number
+  balance_bill: number
   max_used_after: number
-}
-
-export interface EstimateResponse {
-  in_network: VisitEstimate
-  out_of_network: VisitEstimate
+  trace: unknown[]
 }
 
 /** 201 response of POST /members/{id}/visits. */

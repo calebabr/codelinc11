@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { MemoryRouter } from "react-router"
 import { TIER, TestSessionProvider } from "@/test/session"
 import PlansPage from "./PlansPage"
 
@@ -30,6 +31,8 @@ function stubFetch() {
         }
         return { ok: putResult.status < 400, status: putResult.status, json: async () => b }
       }
+      if (String(input).endsWith("/simulate")) return { ok: false, status: 404, json: async () => ({ detail: "Not Found" }) }
+      if (String(input).endsWith("/procedures")) return { ok: true, status: 200, json: async () => [] }
       return { ok: true, status: 200, json: async () => PLANS }
     }),
   )
@@ -38,7 +41,9 @@ function stubFetch() {
 function renderPage(signedInId = "m-jordan") {
   return render(
     <TestSessionProvider signedInId={signedInId}>
-      <PlansPage />
+      <MemoryRouter>
+        <PlansPage />
+      </MemoryRouter>
     </TestSessionProvider>,
   )
 }

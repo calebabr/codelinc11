@@ -81,7 +81,7 @@ export function useLogVisit(token: string, memberId: string, onSaved: () => Prom
       setError(null)
       try {
         const res = await postVisit(token, memberId, code)
-        const last = (res.estimate as { in_network?: VisitEstimate }).in_network ?? (res.estimate as VisitEstimate)
+        const last = res.estimate
         setLogged((l) => ({ ...l, [memberId]: { usage: res.usage, benefits: res.benefits, last } }))
         await onSaved()
       } catch (e) {

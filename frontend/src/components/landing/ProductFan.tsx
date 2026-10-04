@@ -1,6 +1,6 @@
 import { useRef, type CSSProperties } from 'react'
 import { motion, useReducedMotion, useScroll, useTransform, type MotionStyle } from 'motion/react'
-import { FAN_CARD_WIDTH as CARD_WIDTH, FAN_START_SCALE, SCREEN_H, SCREEN_W, screens } from '@/components/landing/screens'
+import { FAN_CARD_WIDTH as CARD_WIDTH, FAN_START_SCALE, SCREEN_H, SCREEN_SIZES, SCREEN_W, screens } from '@/components/landing/screens'
 import { useViewportWidth } from '@/lib/use-viewport-width'
 import { cn } from '@/lib/utils'
 
@@ -18,13 +18,13 @@ function sideOffset(vw: number) {
 }
 
 function Screen({ screen, style, className }: { screen: keyof typeof screens; style: MotionStyle; className?: string }) {
-  const { src, alt } = screens[screen]
+  const { src, srcSet, alt } = screens[screen]
   return (
     <motion.div
       style={{ width: CARD_WIDTH, ...style }}
       className={cn('absolute aspect-[4/3] overflow-hidden bg-white', className)}
     >
-      <img src={src} alt={alt} width={SCREEN_W} height={SCREEN_H} decoding="async" className="size-full object-cover object-top" />
+      <img src={src} srcSet={srcSet} sizes={SCREEN_SIZES} alt={alt} width={SCREEN_W} height={SCREEN_H} decoding="async" className="size-full object-cover object-top" />
     </motion.div>
   )
 }
@@ -35,14 +35,16 @@ function Stage({
   left,
   right,
   caption,
+  className = 'h-screen',
 }: {
   center: MotionStyle
   left?: MotionStyle
   right?: MotionStyle
   caption: MotionStyle
+  className?: string
 }) {
   return (
-    <div className="relative flex h-screen items-center justify-center overflow-hidden">
+    <div className={cn('relative flex items-center justify-center overflow-hidden', className)}>
       {/* Cards sit a little above the middle so the caption fits below */}
       <div className="relative flex -translate-y-[6vh] items-center justify-center" style={{ width: CARD_WIDTH } as CSSProperties}>
         <div className="invisible aspect-[4/3] w-full" aria-hidden />
@@ -93,7 +95,7 @@ function ScrollFan({ desktop, handoff }: { desktop: boolean; handoff: boolean })
   return (
     <section
       ref={ref}
-      aria-label="The bitewise app"
+      aria-label="The Molar Money app"
       className={cn(
         'relative overflow-x-clip',
         desktop ? 'h-[250vh]' : 'h-[160vh]',
@@ -119,12 +121,13 @@ function StaticFan({ desktop }: { desktop: boolean }) {
   const centerEnd = desktop ? CENTER_END : { scale: 0.9, radius: 20 / 0.9 }
   const side = { scale: SIDE_END.scale, borderRadius: SIDE_END.radius, boxShadow: SHADOW_ON }
   return (
-    <section aria-label="The bitewise app" className="relative overflow-x-clip">
+    <section aria-label="The Molar Money app" className="relative overflow-x-clip">
       <Stage
         center={{ scale: centerEnd.scale, borderRadius: centerEnd.radius, boxShadow: SHADOW_ON }}
         left={desktop ? { ...side, x: -offset, rotate: -SIDE_END.rotate } : undefined}
         right={desktop ? { ...side, x: offset, rotate: SIDE_END.rotate } : undefined}
         caption={{}}
+        className={desktop ? 'h-screen' : 'h-[70svh] min-h-[420px]'}
       />
     </section>
   )
@@ -135,5 +138,6 @@ function StaticFan({ desktop }: { desktop: boolean }) {
 export default function ProductFan({ handoff = false }: { handoff?: boolean }) {
   const desktop = useViewportWidth() >= 768
   const reduce = useReducedMotion()
-  return reduce ? <StaticFan desktop={desktop} /> : <ScrollFan desktop={desktop} handoff={handoff} />
+  // Phones get the finished fan with no scroll animation (cheaper and no jumpy pinned section).
+  return reduce || !desktop ? <StaticFan desktop={desktop} /> : <ScrollFan desktop={desktop} handoff={handoff} />
 }

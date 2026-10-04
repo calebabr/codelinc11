@@ -21,7 +21,7 @@ export default function FinalCta() {
           />
           <Link
             to="/login"
-            className="relative mt-10 inline-flex h-13 items-center gap-2 rounded-full bg-white px-8 text-base font-bold text-primary transition-colors hover:bg-blush"
+            className="relative mt-10 inline-flex min-h-13 items-center gap-2 rounded-full bg-white px-8 text-base font-bold text-primary transition-colors hover:bg-blush"
           >
             Get started
             <ArrowRight className="size-4" aria-hidden />

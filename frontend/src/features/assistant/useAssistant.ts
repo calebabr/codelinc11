@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import {
+  cleanFollowups,
   clearChat,
   errorMessage,
   getAssistantContext,
@@ -8,8 +9,9 @@ import {
   streamChat,
   uploadAttachment,
 } from "@/lib/api/assistant"
+import { ApiError } from "@/lib/api/planYear"
 import type { AssistantContext, AttachmentInfo, ChatTurn, StreamEvent } from "@/lib/types/assistant"
-import { getThread, newId, updateThread, useThread, type Message } from "./threads"
+import { getThread, newId, setFollowups, updateThread, useFollowups, useThread, type Message } from "./threads"
 
 const UNAVAILABLE = "The assistant is not available right now. The rest of the app still works."
 
@@ -52,6 +54,7 @@ function turnsOf(thread: Message[]): ChatTurn[] {
 /** Chat state for one member. Switching the member shows that person's own thread. */
 export function useChat(token: string, memberId: string) {
   const thread = useThread(memberId)
+  const followups = useFollowups(memberId)
   const [attachments, setAttachments] = useState<AttachmentInfo[]>([])
   const [uploading, setUploading] = useState(false)
   const [attachError, setAttachError] = useState<string | null>(null)
@@ -72,7 +75,9 @@ export function useChat(token: string, memberId: string) {
         ...t,
         { id: answerId, role: "assistant", content: "", tools: [], status: "streaming" },
       ])
+      setFollowups(memberId, [])
       let unavailable = false
+      let nextFollowups: string[] = []
       let failed = false
       const onEvent = (e: StreamEvent) => {
         if (e.event === "token") patch((m) => ({ ...m, content: m.content + e.data.text }))
@@ -83,7 +88,10 @@ export function useChat(token: string, memberId: string) {
             const i = m.tools.findIndex((x) => x.name === e.data.name && !x.done)
             return i < 0 ? m : { ...m, tools: m.tools.map((x, j) => (j === i ? { ...x, done: true } : x)) }
           })
-        else if (e.event === "done") unavailable = e.data.mode === "unavailable"
+        else if (e.event === "done") {
+          unavailable = e.data.mode === "unavailable"
+          nextFollowups = cleanFollowups(e.data.followups)
+        }
         else if (e.event === "error") failed = true
       }
       try {
@@ -91,9 +99,13 @@ export function useChat(token: string, memberId: string) {
         if (unavailable) patch((m) => ({ ...m, status: "unavailable", note: UNAVAILABLE }))
         else if (failed)
           patch((m) => ({ ...m, status: "error", note: "Something went wrong while answering. Please try again." }))
-        else patch((m) => ({ ...m, status: "ok" }))
+        else {
+          patch((m) => ({ ...m, status: "ok" }))
+          setFollowups(memberId, nextFollowups)
+        }
       } catch (e) {
-        patch((m) => ({ ...m, status: "error", note: errorMessage(e) }))
+        const wait = e instanceof ApiError && e.status === 429 ? e.retryAfter : undefined
+        patch((m) => ({ ...m, status: "error", note: errorMessage(e), retryAfter: wait }))
       }
     },
     [token, memberId],
@@ -161,6 +173,7 @@ export function useChat(token: string, memberId: string) {
     try {
       await clearChat(token, memberId)
       updateThread(memberId, () => [])
+      setFollowups(memberId, [])
       setAttachments([])
     } catch (e) {
       setClearError(errorMessage(e))
@@ -170,7 +183,7 @@ export function useChat(token: string, memberId: string) {
   }, [token, memberId])
 
   return {
-    thread, busy, send, retry, attach, removeAttachment, attachments, uploading, attachError,
+    thread, followups, busy, send, retry, attach, removeAttachment, attachments, uploading, attachError,
     clear, clearing, clearError,
   }
 }

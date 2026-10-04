@@ -13,6 +13,8 @@ export function AssistantButton() {
   const openerRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
+  // Phones: size the panel to the visible area so the input stays above the on-screen keyboard.
+  const [viewport, setViewport] = useState<{ height: number; top: number } | null>(null)
 
   const close = useCallback(() => {
     setOpen(false)
@@ -55,6 +57,24 @@ export function AssistantButton() {
     return () => document.removeEventListener("keydown", onKey)
   }, [open, close])
 
+  useEffect(() => {
+    if (!open) return
+    const vv = window.visualViewport
+    const previous = document.body.style.overflow
+    document.body.style.overflow = "hidden" // the page behind must not scroll
+    if (!vv) return () => { document.body.style.overflow = previous }
+    const update = () => setViewport({ height: vv.height, top: vv.offsetTop })
+    update()
+    vv.addEventListener("resize", update)
+    vv.addEventListener("scroll", update)
+    return () => {
+      vv.removeEventListener("resize", update)
+      vv.removeEventListener("scroll", update)
+      document.body.style.overflow = previous
+      setViewport(null)
+    }
+  }, [open])
+
   if (pathname === "/assistant") return null
 
   return (
@@ -65,25 +85,35 @@ export function AssistantButton() {
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Open assistant"
-          className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-orange px-4 py-3 text-white shadow-lg transition-transform hover:scale-105"
+          className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-[max(1.25rem,env(safe-area-inset-right))] z-40 flex min-h-12 min-w-12 items-center justify-center gap-2 rounded-full bg-orange-dark px-4 py-3 text-white shadow-lg transition-transform hover:scale-105"
         >
           <Sparkles className="size-5" aria-hidden />
           <span className="hidden text-sm font-medium sm:inline">Ask the assistant</span>
         </button>
       )}
       {open && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-ink/30" onClick={close}>
+        <div
+          className="fixed inset-x-0 top-0 z-50 flex h-dvh justify-end bg-ink/30 sm:p-3"
+          style={viewport ? { height: viewport.height, top: viewport.top } : undefined}
+          onClick={close}
+        >
           <aside
             ref={panelRef}
             role="dialog"
             aria-modal="true"
             aria-label="Assistant"
-            className="flex h-full w-full max-w-md flex-col bg-white shadow-xl"
+            className="flex h-full w-full flex-col overflow-hidden bg-white shadow-xl sm:max-w-[30rem] sm:rounded-2xl lg:max-w-[32rem]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between bg-burgundy px-4 py-3 text-white">
+            <div className="flex items-center justify-between bg-burgundy px-4 pt-[max(0.25rem,env(safe-area-inset-top))] text-white">
               <h2 className="font-heading text-lg">Assistant</h2>
-              <button ref={closeRef} type="button" onClick={close} aria-label="Close assistant">
+              <button
+                ref={closeRef}
+                type="button"
+                onClick={close}
+                aria-label="Close assistant"
+                className="-mr-2 inline-flex size-11 items-center justify-center rounded-full hover:bg-white/10"
+              >
                 <X className="size-5" aria-hidden />
               </button>
             </div>

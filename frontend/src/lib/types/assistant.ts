@@ -11,8 +11,11 @@ export type StreamEvent =
   | { event: "tool_start"; data: { name: string; args?: unknown } }
   | { event: "tool_end"; data: { name: string; result?: unknown } }
   | { event: "token"; data: { text: string } }
-  | { event: "done"; data: { mode?: ChatMode } }
+  | { event: "done"; data: { mode?: ChatMode; followups?: unknown } }
   | { event: "error"; data: { message?: string } }
+
+/** Up to this many follow-up questions are shown after an answer. */
+export const MAX_FOLLOWUPS = 4
 
 export interface SuggestionsResponse {
   member_id: string

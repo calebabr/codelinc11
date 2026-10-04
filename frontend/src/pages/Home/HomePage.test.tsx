@@ -5,6 +5,21 @@ import { MemoryRouter } from "react-router"
 import { TestSessionProvider } from "@/test/session"
 import HomePage from "./HomePage"
 
+// Real backend shape: a flat EstimateResult where in_network is a boolean.
+const VISITS: Record<string, { name: string; category: string; billed: number; allowed: number; ded: number; pays: number; pay: number }> = {
+  D1110: { name: "Cleaning (adult)", category: "preventive", billed: 120, allowed: 120, ded: 0, pays: 120, pay: 0 },
+  D2392: { name: "Filling, 2-surface, back tooth (composite)", category: "basic", billed: 200, allowed: 200, ded: 0, pays: 160, pay: 40 },
+  D2740: { name: "Crown, porcelain/ceramic", category: "major", billed: 1200, allowed: 1200, ded: 0, pays: 600, pay: 600 },
+}
+let visitCode = "D1110"
+function visitEstimate(code: string) {
+  const v = VISITS[code]
+  return {
+    code, name: v.name, category: v.category, in_network: true, covered: true, billed: v.billed, allowed: v.allowed,
+    deductible_applied: v.ded, plan_pays: v.pays, you_pay: v.pay, balance_bill: 0, max_used_after: 1220, trace: [],
+  }
+}
+
 function benefits(used: number, remaining: number, dedMet: number, cleanings: number, reminder: string | null) {
   return {
     plan_name: "Preferred",
@@ -33,6 +48,8 @@ function overview(id: string) {
 }
 const PROCS = [
   { procedure: { code: "D1110", name: "Cleaning (adult)", category: "preventive", description: "", synonyms: [], fee_p50: 120, fee_p80: 160 }, score: 1 },
+  { procedure: { code: "D2392", name: "Filling, 2-surface, back tooth (composite)", category: "basic", description: "", synonyms: [], fee_p50: 200, fee_p80: 260 }, score: 1 },
+  { procedure: { code: "D2740", name: "Crown, porcelain/ceramic", category: "major", description: "", synonyms: [], fee_p50: 1200, fee_p80: 1500 }, score: 1 },
 ]
 
 let calls: { url: string; auth: string | null; body: Record<string, unknown> | null }[]
@@ -68,7 +85,7 @@ function mockApi(fail = false, emptySchedule = false) {
           ok: true,
           status: 201,
           json: async () => ({
-            estimate: { code: "D1110", name: "Cleaning (adult)", covered: true, deductible_applied: 0, plan_pays: 120, you_pay: 0, max_used_after: 1220 },
+            estimate: visitEstimate(visitCode),
             usage: { max_used: 1220, deductible_met: 50, history: ["D1110"] },
             benefits: benefits(1220, 280, 50, 2, "Only $280 left."),
           }),
@@ -96,6 +113,7 @@ function renderPage(id = "m-alex") {
 
 beforeEach(() => {
   routesLive = true
+  visitCode = "D1110"
   mockApi()
 })
 afterEach(() => vi.restoreAllMocks())
@@ -144,6 +162,19 @@ describe("Home page", () => {
     expect(calls.filter((c) => c.url.includes("/overview")).length).toBeGreaterThanOrEqual(2)
   })
 
+  it.each([
+    ["D1110", "Cleaning (adult)", "$0"],
+    ["D2392", "Filling, 2-surface, back tooth (composite)", "$40"],
+    ["D2740", "Crown, porcelain/ceramic", "$600"],
+  ])("shows You pay from the real flat response for %s and never NaN", async (code, name, pay) => {
+    visitCode = code
+    const user = userEvent.setup()
+    renderPage("m-alex")
+    await user.click(await screen.findByRole("button", { name: `Log ${name}` }))
+    await waitFor(() => expect(screen.getByTestId("visit-result")).toHaveTextContent(`You pay ${pay}`))
+    expect(screen.getByTestId("visit-result")).not.toHaveTextContent("NaN")
+  })
+
   it("shows a plain message when the visit route is not available yet", async () => {
     routesLive = false
     const user = userEvent.setup()
@@ -155,11 +186,35 @@ describe("Home page", () => {
   it("lets the primary reset demo data after a confirm, and hides the button from others", async () => {
     const user = userEvent.setup()
     renderPage("m-alex")
+    expect(await screen.findByText("This resets your demo family only.")).toBeInTheDocument()
     await user.click(await screen.findByRole("button", { name: "Reset demo data" }))
+    expect(screen.getByText(/This resets your demo family/)).toBeInTheDocument()
     expect(calls.some((c) => c.url.endsWith("/demo/reset"))).toBe(false)
     await user.click(screen.getByRole("button", { name: "Yes, reset" }))
     await waitFor(() => expect(calls.find((c) => c.url.endsWith("/demo/reset"))!.auth).toBe("Bearer tok-m-jordan"))
     expect(await screen.findByText("Demo data was reset.")).toBeInTheDocument()
+  })
+
+  it("says it is the visitor's own demo family", async () => {
+    renderPage("m-alex")
+    expect(await screen.findByText(/This is your own demo family\. Changes you make don't affect anyone else\./)).toBeInTheDocument()
+  })
+
+  it("shows the Name your family card only while it is pending, for the account holder", async () => {
+    const view = render(
+      <TestSessionProvider signedInId="m-jordan" namingPending>
+        <MemoryRouter>
+          <HomePage />
+        </MemoryRouter>
+      </TestSessionProvider>,
+    )
+    expect(await screen.findByRole("heading", { name: "Name your family" })).toBeInTheDocument()
+    await userEvent.setup().click(screen.getByRole("button", { name: "Skip" }))
+    expect(screen.queryByRole("heading", { name: "Name your family" })).toBeNull()
+    view.unmount()
+    renderPage("m-alex")
+    await screen.findByText(/Welcome back/)
+    expect(screen.queryByRole("heading", { name: "Name your family" })).toBeNull()
   })
 
   it("shows an empty state when nothing is scheduled", async () => {

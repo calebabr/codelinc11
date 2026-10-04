@@ -1,5 +1,6 @@
 import { NavLink } from "react-router"
 import { cn } from "@/lib/utils"
+import { LogoMark } from "@/components/Logo"
 
 export const NAV_ITEMS = [
   { to: "/", label: "Home" },
@@ -15,11 +16,11 @@ export function NavBar() {
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-white shadow-sm">
       <div className="mx-auto flex max-w-6xl items-center gap-6 px-4">
-        <NavLink to="/" className="hidden shrink-0 items-center gap-2 py-3 sm:flex">
-          <span className="size-3 rounded-full bg-orange" aria-hidden />
-          <span className="font-heading text-lg font-semibold tracking-tight text-burgundy">Dental Benefits</span>
+        <NavLink to="/" className="hidden min-h-11 shrink-0 items-center gap-2 py-3 sm:flex">
+          <LogoMark className="size-6 text-burgundy" />
+          <span className="font-heading text-lg font-semibold tracking-tight text-burgundy">Molar Money</span>
         </NavLink>
-        <nav aria-label="Main" className="-mx-1 flex flex-1 gap-5 overflow-x-auto px-1">
+        <nav aria-label="Main" className="-mx-1 flex flex-1 gap-3 overflow-x-auto px-1 [scrollbar-width:none] sm:gap-5 [&::-webkit-scrollbar]:hidden">
           {NAV_ITEMS.map((l) => (
             <NavLink
               key={l.to}
@@ -27,7 +28,7 @@ export function NavBar() {
               end={l.to === "/"}
               className={({ isActive }: { isActive: boolean }) =>
                 cn(
-                  "shrink-0 border-b-2 py-4 text-sm font-medium transition-colors",
+                  "inline-flex min-h-[54px] min-w-11 shrink-0 items-center justify-center border-b-2 px-1 text-sm font-medium transition-colors",
                   isActive
                     ? "border-orange text-burgundy"
                     : "border-transparent text-[var(--muted)] hover:text-ink",

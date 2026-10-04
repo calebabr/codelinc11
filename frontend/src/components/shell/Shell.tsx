@@ -1,4 +1,6 @@
+import { Suspense } from "react"
 import { Navigate, Outlet } from "react-router"
+import { PageLoading } from "./PageLoading"
 import { useSessionGate } from "@/state/SessionContext"
 import { UtilityBar } from "./UtilityBar"
 import { NavBar } from "./NavBar"
@@ -31,11 +33,13 @@ export function Shell() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--soft)] text-ink">
+    <div className="flex min-h-dvh flex-col bg-[var(--soft)] text-ink">
       <UtilityBar />
       <NavBar />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
-        <Outlet />
+        <Suspense fallback={<PageLoading />}>
+          <Outlet />
+        </Suspense>
       </main>
       <Footer />
       <AssistantButton />

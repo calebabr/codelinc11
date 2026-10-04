@@ -1,19 +1,42 @@
 # Task Tracker
-_Last updated: 2026-10-03 (evening) by the orchestrator, after a live check of every page_
+_Last updated: 2026-10-03 (night) by the docs agent, after the demo sandboxes, rate limits, phone support, saved comparisons and AWS kit_
 
 Hard deadline: **hackathon demo, 2026-10-04 10:00 AM.** Plan: [../agents/tasks/PLAN.md](../agents/tasks/PLAN.md). Handoff: [../agents/HANDOFF.md](../agents/HANDOFF.md).
+
+**Where the code is:** everything below marked built is on branch `feature/choose-a-plan`. That branch is **not pushed or merged**, and its changes are not all committed yet. `main` is the production version.
 
 ## Before the demo
 - [ ] Rehearse [DEMO.md](DEMO.md) three times. **Owner: Caleb and team**, due 2026-10-04 10:00 AM
 - [ ] Record a backup screen recording of the demo path. **Owner: Caleb**, due 2026-10-04 10:00 AM
-- [ ] Decide whether to merge `integration/main-product` into `main` (pull request on GitHub). **Owner: Caleb**
 - [ ] Capture README screenshots (list at the end of `README.md`). **Owner: design lead**
+- [ ] Test the QR flow with one iPhone and one Android phone (see [DEMO-PHONES.md](DEMO-PHONES.md)); raise `RATE_LOGIN_PER_MINUTE` and `RATE_LOGIN_PER_HOUR` if many phones share one connection. **Owner: Caleb**, added 2026-10-03
+
+## In Progress
+- [ ] Merge `feature/choose-a-plan` into `main` (commit the work, push, open a pull request). **Owner: Caleb**, added 2026-10-03
+  - Context: built and tested (backend 391 passed, ruff clean, frontend 151 tests, typecheck and build clean). Not clicked through in a browser by a human for the "Which plan fits us?" step; no Playwright test. Nothing here has been pushed. `main` is what runs in production.
+- [ ] Deploy `main` to AWS. **Owner: a teammate, using Kiro**, added 2026-10-03
+  - Context: the teammate deploys `main`. `infra/aws/` (CloudFormation, runbook, deploy scripts) is only a reference kit and was not run in AWS. Anything that creates cloud resources or costs money needs the user's approval first.
+- [ ] Review the synthetic odds in "Which plan fits us?" (rates in [MATH.md](MATH.md)). **Owner: M (human)**, added 2026-10-03
 
 ## In Progress (teammates)
 - [ ] Text-to-speech for assistant answers. **Owner: Wrigley**, branch `fe/text-to-speech` off `integration/main-product`
 - [ ] Login page redesign (optional; `frontend/src/pages/Login/LoginPage.tsx`). **Owner: Ulisses**
 
 ## Completed
+- [x] Product name is Molar Money everywhere a user can see it (it was "bitewise" on the landing page and "Dental Benefits" in the app). Completed 2026-10-03
+- [x] T36 to T38 Per-visitor demo families: `POST /auth/demo-login` with `sandbox`, 24 hour expiry, cap 300, `GET /auth/demo-accounts?household_id=`, `POST /demo/reset` for your own family only, `PUT /households/{id}/names`, one-tap **Try the demo** on the landing page and login, **Name your family**; demo accounts carry member status. **Owner: database, backend and frontend agents**, completed 2026-10-03
+  - Outcome: the shared-family problem is solved; each visitor changes only their own copy. About 4.4 KB per copy
+- [x] T37 Rate limiting (`backend/app/ratelimit.py`): per-household chat, global daily chat cap, sign-in per IP, compute, upload, reset; 429 with `Retry-After`. **Owner: backend agent**, completed 2026-10-03
+  - Outcome: protects the Anthropic key. In memory, per process
+- [x] T27 to T29 F7 Monte Carlo ("Which plan fits us?"): `engine/simulate.py`, `POST /simulate`, assistant tool `compare_plans`, Plans page section, docs. **Owner: backend, frontend and docs agents**, completed 2026-10-03
+  - Outcome: Rivera household, average care: Basic 82% / Preferred 17% / Premium 1% cheapest; with Alex's crown, Preferred 54%
+- [x] T31 Plan-comparison follow-ups: "Ask next" chips, plan terms in the tool result, percentage number guard. **Owner: AI agent**, completed 2026-10-03
+- [x] T34 and T35 Saved plan comparisons (`/members/{id}/saved-simulations`, the server computes the summary) and "Save to Plan My Year" / "Saved plan comparisons". **Owner: backend and frontend agents**, completed 2026-10-03
+- [x] Assistant chips "Summarize the plan simulations" and "How are the simulations calculated?" (up to 7 chips); "Questions to ask your dentist" is a plain list. Completed 2026-10-03
+- [x] T39 to T41 Phone support: lazy-loaded pages (first load about 162 kB gzip), `viewport-fit`, 16 px inputs, 44 px targets, full-screen assistant panel, manifest and icons, `/join` Scan to try page, [DEMO-PHONES.md](DEMO-PHONES.md) (same Wi-Fi with `npm run dev:lan` and the Vite `/api` proxy, tunnel, public hosting), `CORS_ORIGINS` and `CORS_ORIGIN_REGEX`, `scripts/lan-url.*` and `scripts/make_qr.py`. Completed 2026-10-03
+- [x] T30 AWS kit written (`infra/aws/`: CloudFormation, runbook, deploy scripts). **Owner: DevOps agent**, completed 2026-10-03
+  - Outcome: not run in AWS; a reference only
+- [x] Clear chat: `DELETE /members/{id}/chat`. Completed 2026-10-03
 - [x] T01 to T04 Stage 0: portal tokens, shell, backend port, household database. Completed 2026-10-03
 - [x] T05 Household, demo sign-in, member overview, invites, `POST /annual-cost`, visits, saved plans, plan switching, demo reset. Completed 2026-10-03
 - [x] T06 Per-person assistant on Anthropic (Ollama optional), suggestions, PDF attachments, tips and dentist-question pre-step. Completed 2026-10-03
@@ -24,13 +47,15 @@ Hard deadline: **hackathon demo, 2026-10-04 10:00 AM.** Plan: [../agents/tasks/P
 - [x] Landing page (Ulisses) and voice input (Wrigley) merged. Completed 2026-10-03
 - [x] Live check of every page at desktop and 375 px: no sideways scrolling; golden numbers on screen. Completed 2026-10-03
 - [x] Fix: the same "ask about a cheaper option" tip showed twice when a treatment was listed twice. Completed 2026-10-03
-- [x] T15 Docs pass: README, DEMO, PRESENTATION, ARCHITECTURE, SETUP, MATH, PROJECT-STORY updated to the built product. Completed 2026-10-03
+- [x] T15 Docs passes: README, DEMO, PRESENTATION, ARCHITECTURE, SETUP, MATH, PROJECT-STORY, TASKS, summaries, READMEs updated to the built product. Completed 2026-10-03
 
 ## Backlog (after the demo)
+- [ ] **Access code idea (not built):** require a short code before a visitor can start a demo family, so a public link cannot be used to fill the sandbox cap or spend the assistant quota. **Owner: backend agent**, added 2026-10-03
+- [ ] Rate limits live in memory in one process; a second server or a restart resets them. Move to a shared store if the app runs on more than one server. **Owner: backend agent**, added 2026-10-03
 - [ ] Browser end-to-end test (Playwright) for the demo path; `tests/e2e` and `tests/contract` are empty. **Owner: tests agent**
+- [ ] A frontend test (`SessionContext.test.tsx`, "sends a signed-out visitor to the login page...") timed out once on a full run under load and passes alone. Raise its wait or find the slow step. **Owner: frontend agent**, added 2026-10-03
 - [ ] Run the CI workflow on GitHub for the first time; `scripts/dev.ps1` and `dev.sh` were only syntax-checked. **Owner: devops agent**
 - [ ] Treatment builder and quote items default to "flexible"; consider asking the user for urgency. **Owner: frontend agent**
-- [ ] Number guard checks `$` amounts only. **Owner: AI agent**
 - [ ] Generate frontend types from `models.py` instead of hand-written types; remove unused shadcn components. **Owner: frontend agent**
 - [ ] Hide the `/style` page in production; stop hard-coding golden figures on the landing page. **Owner: frontend agent**
 - [ ] The "Viewing" member resets to the signed-in person on a full page reload. **Owner: frontend agent**

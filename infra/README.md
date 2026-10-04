@@ -2,7 +2,7 @@
 
 Running, checking and shipping the project. The DevOps agent (`agents/devops-agent.md`) owns this folder and `.github/`.
 
-Status: CI is set up (`.github/workflows/ci.yml`). Run scripts are in `scripts/`. No deployment yet.
+Status: CI is set up (`.github/workflows/ci.yml`). Run scripts are in `scripts/`. An AWS deployment kit is written in `infra/aws/` but has not been run yet.
 
 ## Local run
 
@@ -28,7 +28,9 @@ The scripts never print `.env`. Or run the parts by hand:
 | `OLLAMA_URL` | Where the local model runs (default `http://localhost:11434`) | No |
 | `OLLAMA_MODEL` | Which local model to use (default `llama3.2:3b`) | No |
 | `OLLAMA_TIMEOUT` | Seconds to wait for the model | No |
-| `VITE_API_URL` | Where the frontend finds the backend | No |
+| `VITE_API_URL` | Where the frontend finds the backend (`/api` for the phone demo proxy and for AWS) | No |
+| `CORS_ORIGINS` | Browser addresses allowed to call the API, comma separated (default: the two localhost:5173 addresses) | No |
+| `CORS_ORIGIN_REGEX` | Optional regex of allowed origins, for tunnel domains such as `https://.*\.trycloudflare\.com` | No |
 | `ANTHROPIC_API_KEY` | Key for the Anthropic provider, if that provider is used | **Yes** |
 | `ANTHROPIC_MODEL` | Anthropic model name (optional) | No |
 | `ASSISTANT_PROVIDER` | `auto` (default), `anthropic`, `ollama` or `none` | No |
@@ -44,4 +46,7 @@ Keep `.env.example` in step with this table.
 End-to-end tests are not in CI; run them locally before checkpoints.
 
 ## Deployment
-Not decided. Anything that creates cloud resources, costs money or changes repository settings needs the user's explicit approval first. Nothing in the product should send health data to a third party unless the decision log says so. Using the Anthropic provider sends chat content to a third party, so which data may be sent is an open decision (F5).
+AWS kit (CloudFront, private S3 for the frontend, one EC2 server for the backend): [aws/RUNBOOK.md](aws/RUNBOOK.md). On AWS the frontend is built with `VITE_API_URL=/api`, and secrets (`ANTHROPIC_API_KEY`, `SESSION_SECRET`) come from SSM Parameter Store and the instance, never from the repo. Nothing has been created in AWS yet. Anything that creates cloud resources, costs money or changes repository settings needs the user's explicit approval first. Using the Anthropic provider sends chat content to a third party, so which data may be sent is an open decision (F5).
+
+## Phones and the QR code demo
+Three ways to let a phone reach the app (same Wi-Fi, a tunnel from the laptop, or public hosting) and the QR script: [../docs/DEMO-PHONES.md](../docs/DEMO-PHONES.md).

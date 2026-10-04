@@ -24,20 +24,23 @@ describe('portal routes', () => {
     ['/plan-year', 'Plan My Year', 'Plan My Year'],
     ['/assistant', 'Assistant', 'Assistant'],
   ]
-  it.each(cases)('renders %s with heading %s and highlights its nav item', (path, heading, navLabel) => {
+  it.each(cases)('renders %s with heading %s and highlights its nav item', async (path, heading, navLabel) => {
     renderAt(path)
-    expect(screen.getByRole('heading', { level: 1, name: heading })).toBeInTheDocument()
+    // Pages load on demand (React.lazy), so wait for the heading.
+    expect(await screen.findByRole('heading', { level: 1, name: heading }, { timeout: 14000 })).toBeInTheDocument()
     const nav = screen.getByRole('navigation', { name: 'Main' })
     expect(within(nav).getByRole('link', { current: 'page' })).toHaveTextContent(navLabel)
-  })
+  }, 20000)
 
-  it('shows the assistant button everywhere except /assistant', () => {
+  it('shows the assistant button everywhere except /assistant', async () => {
     const { unmount } = renderAt('/plans')
+    await screen.findByRole('heading', { level: 1, name: 'Plans' }, { timeout: 14000 })
     expect(screen.getByRole('button', { name: 'Open assistant' })).toBeInTheDocument()
     unmount()
     renderAt('/assistant')
+    await screen.findByRole('heading', { level: 1, name: 'Assistant' }, { timeout: 14000 })
     expect(screen.queryByRole('button', { name: 'Open assistant' })).not.toBeInTheDocument()
-  })
+  }, 30000)
 
   it('opens and closes the assistant panel', async () => {
     const user = userEvent.setup()

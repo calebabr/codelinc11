@@ -1,9 +1,11 @@
-// Demo sign-in: one-click account cards from GET /auth/demo-accounts, no password.
+// Demo sign-in: one big "Try the demo" button (a brand-new demo family), then one-click account
+// cards from GET /auth/demo-accounts for the same family. No sign-up form, email or password.
 // Self-contained on purpose: the design task can restyle this one file.
 
 import { useState } from "react"
 import { Link, Navigate, useNavigate } from "react-router"
 import AuthLayout from "@/components/auth/AuthLayout"
+import TryDemoButton from "@/components/auth/TryDemoButton"
 import { ArrowRight } from "lucide-react"
 import { errorMessage } from "@/lib/api/planYear"
 import { useSessionGate } from "@/state/SessionContext"
@@ -39,14 +41,27 @@ export default function LoginPage() {
 
   function roleLine(a: DemoAccount): string {
     const word = ROLE_WORDS[a.role] ?? a.role
-    // The demo accounts list has no status yet; Noah is the seeded pending member.
-    const pending = a.status === "pending" || a.member_id === "m-noah"
-    return pending ? `${word} · Waiting for approval` : word
+    // The label follows the account's own status when the API sends one.
+    return a.status === "pending" ? `${word} · Waiting for approval` : word
   }
 
   return (
-    <AuthLayout title="Welcome back" subtitle="Pick a demo account to see your family's plan.">
+    <AuthLayout title="Welcome back" subtitle={gate.hasFamily ? "Pick up where you left off in your demo family." : "Try the demo in one tap. No sign-up, email or password."}>
       <div className="space-y-3">
+        <TryDemoButton className="h-14 w-full text-lg" wrapperClassName="flex w-full items-stretch" />
+        {gate.hasFamily && (
+          <button
+            type="button"
+            className="inline-flex min-h-11 items-center text-sm font-semibold text-primary hover:underline"
+            onClick={() => void gate.forgetFamily()}
+          >
+            Start a fresh family
+          </button>
+        )}
+        <p className="text-sm text-muted-foreground">
+          This is your own demo family. Changes you make don&apos;t affect anyone else.
+        </p>
+        <h2 className="pt-4 text-base font-bold text-foreground">Or choose who to sign in as</h2>
         {gate.status === "loading" && (
           <p role="status" className="text-muted-foreground">
             Loading…
@@ -98,7 +113,7 @@ export default function LoginPage() {
           ))}
         </ul>
         <p className="text-sm text-muted-foreground">
-          Maya (a child profile) has no login. Sign in as Jordan to see her benefits.
+          Child profiles have no login. Sign in as the account holder to see their benefits.
         </p>
         <Link to="/welcome" className="inline-block text-sm font-semibold text-primary hover:underline">
           Back to the welcome page

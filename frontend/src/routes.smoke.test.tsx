@@ -79,11 +79,11 @@ describe('portal route smoke test', () => {
         </MemoryRouter>
       </TestSessionProvider>,
     )
-    expect(screen.getByRole('heading', { level: 1, name: heading })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: heading }, { timeout: 14000 })).toBeInTheDocument()
     // Let the mocked requests settle (inside act) before checking the console.
     await act(async () => {
       await new Promise((r) => setTimeout(r, 100))
     })
     expect(errors).toEqual([])
-  })
+  }, 20000)
 })

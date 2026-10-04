@@ -1,4 +1,4 @@
-import { API_URL, ApiError, DEMO_MONTH } from "@/lib/api/planYear"
+import { API_URL, ApiError, apiFailure, DEMO_MONTH } from "@/lib/api/planYear"
 import type { AnnualCostRequest, AnnualCostResponse, EstimateResponse, TreatmentPlanParseResponse } from "@/lib/types/costs"
 import type { SavingsTipsResponse, TreatmentItem, Usage } from "@/lib/types/planYear"
 
@@ -13,16 +13,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   } catch {
     throw new ApiError("We can't reach the server right now. Please try again in a moment.")
   }
-  if (!res.ok) {
-    let detail = ""
-    try {
-      const j = await res.json()
-      if (typeof j?.detail === "string") detail = j.detail
-    } catch {
-      /* ignore */
-    }
-    throw new ApiError(detail || `The server returned an error (${res.status}).`, res.status)
-  }
+  if (!res.ok) throw await apiFailure(res)
   return (await res.json()) as T
 }
 

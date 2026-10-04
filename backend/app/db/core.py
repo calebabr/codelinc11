@@ -26,6 +26,7 @@ SEED_TABLES = [
     "member_context",
     "member_preferences",
     "saved_plans",
+    "notification_prefs",
 ]
 
 

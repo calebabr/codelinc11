@@ -54,6 +54,7 @@ function mockApi() {
       if (url.endsWith("/plans")) return ok([PLAN("basic", "Basic", 28), PLAN("preferred", "Preferred", 44), PLAN("premium", "Premium", 61)])
       const hh = url.match(/\/households\/([^/]+)$/)
       if (hh) return ok(householdFor(headers.Authorization!.replace("Bearer tok-", "")))
+      if (url.endsWith("/simulate")) return { ok: false, status: 404, json: async () => ({ detail: "Not Found" }) }
       return ok([])
     }),
   )
@@ -73,6 +74,7 @@ beforeEach(() => {
   down = false
   tier = "preferred"
   sessionStorage.clear()
+  localStorage.clear()
   mockApi()
 })
 afterEach(() => vi.restoreAllMocks())
@@ -97,7 +99,7 @@ describe("SessionProvider", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Welcome back, Jordan")
     const login = calls.find((c) => c.url.endsWith("/auth/demo-login"))!
     expect(login.method).toBe("POST")
-    expect(login.body).toEqual({ member_id: "m-jordan" })
+    expect(login.body).toEqual({ member_id: "m-jordan", sandbox: true })
     const hh = calls.find((c) => c.url.endsWith("/households/hh-rivera"))!
     expect(hh.auth).toBe("Bearer tok-m-jordan")
     expect(sessionStorage.getItem("dental.signedInMemberId")).toBe("m-jordan")
@@ -107,7 +109,7 @@ describe("SessionProvider", () => {
     sessionStorage.setItem("dental.signedInMemberId", "m-alex")
     renderApp()
     await waitFor(() => expect(screen.getByTestId("active-member-label")).toHaveTextContent("Alex Rivera"))
-    expect(calls.find((c) => c.url.endsWith("/auth/demo-login"))!.body).toEqual({ member_id: "m-alex" })
+    expect(calls.find((c) => c.url.endsWith("/auth/demo-login"))!.body).toEqual({ member_id: "m-alex", sandbox: true })
   })
 
   it("shows a clear error with a retry when the server is down, then recovers", async () => {

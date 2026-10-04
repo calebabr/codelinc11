@@ -292,10 +292,13 @@ class DemoAccount(BaseModel):
     member_id: str
     role: Literal["primary", "adult", "managed"]
     household_id: str
+    status: str = "active"                              # "pending" while eligibility is unconfirmed
 
 
 class DemoLoginRequest(BaseModel):
-    member_id: str
+    member_id: str                                      # a template id e.g. "m-alex" (or a sandbox id)
+    sandbox: bool = False                               # true: sign in to the visitor's own demo family
+    household_id: str | None = Field(default=None, max_length=64)   # reuse this sandbox (needs sandbox true)
 
 
 class Member(BaseModel):
@@ -308,6 +311,34 @@ class Member(BaseModel):
     has_login: bool
     status: str = "active"                              # "active" or "pending"
     status_note: str | None = None
+    # Profile fields (sprint 2, B1). All optional so older clients keep working.
+    dob: str | None = None                              # ISO date; `age` is derived from it
+    email: str | None = None                            # contact email (not the sign-in account)
+    phone: str | None = None                            # digits only, e.g. "3345550142"
+    zip: str | None = None                              # 5 digits
+    notes: str | None = None                            # up to 200 characters
+    primary_dentist_id: str | None = None               # set by the providers feature
+
+
+class ProfilePatch(BaseModel):
+    """PATCH /members/{id}/profile. Send only what changes; null or "" clears email, phone, zip, notes.
+    Values are checked by the route (plain 422 messages)."""
+    name: str | None = Field(default=None, max_length=200)
+    dob: str | None = Field(default=None, max_length=40)
+    email: str | None = Field(default=None, max_length=200)
+    phone: str | None = Field(default=None, max_length=60)
+    zip: str | None = Field(default=None, max_length=40)
+    notes: str | None = Field(default=None, max_length=1000)
+
+
+class NewMember(BaseModel):
+    """POST /households/{id}/members."""
+    name: str = Field(max_length=200)
+    relationship: Literal["spouse", "partner", "child", "other"]
+    dob: str = Field(max_length=40)
+    email: str | None = Field(default=None, max_length=200)
+    phone: str | None = Field(default=None, max_length=60)
+    zip: str | None = Field(default=None, max_length=40)
 
 
 class PlanTierSummary(BaseModel):
@@ -329,10 +360,27 @@ class Household(BaseModel):
     members: list[Member]                               # only the members the signed-in person may see
 
 
+class SandboxInfo(BaseModel):
+    household_id: str                                   # the sandbox household id, e.g. "hh-rivera.3f9a1c"
+    expires_at: str                                     # ISO 8601 UTC
+
+
 class DemoLoginResponse(BaseModel):
     token: str                                          # send as "Authorization: Bearer <token>"
     member: Member
     household: Household
+    sandbox: SandboxInfo | None = None                  # set when signed in to a sandbox
+
+
+class MemberName(BaseModel):
+    member_id: str = Field(max_length=64)
+    name: str = Field(max_length=200)
+
+
+class HouseholdNamesRequest(BaseModel):
+    """Rename a demo family. Names are checked by the route (letters, spaces, ' - . only)."""
+    household_name: str | None = Field(default=None, max_length=200)   # surname, e.g. "Rivera"
+    members: list[MemberName] = Field(default_factory=list, max_length=12)
 
 
 class ServiceEligibility(BaseModel):
@@ -372,6 +420,7 @@ class MemberOverview(BaseModel):
     reminder: str | None = None
     eligibility: list[ServiceEligibility]
     as_of: str                                          # demo date used as "today" (ISO)
+    notifications_unread: int = 0                       # unread in-app notifications (0 when the app channel is off)
 
 
 class ScheduleEntry(BaseModel):
@@ -431,3 +480,156 @@ class AnnualCostResponse(BaseModel):
     per_person: list[AnnualCostPerson]
     assumptions: list[str]
     disclaimer: str = "This is an estimate. Your actual cost depends on your dentist's charges and claim review."
+
+
+# ---------- Choose a Plan: Monte Carlo plan comparison (F7) ----------
+
+CareLevel = Literal["low", "average", "high"]
+
+
+class SimulateKnownCare(BaseModel):
+    code: str = Field(min_length=1, max_length=12)
+    count: int = Field(default=1, ge=1, le=5)
+
+
+class SimulateMember(BaseModel):
+    id: str = Field(min_length=1, max_length=64)
+    name: str = Field(default="", max_length=80)
+    age: int = Field(ge=0, le=120)
+    care_level: CareLevel = "average"
+    known_care: list[SimulateKnownCare] = Field(default=[], max_length=10)  # added to every simulated year
+
+
+class SimulateRequest(BaseModel):
+    members: list[SimulateMember] = Field(min_length=1, max_length=8)
+    plan_ids: list[str] | None = Field(default=None, max_length=10)       # default: every plan
+    n: int = Field(default=5000, ge=100, le=20000)                         # simulated years
+    seed: int = 42
+    in_network: bool = True
+
+
+class SimulatePlanResult(BaseModel):
+    plan_id: str
+    name: str
+    monthly_premium: float
+    premiums_total: float                               # monthly premium x 12 x people
+    mean: float                                         # household total: premiums + what the family pays
+    median: float                                       # nearest-rank 50th percentile
+    p10: float
+    p90: float
+    min: float
+    max: float
+    cheapest_share: int                                 # whole percent; shares add up to exactly 100
+    histogram: list[int]                                # one count per bin, shared bin_edges
+
+
+class SimulateResponse(BaseModel):
+    n: int
+    seed: int
+    in_network: bool
+    plans: list[SimulatePlanResult]
+    bin_edges: list[float]
+    winner_plan_id: str
+    reasons: list[str]
+    assumptions: list[str]
+    disclaimer: str = "This is an estimate. Your actual cost depends on your dentist's charges and claim review."
+
+
+# ---------- Saved "Which plan fits us?" comparisons (T34) ----------
+
+class SavedSimulationPlanSummary(BaseModel):
+    plan_id: str
+    name: str
+    cheapest_share: int
+    median: float
+    p90: float
+
+
+class SavedSimulationSummary(BaseModel):
+    winner_plan_id: str
+    winner_name: str
+    winner_share: int
+    plans: list[SavedSimulationPlanSummary]
+    current_plan_id: str | None = None
+
+
+class SavedSimulationCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=60)
+    request: SimulateRequest
+
+
+class SavedSimulationUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=60)
+    request: SimulateRequest | None = None
+
+
+class SavedSimulation(BaseModel):
+    id: str
+    member_id: str
+    name: str
+    request: SimulateRequest
+    summary: SavedSimulationSummary
+    created_at: str
+    updated_at: str
+
+
+# ---------- Notifications (sprint 2, B2) ----------
+
+NotificationKind = Literal["benefits_expiring", "preventive_unused", "upcoming_appointment",
+                           "procedure_planned", "deductible_met", "claim_update", "eob_ready", "test"]
+
+
+class Notification(BaseModel):
+    id: int
+    member_id: str
+    kind: NotificationKind
+    title: str
+    body: str
+    severity: Literal["info", "success", "warning"]
+    link: str | None = None                             # app route to open, for example "/plan-year"
+    created_at: str                                     # ISO time (UTC)
+    read_at: str | None = None                          # null while unread
+
+
+class NotificationList(BaseModel):
+    notifications: list[Notification]                   # newest first
+    unread_count: int                                   # all unread, even when `unread=1` is not used
+    app_enabled: bool = True                            # false: the person turned the in-app channel off
+
+
+class NotificationPrefs(BaseModel):
+    app: bool = True
+    email: bool = False
+    sms: bool = False
+    types: list[NotificationKind] | None = None         # null means every kind
+    email_on_file: bool = False                         # whether a valid email is saved (the address is not returned)
+    phone_on_file: bool = False
+
+
+class NotificationPrefsUpdate(BaseModel):
+    app: bool = True
+    email: bool = False
+    sms: bool = False
+    types: list[NotificationKind] | None = None
+
+
+class TestNotificationRequest(BaseModel):
+    channel: Literal["app", "email", "sms"]
+
+
+class OutboxMessage(BaseModel):
+    id: int
+    member_id: str
+    channel: Literal["email", "sms"]
+    to_address: str                                     # the stored contact (shown only to people who may see this member)
+    subject: str | None = None
+    body: str
+    created_at: str
+    status: Literal["preview"] = "preview"              # always "preview": nothing is ever sent
+
+
+class TestNotificationResponse(BaseModel):
+    ok: bool = True
+    channel: Literal["app", "email", "sms"]
+    notification: Notification | None = None           # for channel "app"
+    outbox: OutboxMessage | None = None                 # for "email" and "sms" (a preview, not sent)

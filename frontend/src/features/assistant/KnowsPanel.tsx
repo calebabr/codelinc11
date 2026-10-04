@@ -1,4 +1,5 @@
-import type { ReactNode } from "react"
+import { useState, type ReactNode } from "react"
+import { ChevronDown } from "lucide-react"
 import { useAssistantContext } from "./useAssistant"
 
 function Group({ title, children }: { title: string; children: ReactNode }) {
@@ -32,9 +33,28 @@ export function KnowsPanel({
   refreshKey: number
 }) {
   const { data, loading, error, retry } = useAssistantContext(token, memberId, refreshKey)
+  // Phones and tablets: collapsed behind a button. Large screens: always open, in a side column.
+  const [open, setOpen] = useState(false)
+  const body = open ? "block" : "hidden lg:block"
   return (
-    <aside className="portal-card" aria-label="What Your Assistant Knows" data-testid="knows-panel">
-      <h2 className="portal-card-title">What Your Assistant Knows</h2>
+    <aside
+      className="portal-card !p-3 lg:sticky lg:top-2 lg:max-h-[calc(100dvh-12rem)] lg:overflow-y-auto"
+      aria-label="What Your Assistant Knows"
+      data-testid="knows-panel"
+    >
+      <h2 className="portal-card-title !mb-0 hidden !text-base lg:block">What Your Assistant Knows</h2>
+      <button
+        type="button"
+        className="flex min-h-11 w-full items-center justify-between gap-2 text-left text-sm font-bold text-burgundy lg:hidden"
+        aria-expanded={open}
+        aria-controls="knows-body"
+        data-testid="knows-toggle"
+        onClick={() => setOpen((v) => !v)}
+      >
+        What Your Assistant Knows
+        <ChevronDown className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
+      </button>
+      <div id="knows-body" data-testid="knows-body" className={body}>
       {loading && !data && <p className="mt-3 text-sm text-[var(--muted)]">Loading…</p>}
       {error && (
         <div role="alert" className="note mt-3">
@@ -70,6 +90,7 @@ export function KnowsPanel({
           </p>
         </div>
       )}
+      </div>
     </aside>
   )
 }

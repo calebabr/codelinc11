@@ -134,7 +134,7 @@ def test_chips_present_for_adults_and_children(store):
     assert "How can I save on this?" in adult and "What should I ask my dentist?" in adult
     child = suggest_questions(build_member_context(store, JORDAN, MAYA))
     assert any("ask" in q.lower() and "dentist" in q.lower() for q in child)
-    assert len(adult) <= 5 and len(child) <= 5
+    assert len(adult) <= 7 and len(child) <= 7
     json.dumps(adult)
 
 

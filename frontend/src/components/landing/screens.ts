@@ -3,9 +3,9 @@ export const SCREEN_W = 1600
 export const SCREEN_H = 1200
 
 export const screens = {
-  coverage: { src: '/screens/coverage.png', alt: 'The bitewise My Coverage screen: what your plan covers and what you have left' },
-  estimate: { src: '/screens/estimate.png', alt: 'The bitewise Estimate screen: what you pay and what your plan pays for a procedure' },
-  plan: { src: '/screens/plan.png', alt: 'The bitewise Plan My Year screen: when to schedule each procedure' },
+  coverage: { src: '/screens/coverage.png', srcSet: '/screens/coverage-800.webp 800w, /screens/coverage.png 1600w', alt: 'The Molar Money My Coverage screen: what your plan covers and what you have left' },
+  estimate: { src: '/screens/estimate.png', srcSet: '/screens/estimate-800.webp 800w, /screens/estimate.png 1600w', alt: 'The Molar Money Estimate screen: what you pay and what your plan pays for a procedure' },
+  plan: { src: '/screens/plan.png', srcSet: '/screens/plan-800.webp 800w, /screens/plan.png 1600w', alt: 'The Molar Money Plan My Year screen: when to schedule each procedure' },
 } as const
 
 // Product fan geometry. The hero's zoom ends exactly where the fan starts, so both read these.
@@ -19,3 +19,6 @@ export function fanStartPose(vw: number, vh: number, stageWidth: number) {
   const width = Math.min(1000, vw * 0.88, vh * 1.2) * FAN_START_SCALE
   return { width, cx: stageWidth / 2, cy: vh / 2 - vh * FAN_LIFT }
 }
+
+// Phones get the 800px WebP (about 20 KB) instead of the 1600px PNG (about 300 KB).
+export const SCREEN_SIZES = '(min-width: 1024px) 1000px, 88vw'

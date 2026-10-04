@@ -25,6 +25,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from pydantic import Field
 
+from .. import ratelimit
 from ..agent.context import MemberContext, build_member_context
 from ..agent.loop import run_chat
 from ..agent.providers import Provider, select_provider
@@ -107,7 +108,7 @@ def _remember(store: Any, ctx: MemberContext, user_text: str, events: Iterator[d
                                         role="assistant")
 
 
-@router.post("/chat")
+@router.post("/chat", dependencies=[Depends(ratelimit.limit_chat)])
 def chat(req: MemberChatRequest, store: StoreDep, provider: ProviderDep,
          viewer: Annotated[str | None, Depends(optional_viewer)] = None) -> StreamingResponse:
     if viewer is None and os.environ.get("ASSISTANT_ALLOW_ANONYMOUS") != "1":
@@ -162,7 +163,7 @@ def clear_chat(member_id: str, store: StoreDep, viewer: Viewer) -> dict:
     return {"ok": True, "removed": removed}
 
 
-@router.post("/chat/attachments")
+@router.post("/chat/attachments", dependencies=[Depends(ratelimit.limit_attachments)])
 async def upload_attachment(request: Request, store: StoreDep, viewer: Viewer,
                             member_id: str, filename: str = "document.pdf") -> dict:
     """Upload one PDF as the raw request body (Content-Type: application/pdf, max 5 MB)."""
