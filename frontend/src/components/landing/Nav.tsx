@@ -36,7 +36,7 @@ export default function Nav() {
               Log in
             </Link>
             <Link
-              to="/login"
+              to="/signup"
               className="inline-flex h-11 items-center rounded-full bg-primary px-6 text-[15px] font-bold text-primary-foreground transition-colors hover:bg-primary/90"
             >
               Get started
@@ -62,7 +62,7 @@ export default function Nav() {
                   Log in
                 </Link>
                 <Link
-                  to="/login"
+                  to="/signup"
                   className="mt-2 inline-flex h-12 items-center justify-center rounded-full bg-primary text-base font-bold text-primary-foreground"
                 >
                   Get started

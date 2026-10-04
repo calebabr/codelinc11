@@ -2,13 +2,16 @@
 // household (from the backend) and which family member the app is showing
 // ("active member").
 //
-// Sign-in is the demo flow: POST /auth/demo-login (no password). On load we sign in
-// again only if the person chose an account earlier in this browser tab (remembered
-// in sessionStorage only). Otherwise the status is "signed-out" and the app shows /login.
+// Sign-in has two steps. Clerk proves who the person is (/login, see AuthProvider). Then
+// they pick a household profile: POST /auth/demo-login, sent with the Clerk token
+// (`getAuthToken`). On load we pick again only if the person chose a profile earlier in
+// this browser tab (remembered in sessionStorage only). Otherwise the status is
+// "signed-out" and the app shows /choose-profile. While nobody is signed in to Clerk the
+// provider is `paused`: it calls no API and forgets the remembered profile.
 // The token stays in memory. Pages read everything from useSession() and never
 // hard-code a person or fetch their own token.
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { demoLogin, getDemoAccounts, getHousehold, putHouseholdPlan } from "@/lib/api/family"
 import { errorMessage } from "@/lib/api/planYear"
 import type { DemoAccount, FamilyHousehold, FamilyMember } from "@/lib/types/family"
@@ -92,16 +95,32 @@ interface Signed {
   household: Household
 }
 
-export function SessionProvider({ children, initialMemberId }: { children: ReactNode; initialMemberId?: string }) {
+export function SessionProvider({
+  children,
+  initialMemberId,
+  getAuthToken,
+  paused = false,
+}: {
+  children: ReactNode
+  initialMemberId?: string
+  /** Returns the Clerk session token sent with POST /auth/demo-login. */
+  getAuthToken?: () => Promise<string | null>
+  /** Nobody is signed in to Clerk: stay signed out and call no API. */
+  paused?: boolean
+}) {
   const [accounts, setAccounts] = useState<DemoAccount[]>([])
   const [signed, setSigned] = useState<Signed | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [status, setStatus] = useState<SessionStatus>("loading")
   const [error, setError] = useState<string | null>(null)
   const [attempt, setAttempt] = useState(0)
+  // A ref, so a new getAuthToken function from the caller never re-runs the sign-in effect
+  const authToken = useRef(getAuthToken)
+  authToken.current = getAuthToken
 
   const doSignIn = useCallback(async (memberId: string) => {
-    const login = await demoLogin(memberId)
+    const getToken = authToken.current
+    const login = await demoLogin(memberId, getToken ? await getToken() : null)
     // Reload the household with the new token so the member list is the server's current view.
     let household = login.household
     try {
@@ -116,6 +135,12 @@ export function SessionProvider({ children, initialMemberId }: { children: React
 
   useEffect(() => {
     let cancelled = false
+    if (paused) {
+      remember(null)
+      setSigned(null)
+      setStatus("signed-out")
+      return
+    }
     setStatus("loading")
     setError(null)
     const run = async () => {
@@ -126,7 +151,7 @@ export function SessionProvider({ children, initialMemberId }: { children: React
         const wanted = initialMemberId ?? remembered()
         const pick = wanted ? list.find((a) => a.member_id === wanted) : undefined
         if (!pick) {
-          // Nobody signed in yet: the app sends the visitor to /login.
+          // No profile picked yet: the app sends the visitor to /choose-profile.
           if (list.length === 0) throw new Error("No demo accounts are available.")
           if (wanted) remember(null)
           setStatus("signed-out")
@@ -147,7 +172,7 @@ export function SessionProvider({ children, initialMemberId }: { children: React
     }
     // initialMemberId is only a first guess; it is not tracked after the first sign-in.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [attempt, doSignIn])
+  }, [attempt, doSignIn, paused])
 
   const signIn = useCallback(
     async (memberId: string) => {

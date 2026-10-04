@@ -22,16 +22,17 @@ The app is a portal-style shell: a slim burgundy utility bar (household name, me
 | `/costs` | `Costs/CostsPage.tsx` |
 | `/plan-year` | `PlanYear/PlanYearPage.tsx` |
 | `/assistant` | `Assistant/AssistantPage.tsx` |
-| `/login` | `Login/LoginPage.tsx` (one-click demo account cards from `GET /auth/demo-accounts`, built on `components/auth/AuthLayout.tsx`; one file so design can restyle it) |
+| `/login`, `/signup` | `Login/LoginPage.tsx`, `Signup/SignupPage.tsx` (Clerk's sign-in and sign-up forms in `components/auth/AuthLayout.tsx`) |
+| `/choose-profile` | `ChooseProfile/ChooseProfilePage.tsx` ("Who's using bitewise?": one card per profile from `GET /auth/demo-accounts`; one file so design can restyle it) |
 | `/style` | style guide (owned by the design task) |
 
 Routes live in `AppRoutes` in `src/App.tsx`; shell parts are in `src/components/shell/`.
 
 **Session (T19, `src/state/SessionContext.tsx`):** the real backend session.
 
-- On load, `SessionProvider` calls `GET /auth/demo-accounts`. Nobody is signed in automatically: a signed-out visitor to any app route (including `/`) is redirected to `/login`, where one click on Jordan, Alex or Noah calls `POST /auth/demo-login` and goes to `/`. The choice is remembered in `sessionStorage` under `dental.signedInMemberId` (nothing else is stored), so a reload in the same tab stays signed in. `/welcome` is the public landing page; its "Log in" and "Get started" go to `/login`. The bearer token is kept in memory. The household is then loaded with `GET /households/{id}`. Real ids: `hh-rivera`, `m-jordan`, `m-alex`, `m-noah`, `m-maya` (Maya has no login).
+- Sign-in has two steps. First Clerk (`/login` or `/signup`): a visitor who is not signed in to Clerk is sent from any app route (including `/`) to `/login`, and back afterwards. Then the household profile: `SessionProvider` calls `GET /auth/demo-accounts`, and with no profile picked the visitor goes to `/choose-profile`, where one click on Jordan, Alex or Noah calls `POST /auth/demo-login` (sent with the Clerk session token) and goes to `/`. While signed out of Clerk the provider is paused and calls no API. The choice is remembered in `sessionStorage` under `dental.signedInMemberId` (nothing else is stored), so a reload in the same tab stays signed in. `/welcome` is the public landing page; its "Log in" goes to `/login` and "Get started" to `/signup`. The bearer token is kept in memory. The household is then loaded with `GET /households/{id}`. Real ids: `hh-rivera`, `m-jordan`, `m-alex`, `m-noah`, `m-maya` (Maya has no login).
 - `useSession()` (pages) returns `account`, `user` (the signed-in member), `household` (backend shape plus `planTier`, the plan id), `activeMember`, `setActiveMemberId(id)`, `token`, `accounts`, `signIn(memberId)` and `signOut()`. It throws if used outside a ready session, so pages render inside the `Shell`.
-- `useSessionGate()` (shell and login) adds `status` (`loading`, `ready`, `error`, `signed-out`), `error` and `retry`. The `Shell` shows a loading note, a clear error with "Try again" when the backend is down, or redirects to `/login` after sign-out.
+- `useSessionGate()` (shell and login) adds `status` (`loading`, `ready`, `error`, `signed-out`), `error` and `retry`. The `Shell` shows a loading note, a clear error with "Try again" when the backend is down, or redirects to `/choose-profile` when no profile is picked ("Switch profile" in the utility bar). "Sign out" signs out of Clerk and returns to `/welcome`.
 - Every API call takes the shared `token`. There are no per-page sign-ins. A non-primary person (Alex, Noah) sees only their own household member, as the backend returns.
 - The member switcher in the utility bar is a card menu, not a native select.
 - Tests use `src/test/session.tsx` (`TestSessionProvider`, fixed Rivera household with the real ids, token `tok-<id>`, no network). `src/state/SessionContext.test.tsx` covers the real provider with a mocked `fetch`.

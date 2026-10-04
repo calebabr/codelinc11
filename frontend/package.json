@@ -13,11 +13,13 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@clerk/react": "^6.17.5",
+    "@clerk/ui": "^1.38.1",
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
-    "@fontsource-variable/manrope": "^5.3.0",
-    "@fontsource-variable/newsreader": "^5.3.0",
     "@fontsource-variable/fraunces": "^5.3.0",
     "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/manrope": "^5.3.0",
+    "@fontsource-variable/newsreader": "^5.3.0",
     "@hookform/resolvers": "^5.9.1",
     "@microsoft/fetch-event-source": "^2.0.1",
     "@tailwindcss/vite": "^4.3.3",

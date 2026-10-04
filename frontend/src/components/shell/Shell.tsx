@@ -8,7 +8,8 @@ import { AssistantButton } from "./AssistantButton"
 export function Shell() {
   const gate = useSessionGate()
 
-  if (gate.status === "signed-out") return <Navigate to="/login" replace />
+  // Signed in to Clerk (RequireClerk) but no household profile picked yet
+  if (gate.status === "signed-out") return <Navigate to="/choose-profile" replace />
   if (gate.status === "loading") {
     return (
       <div className="mx-auto max-w-md p-8" role="status">
