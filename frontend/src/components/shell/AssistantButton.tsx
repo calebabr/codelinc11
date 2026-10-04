@@ -87,7 +87,9 @@ export function AssistantButton() {
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Open assistant"
-          className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-[max(1.25rem,env(safe-area-inset-right))] z-40 flex min-h-12 min-w-12 items-center justify-center gap-2 rounded-full bg-orange-dark px-4 py-3 text-white shadow-lg transition-transform hover:scale-105"
+          // bottom 6rem: sits above the "Powered by Netlify" badge (bottom-right, about 64 px tall, top layer),
+          // which otherwise covers this button and takes its clicks on the live site.
+          className="fixed bottom-[max(6rem,calc(env(safe-area-inset-bottom)+4.75rem))] right-[max(1.25rem,env(safe-area-inset-right))] z-40 flex min-h-12 min-w-12 items-center justify-center gap-2 rounded-full bg-orange-dark px-4 py-3 text-white shadow-lg transition-transform hover:scale-105"
         >
           <Sparkles className="size-5" aria-hidden />
           <span className="hidden text-sm font-medium sm:inline">Ask the assistant</span>
