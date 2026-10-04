@@ -1,6 +1,10 @@
 import '@testing-library/jest-dom/vitest'
 import { afterEach, vi } from 'vitest'
 import { cleanup, configure } from '@testing-library/react'
+import { MotionGlobalConfig } from 'motion/react'
+
+// Animations finish instantly in tests, so exits (like closing the assistant panel) unmount right away.
+MotionGlobalConfig.skipAnimations = true
 
 // Under heavy parallel load (several test runs at once) the 1 s default for findBy/waitFor is too short.
 configure({ asyncUtilTimeout: 5000 })

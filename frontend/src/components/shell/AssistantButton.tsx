@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useLocation } from "react-router"
 import { Sparkles, X } from "lucide-react"
+import { AnimatePresence, motion } from "motion/react"
+import { ease } from "@/lib/motion"
 import { AssistantChat } from "@/features/assistant/AssistantChat"
 import { useSession } from "@/state/SessionContext"
 
@@ -91,13 +93,24 @@ export function AssistantButton() {
           <span className="hidden text-sm font-medium sm:inline">Ask the assistant</span>
         </button>
       )}
+      {/* Opens with a short fade and slide; AnimatePresence plays it in reverse on close */}
+      <AnimatePresence>
       {open && (
-        <div
+        <motion.div
+          key="assistant-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
           className="fixed inset-x-0 top-0 z-50 flex h-dvh justify-end bg-ink/30 sm:p-3"
           style={viewport ? { height: viewport.height, top: viewport.top } : undefined}
           onClick={close}
         >
-          <aside
+          <motion.aside
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 24 }}
+            transition={{ duration: 0.28, ease }}
             ref={panelRef}
             role="dialog"
             aria-modal="true"
@@ -124,9 +137,10 @@ export function AssistantButton() {
                 memberName={activeMember.name.split(" ")[0]}
               />
             </div>
-          </aside>
-        </div>
+          </motion.aside>
+        </motion.div>
       )}
+      </AnimatePresence>
     </>
   )
 }
