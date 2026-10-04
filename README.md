@@ -1,6 +1,6 @@
 # Molar Money: Dental Benefits Copilot
 
-An assistant for people with employer dental insurance. It answers three questions in plain language: **What will this procedure cost me? When should I schedule my care to pay the least? What do I still have left this year?** Built for the codeLinc 11 hackathon (Path 1, dental) by a five-person team using a team of AI coding agents.
+An assistant for people with employer dental insurance. It answers three questions in plain language: **What will this procedure cost me? When should I schedule my care to pay the least? What do I still have left this year?** Built for the codeLinc 11 hackathon (Path 1, dental) by a five-person team.
 
 > **Status (2026-10-03):** the full product works end to end and is ready for the 2026-10-04 demo: landing page, one-tap demo sign-in where every visitor gets their own demo family, six connected pages, a per-person household database, and an AI assistant on Anthropic that calls the money engine through tools. This work is on branch `feature/choose-a-plan`, which is **not pushed or merged yet**; `main` is what is in production.
 > All plan, fee and member data is **synthetic**. Nothing here is a real plan or a real person.
