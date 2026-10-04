@@ -155,6 +155,13 @@ def assistant_context(member_id: str, store: StoreDep, viewer: Viewer) -> dict:
     return _context(store, viewer, member_id).public_view()
 
 
+@router.delete("/members/{member_id}/chat")
+def clear_chat(member_id: str, store: StoreDep, viewer: Viewer) -> dict:
+    """Clear this person's saved assistant chat (same visibility rule as chat)."""
+    removed = guarded(lambda: store.clear_chat_memory(viewer, member_id))
+    return {"ok": True, "removed": removed}
+
+
 @router.post("/chat/attachments")
 async def upload_attachment(request: Request, store: StoreDep, viewer: Viewer,
                             member_id: str, filename: str = "document.pdf") -> dict:

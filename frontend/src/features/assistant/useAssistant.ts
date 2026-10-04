@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import {
+  clearChat,
   errorMessage,
   getAssistantContext,
   getSuggestions,
@@ -149,5 +150,27 @@ export function useChat(token: string, memberId: string) {
     [],
   )
 
-  return { thread, busy, send, retry, attach, removeAttachment, attachments, uploading, attachError }
+  const [clearing, setClearing] = useState(false)
+  const [clearError, setClearError] = useState<string | null>(null)
+  useEffect(() => setClearError(null), [memberId])
+
+  /** Delete this person's saved chat on the server, then empty the conversation on screen. */
+  const clear = useCallback(async () => {
+    setClearError(null)
+    setClearing(true)
+    try {
+      await clearChat(token, memberId)
+      updateThread(memberId, () => [])
+      setAttachments([])
+    } catch (e) {
+      setClearError(errorMessage(e))
+    } finally {
+      setClearing(false)
+    }
+  }, [token, memberId])
+
+  return {
+    thread, busy, send, retry, attach, removeAttachment, attachments, uploading, attachError,
+    clear, clearing, clearError,
+  }
 }

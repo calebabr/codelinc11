@@ -244,6 +244,13 @@ class Store:
             else:
                 raise ValueError(f"unknown context kind {kind!r}")
 
+    def clear_chat_memory(self, viewer_id: str, member_id: str) -> int:
+        """Delete one person's saved assistant chat. Returns how many messages were removed."""
+        with session(self.path) as conn:
+            self._target(conn, viewer_id, member_id)
+            cur = conn.execute("DELETE FROM chat_memory WHERE member_id = ?", (member_id,))
+            return cur.rowcount
+
     # ---- schedule ------------------------------------------------------
     def list_upcoming_schedule(
         self, viewer_id: str, member_id: str | None = None, today: date | None = None

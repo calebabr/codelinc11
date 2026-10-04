@@ -46,6 +46,7 @@ function mockApi() {
       if (m) return json(CONTEXT[m[1]])
       if (url.includes("/chat/attachments"))
         return json({ attachment_id: "att-1", filename: "quote.pdf", size: 10, notice: "Demo only" })
+      if (init?.method === "DELETE" && /\/members\/[\w-]+\/chat$/.test(url)) return json({ ok: true, removed: 2 })
       if (url.endsWith("/chat")) return chatReply()
       return new Response("{}", { status: 404 })
     }),
@@ -188,5 +189,29 @@ describe("Assistant page", () => {
     await user.upload(screen.getByTestId("pdf-input"), new File(["x"], "photo.png", { type: "image/png" }))
     expect(await screen.findByText("Only PDF files can be attached.")).toBeInTheDocument()
     expect(calls.some((c) => c.url.includes("/chat/attachments"))).toBe(false)
+  })
+})
+
+describe("Clear chat", () => {
+  it("asks first, then deletes this person's saved chat and empties the conversation", async () => {
+    const user = userEvent.setup()
+    renderPage("m-alex")
+    await user.type(await screen.findByPlaceholderText("Ask about Alex's plan"), "crown?")
+    await user.click(screen.getByRole("button", { name: "Send" }))
+    await screen.findByText(/\$800/)
+    await user.click(screen.getByRole("button", { name: /Clear chat/ }))
+    expect(screen.getByText("Delete Alex's chat history?")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Yes, clear" }))
+    await waitFor(() => expect(screen.queryAllByTestId("msg-assistant")).toHaveLength(0))
+    expect(calls.some((c) => c.method === "DELETE" && c.url.endsWith("/members/m-alex/chat"))).toBe(true)
+    expect(screen.getByRole("button", { name: /Clear chat/ })).toBeInTheDocument()
+  })
+
+  it("cancel keeps the conversation", async () => {
+    const user = userEvent.setup()
+    renderPage("m-alex")
+    await user.click(await screen.findByRole("button", { name: /Clear chat/ }))
+    await user.click(screen.getByRole("button", { name: "Cancel" }))
+    expect(calls.some((c) => c.method === "DELETE")).toBe(false)
   })
 })

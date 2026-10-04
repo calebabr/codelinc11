@@ -108,3 +108,9 @@ export async function streamChat(
   buf += decoder.decode()
   parseSse(buf + "\n\n").events.forEach(onEvent)
 }
+
+/** Delete this person's saved assistant chat on the server. */
+export async function clearChat(token: string, memberId: string): Promise<void> {
+  const res = await authedFetch(token, `/members/${encodeURIComponent(memberId)}/chat`, { method: "DELETE" })
+  if (!res.ok) throw await failure(res)
+}

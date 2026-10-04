@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
-import { FileText, Loader2, Mic, Paperclip, Send, X } from "lucide-react"
+import { FileText, Loader2, Mic, Paperclip, Send, Trash2, X } from "lucide-react"
 import { useSpeechRecognition } from "@/lib/useSpeechRecognition"
 import { MAX_PDF_BYTES } from "@/lib/api/assistant"
 import { Disclaimer } from "@/components/Disclaimer"
@@ -84,10 +84,11 @@ export function AssistantChat({
   memberName: string
   onSent?: () => void
 }) {
-  const { thread, busy, send, retry, attach, removeAttachment, attachments, uploading, attachError } = useChat(
-    token,
-    memberId,
-  )
+  const {
+    thread, busy, send, retry, attach, removeAttachment, attachments, uploading, attachError,
+    clear, clearing, clearError,
+  } = useChat(token, memberId)
+  const [confirmClear, setConfirmClear] = useState(false)
   const sugg = useSuggestions(token, memberId)
   const [text, setText] = useState("")
   const fileRef = useRef<HTMLInputElement>(null)
@@ -107,7 +108,10 @@ export function AssistantChat({
     speech.toggle()
   }
 
-  useEffect(() => setText(""), [memberId])
+  useEffect(() => {
+    setText("")
+    setConfirmClear(false)
+  }, [memberId])
   useEffect(() => {
     endRef.current?.scrollIntoView?.({ block: "end" })
   }, [thread])
@@ -126,6 +130,39 @@ export function AssistantChat({
 
   return (
     <div className="flex h-full min-h-0 flex-col" data-testid="assistant-chat">
+      <div className="flex min-h-11 items-center justify-end gap-2 border-b border-line px-4 py-1.5 text-xs">
+        {clearError && (
+          <span role="alert" className="mr-auto text-[var(--warn-ink)]">
+            {clearError}
+          </span>
+        )}
+        {confirmClear ? (
+          <>
+            <span className="text-ink">Delete {memberName}&apos;s chat history?</span>
+            <button
+              type="button"
+              className="btn btn-orange !px-3 !py-1 text-xs"
+              disabled={clearing}
+              onClick={() => void clear().then(() => setConfirmClear(false))}
+            >
+              {clearing ? "Clearing…" : "Yes, clear"}
+            </button>
+            <button type="button" className="btn btn-outline !px-3 !py-1 text-xs" onClick={() => setConfirmClear(false)}>
+              Cancel
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 font-semibold text-[var(--muted)] hover:text-burgundy disabled:opacity-50"
+            disabled={busy}
+            onClick={() => setConfirmClear(true)}
+            title="Delete this person's saved chat so the assistant starts fresh"
+          >
+            <Trash2 className="size-3.5" aria-hidden /> Clear chat
+          </button>
+        )}
+      </div>
       <ul
         className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4"
         aria-live="polite"

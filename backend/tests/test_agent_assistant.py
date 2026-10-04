@@ -286,6 +286,24 @@ def test_memory_is_saved_per_person_and_never_crosses(client_for, store):
     assert "forget my cleaning" in fake2.calls[0]["system"]
 
 
+def test_clear_chat_deletes_only_that_persons_memory(client_for, store):
+    c = client_for(FakeProvider([say("Hi Alex. This is an estimate, not a guarantee."),
+                                 say("Hi Jordan. This is an estimate, not a guarantee.")]))
+    ask(c, ALEX, "hello")
+    ask(c, JORDAN, "hello")
+    r = c.delete(f"/members/{ALEX}/chat", headers=auth(ALEX))
+    assert r.status_code == 200 and r.json() == {"ok": True, "removed": 2}
+    assert store.get_member_context(ALEX, ALEX)["chat_memory"] == []
+    assert len(store.get_member_context(JORDAN, JORDAN)["chat_memory"]) == 2
+
+
+def test_clear_chat_follows_access_rules(client_for):
+    c = client_for(None)
+    assert c.delete(f"/members/{JORDAN}/chat", headers=auth(ALEX)).status_code == 403
+    assert c.delete(f"/members/{ALEX}/chat").status_code == 401
+    assert c.delete(f"/members/{MAYA}/chat", headers=auth(JORDAN)).status_code == 200
+
+
 def test_failed_answers_are_not_saved(client_for, store):
     ask(client_for(None), ALEX, "hello")
     assert store.get_member_context(ALEX, ALEX)["chat_memory"] == []
