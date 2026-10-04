@@ -34,6 +34,14 @@ describe('portal routes', () => {
     expect(within(nav).getByRole('link', { current: 'page' })).toHaveTextContent(navLabel)
   }, 20000)
 
+  it('the Molar Money logo links to the welcome page, while the Home tab stays the app home', async () => {
+    renderAt('/plans')
+    await screen.findByRole('heading', { level: 1, name: 'Plans' }, { timeout: 14000 })
+    expect(screen.getByRole('link', { name: /Molar Money: back to the welcome page/ })).toHaveAttribute('href', '/welcome')
+    const nav = screen.getByRole('navigation', { name: 'Main' })
+    expect(within(nav).getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/')
+  }, 20000)
+
   it('shows the assistant button everywhere except /assistant', async () => {
     const { unmount } = renderAt('/plans')
     await screen.findByRole('heading', { level: 1, name: 'Plans' }, { timeout: 14000 })
