@@ -19,12 +19,13 @@
 [build.environment]
   NODE_VERSION = "20"        # same as CI
 
-# API: forward /api/* to the backend on AWS (Elastic IP, so it survives restarts).
-# Must stay above the single-page-app rule. Netlify gives up on a forwarded request
+# API: forward /api/* to the backend on AWS (Elastic IP 3.149.89.171, so it survives restarts).
+# The target is a hostname, not the bare IP: Netlify proxies to hostnames, and
+# 3-149-89-171.sslip.io simply resolves to 3.149.89.171. Must stay above the single-page-app rule. Netlify gives up on a forwarded request
 # after about 26 seconds, so very slow assistant answers can time out.
 [[redirects]]
   from = "/api/*"
-  to = "http://3.149.89.171:8000/:splat"
+  to = "http://3-149-89-171.sslip.io:8000/:splat"
   status = 200
   force = true
 
