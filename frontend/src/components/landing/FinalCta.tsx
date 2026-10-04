@@ -20,7 +20,7 @@ export default function FinalCta() {
             className="relative mx-auto max-w-3xl text-[44px] leading-[1] text-white md:text-[72px]"
           />
           <Link
-            to="/login"
+            to="/signup"
             className="relative mt-10 inline-flex h-13 items-center gap-2 rounded-full bg-white px-8 text-base font-bold text-primary transition-colors hover:bg-blush"
           >
             Get started

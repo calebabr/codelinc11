@@ -2,6 +2,16 @@ import '@testing-library/jest-dom/vitest'
 import { afterEach, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
 
+// Clerk needs a real browser session. Tests run as a signed-in Clerk user; the household
+// profile still comes from SessionProvider / TestSessionProvider.
+vi.mock('@clerk/react', () => ({
+  ClerkProvider: ({ children }: { children: unknown }) => children,
+  useAuth: () => ({ isLoaded: true, isSignedIn: true, userId: 'user_test', getToken: async () => 'clerk-tok' }),
+  useClerk: () => ({ signOut: vi.fn(async () => {}) }),
+  SignIn: () => null,
+  SignUp: () => null,
+}))
+
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()

@@ -16,7 +16,7 @@ export default function Footer() {
           <Link to="/login" className="hover:text-foreground">
             Log in
           </Link>
-          <Link to="/login" className="hover:text-foreground">
+          <Link to="/signup" className="hover:text-foreground">
             Get started
           </Link>
         </nav>

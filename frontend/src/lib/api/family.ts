@@ -32,8 +32,9 @@ async function call<T>(path: string, token: string | null, init: RequestInit = {
 
 export const getDemoAccounts = () => call<DemoAccount[]>("/auth/demo-accounts", null)
 
-export const demoLogin = (memberId: string) =>
-  call<DemoLoginResponse>("/auth/demo-login", null, {
+/** `authToken`: the Clerk session token, so the backend can check who is signing in (see docs/FRONTEND.md). */
+export const demoLogin = (memberId: string, authToken: string | null = null) =>
+  call<DemoLoginResponse>("/auth/demo-login", authToken, {
     method: "POST",
     body: JSON.stringify({ member_id: memberId }),
   })
