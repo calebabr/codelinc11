@@ -12,12 +12,13 @@ An assistant for people with employer dental insurance. It answers three questio
 | **Landing** (`/welcome`) | What Molar Money is, with a worked crown example and a one-tap **Try the demo** button |
 | **Scan to try** (`/join`) | A big QR code page for a screen or projector; phones scan it and land on `/welcome` |
 | **Sign in** (`/login`) | **Try the demo** creates your own copy of the demo family. Then pick Jordan (primary account holder), Alex (adult) or Noah (adult, waiting for approval). Maya (9) has no login |
-| **Home** | What is left this plan year, deductible, cleanings used, a "use it before it resets" banner, log a visit, calendar reminders, a one-time **Name your family** card (primary only) |
+| **Home** | What is left this plan year, deductible, cleanings used, a "use it before it resets" banner, log a visit, calendar reminders, a **Notifications** card, a one-time **Name your family** card (primary only) |
 | **Plans** | Compare Basic, Preferred and Premium side by side; **Which plan fits us?** simulates 5,000 possible years for your household and shows how often each plan is cheapest (synthetic odds) and can save a comparison to Plan My Year; the primary can switch the family plan |
-| **Family** | Household tree; tap a person to see their own maximum, deductible and what they can use |
+| **Family** | Household tree; tap a person to see their own maximum, deductible and what they can use; edit profiles (date of birth, email, text number, ZIP), add and remove family members |
 | **Costs** | Estimate a procedure in or out of network with "show the math", read a pasted dentist quote, yearly cost for a plan |
 | **Plan My Year** | Add treatments and get the cheapest order across two plan years; urgent care never moves; save plans and saved plan comparisons; ways to save; questions for your dentist (a plain list) |
 | **Assistant** | Ask in plain words (typed or by voice); answers come from that person's own data and the engine |
+| **Notifications** (bell, top right) | Upcoming appointments and pending alerts for the person you are viewing; a full page with filters and settings for app, email and text. Email and text are previews only: nothing is ever sent in the demo |
 
 Each person in the household has their own usage, history, saved plans and assistant memory. The primary account holder sees everyone; an adult sees only themselves.
 
@@ -68,9 +69,9 @@ npm run dev:lan                                             # same, but reachabl
 ## Tests (verified 2026-10-03)
 | Suite | Command | Result |
 |---|---|---|
-| Backend (engine, API, auth and access rules, database, assistant, sandboxes, rate limits) | `cd backend && .venv/Scripts/python -m pytest -q` | 391 passed |
+| Backend (engine, API, auth and access rules, database, assistant, sandboxes, rate limits) | `cd backend && .venv/Scripts/python -m pytest -q` | 523 passed |
 | Backend lint | `cd backend && .venv/Scripts/python -m ruff check .` | clean |
-| Frontend (pages, session, demo family, switcher, API clients; 17 test files) | `cd frontend && npm run test` | 151 tests. On my last full run 150 passed and one sign-in test timed out under load; it passes when run alone (6 of 6) |
+| Frontend (pages, session, demo family, switcher, notifications, API clients; 20 test files) | `cd frontend && npm run test` | 205 tests |
 | Frontend types and build | `npm run typecheck && npm run build` | clean |
 | Browser end-to-end | `tests/` | not written yet (the demo flow is covered at the API level) |
 
@@ -100,7 +101,7 @@ Built by a five-person team (listed in the order given, without ranking):
 - Sign-in is a demo "choose your account" screen with no passwords (decision F1). Anyone with the link can start a demo family. An access code before a visitor can start a demo is an idea only; it is **not built**.
 - The odds in "Which plan fits us?" are synthetic stand-ins, not claims data.
 - Rate limits are counted in memory, per server process, and reset when the server restarts. Everything runs on one server with one SQLite file.
-- Deployment: `main` is the production version and a teammate deploys it. `infra/aws/` is only a reference kit and has not been run.
+- Deployment: `main` is the production version. The backend runs on AWS and the frontend on Netlify (settings and the after-release checklist: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)). A change merged to `main` reaches the live site; the backend is redeployed by a teammate. `infra/aws/` is only a reference kit.
 - Using the Anthropic provider sends chat text to a third party, so the demo uses synthetic data and sample documents only (decision F5).
 
 ## Repository layout
@@ -118,6 +119,6 @@ Built by a five-person team (listed in the order given, without ranking):
 ## More
 [docs/FEATURES.md](docs/FEATURES.md) (features and golden numbers) · [docs/DEMO.md](docs/DEMO.md) · [docs/DEMO-PHONES.md](docs/DEMO-PHONES.md) · [docs/PRESENTATION.md](docs/PRESENTATION.md) · [docs/CONVENTIONS.md](docs/CONVENTIONS.md) · [docs/GIT-WORKFLOW.md](docs/GIT-WORKFLOW.md)
 
-Screenshots to capture for this README (not yet added): landing hero with Try the demo, Scan to try page, Home for Jordan, Family tree, Plan My Year savings card for Alex ($2,300 to $1,405), Costs crown out of network, Assistant answer.
+Screenshots to capture for this README (add them from the live site): landing hero with Try the demo, Scan to try page, Home for Jordan, Family tree, Plan My Year savings card for Alex ($2,300 to $1,405), Costs crown out of network, Assistant answer.
 
 All figures are estimates, not guarantees.

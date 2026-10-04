@@ -52,7 +52,7 @@ flowchart LR
 | `GET /health` | Server up, `chat_mode` (`anthropic`, `ollama` or `unavailable`) |
 | `GET /auth/demo-accounts[?household_id=]`, `POST /auth/demo-login` | Demo sign-in; `sandbox: true` gives each visitor their own copy of the demo family (`hh-rivera.<sid>`), reused by `household_id`, 410 when expired |
 | `PUT /households/{id}/names` | Rename people and the family (primary, sandbox families only) |
-| `GET /members/{id}/notifications?unread=1` | Makes any new notifications from the person's data (benefits expiring, unused checkups and cleanings, appointments within 14 days, saved treatment plans, deductible met; amounts from the benefits engine; idempotent through `dedupe_key`), then lists them newest first with `unread_count`. Same visibility as the overview. Allowed in the shared template family |
+| `GET /members/{id}/notifications?unread=1` | Makes any new notifications from the person's data (benefits expiring, unused checkups and cleanings, appointments and reminders within `NOTIFY_WINDOW_DAYS` (default 45) days, warning when due in 7 days or fewer, saved treatment plans, deductible met; amounts from the benefits engine; idempotent through `dedupe_key`), then lists them newest first with `unread_count`. Same visibility as the overview. Allowed in the shared template family |
 | `POST /members/{id}/notifications/{nid}/read` · `POST /members/{id}/notifications/read-all` | Mark one or all read |
 | `GET` / `PUT /members/{id}/notification-prefs` | In-app (default on), email and text (default off), and which kinds. Email or text needs a valid contact on the profile (plain 422 otherwise). PUT: demo families only (403 for the template) |
 | `POST /members/{id}/notifications/test` | `{channel: app\|email\|sms}`: a sample in-app notification, or a delivery preview to the stored contact. Demo families only; rate limited (compute bucket) |
@@ -88,11 +88,12 @@ The API contract is `backend/app/models.py`. Live docs: http://localhost:8000/do
 | Path | What is there |
 |---|---|
 | `backend/app/main.py` | FastAPI app, core routes, CORS |
-| `backend/app/routers/` | `auth`, `households`, `members`, `saved_plans`, `saved_simulations`, `annual_cost`, `simulate`, `chat`, `session`, `tips`, `questions`, `treatment_plan` |
+| `backend/app/routers/` | `auth`, `households`, `members`, `saved_plans`, `saved_simulations`, `notifications`, `profiles`, `annual_cost`, `simulate`, `chat`, `session`, `tips`, `questions`, `treatment_plan` |
 | `backend/app/engine/` | `estimate.py`, `annual.py`, `sequencer.py`, `status.py`, `tips.py`, `simulate.py` |
 | `backend/app/agent/` | `providers.py` (Anthropic, Ollama), `loop.py`, `tools.py`, `guard.py`, `context.py`, `suggestions.py` |
 | `backend/app/db/` | `core.py`, `store.py`, `sandbox.py` (per-visitor demo families), `__main__.py` (SQLite access layer, `python -m app.db --reset`) |
 | `backend/data/` | `plans/{basic,preferred,premium}.json`, `cdt_codes.json` |
+| `backend/app/notifications.py`, `notifier.py` | Makes notifications from a person's data; `Notifier` interface (email and text are previews only) |
 | `backend/app/ratelimit.py` | In-memory rate limits (see "Rate limiting" below) |
 | `backend/tests/` | 391 tests (about 2 minutes) |
 | `infra/aws/` | CloudFormation kit, runbook and deploy scripts (a reference; not run in AWS) |
@@ -100,8 +101,8 @@ The API contract is `backend/app/models.py`. Live docs: http://localhost:8000/do
 | `frontend/src/pages/Join/` | `/join` "Scan to try" QR page |
 | `frontend/public/` | `manifest.webmanifest`, icons (Add to Home Screen) |
 | `database/` | `migrations/`, `seeds/demo_household.json` |
-| `frontend/src/pages/` | `Landing.tsx`, `Login/`, `Join/`, `Home/`, `Plans/`, `Family/`, `Costs/`, `PlanYear/`, `Assistant/`, `StyleGuide.tsx` |
-| `frontend/src/features/` | Page building blocks: `home`, `plans`, `family`, `costs`, `planYear`, `assistant` |
+| `frontend/src/pages/` | `Landing.tsx`, `Login/`, `Join/`, `Home/`, `Plans/`, `Family/`, `Costs/`, `PlanYear/`, `Assistant/`, `Notifications/` (`/notifications`), `StyleGuide.tsx` |
+| `frontend/src/features/` | Page building blocks: `home`, `plans`, `family`, `costs`, `planYear`, `assistant`, `notifications` (bell in the top bar, settings, Home card) |
 | `frontend/src/components/` | `shell/` (top bar, nav, switcher, assistant button), `landing/`, `auth/`, `ui/` |
 | `frontend/src/state/SessionContext.tsx` | Signed-in session, viewed member, household |
 | `frontend/src/index.css` | Portal design tokens (landing keeps its own scoped `.landing` look) |

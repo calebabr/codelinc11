@@ -20,7 +20,7 @@ python -m venv .venv
 ```
 
 - API: http://localhost:8000. Interactive docs: http://localhost:8000/docs. Health check: http://localhost:8000/health
-- Run the tests: `.venv/Scripts/python -m pytest -q` (391 tests, about 2 minutes, no internet or model needed)
+- Run the tests: `.venv/Scripts/python -m pytest -q` (523 tests, about 2 minutes, no internet or model needed)
 - Lint: `.venv/Scripts/python -m ruff check .`
 
 ## Frontend
@@ -30,7 +30,7 @@ From `frontend/`:
 npm install
 npm run dev          # http://localhost:5173
 npm run dev:lan      # same, but phones on your Wi-Fi can open it (see DEMO-PHONES.md)
-npm run test         # 151 tests, about 1 minute
+npm run test         # 205 tests, about 1 minute
 npm run typecheck
 npm run build
 ```
@@ -51,6 +51,7 @@ Copy `.env.example` (repo root) to `backend/.env`. The real `.env` is git-ignore
 | `OLLAMA_TIMEOUT` | Optional local chat | Seconds, default 60 |
 | `BENEFITS_DB_PATH` | Database | Default `database/benefits.db` |
 | `ASSISTANT_ALLOW_ANONYMOUS` | Assistant | Default `0`. Set `1` only for local experiments without sign-in |
+| `NOTIFY_WINDOW_DAYS` | Notification bell | Appointments and reminders this many days ahead (or fewer) of the demo clock get a notification. Default 45 |
 | `DEMO_SANDBOX_TTL_HOURS`, `DEMO_MAX_SANDBOXES` | Demo families | Each visitor's private demo family lives 24 hours (default); at most 300 at once (default) |
 | `RATE_LIMIT_ENABLED` | Rate limits | Default `1`. `0` turns every limit off |
 | `RATE_LOGIN_PER_MINUTE`, `RATE_LOGIN_PER_HOUR` | Rate limits | Creating demo families, per client address. Defaults 10 and 60. Raise them for a room full of phones on one connection |

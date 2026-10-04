@@ -1,6 +1,6 @@
 # PROJECT STORY
 
-A factual build story for resumes and interviews. Facts as of 2026-10-03 (the integrated product on branch `feature/choose-a-plan`, which is not pushed or merged yet; `main` is production; ready for the 2026-10-04 demo). Numbers were checked by running the tests that day. No claim here goes beyond what exists.
+A factual build story for resumes and interviews. Facts as of 2026-10-04: `main` is production (backend on AWS, frontend on Netlify; sign-in is **Try the demo** only), and sprint 2 work (profiles, notifications) is on branch `sprint/family-providers-reports`, not yet merged. Numbers were checked by running the tests that day. No claim here goes beyond what exists.
 
 ## The problem
 People with employer dental plans rarely know what a procedure will cost, and they lose unused benefits when the plan year resets. The hackathon challenge (codeLinc 11, Path 1, dental) asks for a tool that helps with that.
@@ -29,8 +29,8 @@ Family, not one person (D1); a sign-in on a real household data model (D2, F1); 
 ## Measurable outcomes (2026-10-03)
 | Measure | Value |
 |---|---|
-| Backend tests | 391 passing (on `feature/choose-a-plan`; 262 before the Monte Carlo plan comparison, demo sandboxes and rate limits) |
-| Frontend tests | 151 across 17 test files (151 passed on the orchestrator run; one sign-in test timed out once on a full run under load and passes alone). Typecheck and production build clean |
+| Backend tests | 523 passing on the sprint branch (391 before sprint 2; 262 before the Monte Carlo plan comparison, demo sandboxes and rate limits); coverage 96% |
+| Frontend tests | 205 passing on the sprint branch (151 before sprint 2). Typecheck and production build clean |
 | First page load on a phone | about 162 kB of JavaScript, gzipped (other pages load on demand) |
 | Golden scenarios | G1 to G6 and S2 pass (S2: $2,300 to $1,405, saves $895) |
 | API endpoints built | 36 routes on `feature/choose-a-plan` (engine, plan simulation, demo sign-in with per-visitor families, household and renaming, member overview, visits, saved plans, saved plan comparisons, plan switching, assistant) |
@@ -41,6 +41,9 @@ Family, not one person (D1); a sign-in on a real household data model (D2, F1); 
 | Lint | `ruff check .` clean |
 
 Not done: browser end-to-end tests (Playwright); the CI workflow has not run on GitHub yet; the AWS kit in `infra/aws/` has not been run in AWS (a teammate deploys `main`); an access code for the demo is an idea, not built.
+
+## Sprint 2 so far (branch `sprint/family-providers-reports`)
+Done: the `$NaN` fix, a bigger chat box, a pytest suite foundation (markers, 14 regression tests), editable profiles and family members (demo family only), and notifications: a bell with an unread badge, a `/notifications` page with filters and per-person settings, a Home card, and notifications made from the person's data and the benefits engine. Email and text are **delivery previews only**; a `Notifier` interface marks where a real sender would plug in. Not built yet: Find Providers, quote to dentist matching, Reports, and real email or text sending.
 
 ## What I would say honestly
 - Every visitor gets their own private demo family (a clone of the seeded household, 24 hours, cap of 300), so a public demo is not spoiled by one person. In-memory rate limits protect the Anthropic key. The app was made to work on phones, with a QR page to join.

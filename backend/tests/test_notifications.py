@@ -87,7 +87,7 @@ def test_alex_gets_expiring_benefits_with_the_engine_amount(client):
     _hid, ids, heads = family(client)
     body = get_list(client, ids["alex"], heads["alex"])
     by_kind = {n["kind"]: n for n in body["notifications"]}
-    assert set(by_kind) == {"benefits_expiring", "preventive_unused", "deductible_met", "procedure_planned"}
+    assert set(by_kind) == {"benefits_expiring", "preventive_unused", "deductible_met", "procedure_planned", "reminder"}
     expiring = by_kind["benefits_expiring"]
     assert expiring["title"] == "$400 of your yearly maximum is left"   # 1,500 - 1,100 (FEATURES.md S2)
     assert expiring["severity"] == "warning"
@@ -100,7 +100,7 @@ def test_alex_gets_expiring_benefits_with_the_engine_amount(client):
     assert f"${value:,.0f}" in unused["body"]
     assert by_kind["deductible_met"]["severity"] == "success"
     assert "Root canal, crown and two fillings" in by_kind["procedure_planned"]["title"]
-    assert body["unread_count"] == 4 and body["app_enabled"] is True
+    assert body["unread_count"] == 5 and body["app_enabled"] is True
     for n in body["notifications"]:
         assert n["read_at"] is None and n["member_id"] == ids["alex"] and "dedupe_key" not in n
 
@@ -117,27 +117,114 @@ def test_amounts_carry_the_disclaimer_and_never_say_delay(client):
 def test_other_members_get_their_own_notifications(client):
     _hid, ids, heads = family(client)
     jordan = get_list(client, ids["jordan"], heads["jordan"])
-    assert set(kinds(jordan)) == {"benefits_expiring", "preventive_unused"}   # no deductible met yet
-    assert jordan["notifications"][0]["title"] == "$1,290 of your yearly maximum is left"
+    assert set(kinds(jordan)) == {"benefits_expiring", "preventive_unused", "upcoming_appointment"}
+    assert "$1,290 of your yearly maximum is left" in [n["title"] for n in jordan["notifications"]]
     noah = get_list(client, ids["noah"], heads["noah"])
-    assert noah["notifications"] == []                                          # coverage is pending
+    assert kinds(noah) == ["reminder"]       # coverage is pending: no benefit notifications, his reminder shows
 
 
-def test_upcoming_appointment_only_within_14_days(client, store):
+def test_window_defaults_to_45_days(monkeypatch):
+    from app.notifications import notify_window_days
+    monkeypatch.delenv("NOTIFY_WINDOW_DAYS", raising=False)
+    assert notify_window_days() == 45
+    for bad in ("abc", "-3", ""):
+        monkeypatch.setenv("NOTIFY_WINDOW_DAYS", bad)
+        assert notify_window_days() == 45
+
+
+def test_upcoming_appointment_only_within_the_window(client, store, monkeypatch):
+    monkeypatch.setenv("NOTIFY_WINDOW_DAYS", "14")
     _hid, ids, heads = family(client)
     add_appointment(store, ids["alex"], "2026-11-10")                              # in 9 days
     add_appointment(store, ids["alex"], "2026-11-15", title="Far enough")           # in 14 days: included
     add_appointment(store, ids["alex"], "2026-11-16", title="Too far")              # in 15 days
-    add_appointment(store, ids["alex"], "2026-11-03", kind="reminder", title="A reminder")
+    add_appointment(store, ids["alex"], "2026-10-31", title="Already past")         # yesterday
     body = get_list(client, ids["alex"], heads["alex"])
     titles = [n["title"] for n in body["notifications"] if n["kind"] == "upcoming_appointment"]
     assert sorted(titles) == ["Cleaning and exam on Nov 10", "Far enough on Nov 15"]
     first = next(n for n in body["notifications"] if n["title"].endswith("Nov 10"))
-    assert "in 9 days" in first["body"]
+    assert "in 9 days" in first["body"] and first["severity"] == "info"
+    # With the 14-day window the seeded reminder (44 days away) is not generated.
+    assert "reminder" not in kinds(body)
 
 
-def test_seed_appointments_are_outside_the_window(client):
+def test_demo_seed_items_show_with_default_settings(client):
     _hid, ids, heads = family(client)
+    jordan = get_list(client, ids["jordan"], heads["jordan"])
+    appt = next(n for n in jordan["notifications"] if n["kind"] == "upcoming_appointment")
+    assert appt["title"] == "Cleaning and exam on Nov 18" and appt["severity"] == "info"
+    assert "in 17 days" in appt["body"] and appt["link"] == "/"
+    # Maya is a managed child: the primary sees her notification.
+    maya = get_list(client, ids["maya"], heads["jordan"])
+    assert "Checkup and cleaning on Dec 4" in [n["title"] for n in maya["notifications"]]
+    noah = get_list(client, ids["noah"], heads["noah"])
+    rem = noah["notifications"][0]
+    assert rem["kind"] == "reminder" and rem["title"] == "Reminder: Send student enrollment proof, due Nov 30"
+    assert rem["severity"] == "info" and rem["link"] == "/" and "in 29 days" in rem["body"]
+    assert "Needed to keep Noah covered." in rem["body"]
+    alex = get_list(client, ids["alex"], heads["alex"])
+    arem = next(n for n in alex["notifications"] if n["kind"] == "reminder")
+    assert arem["title"] == "Reminder: Use your remaining benefits, due Dec 15"
+    assert "this is an estimate" in arem["body"].lower()       # the note has a dollar amount
+
+
+def test_items_outside_the_window_are_not_generated(client, store):
+    _hid, ids, heads = family(client)
+    add_appointment(store, ids["alex"], "2026-12-16", title="Edge of window")         # 45 days: included
+    add_appointment(store, ids["alex"], "2026-12-17", title="Way too far")            # 46 days: not
+    add_appointment(store, ids["alex"], "2026-12-17", kind="reminder", title="Also far")
+    add_appointment(store, ids["alex"], "2026-10-30", kind="reminder", title="Past due")
+    titles = [n["title"] for n in get_list(client, ids["alex"], heads["alex"])["notifications"]]
+    assert "Edge of window on Dec 16" in titles
+    assert not any("Way too far" in t or "Also far" in t or "Past due" in t for t in titles)
+
+
+def test_window_can_be_changed_with_the_environment(client, monkeypatch):
+    monkeypatch.setenv("NOTIFY_WINDOW_DAYS", "20")
+    _hid, ids, heads = family(client)
+    assert "upcoming_appointment" in kinds(get_list(client, ids["jordan"], heads["jordan"]))   # 17 days
+    assert get_list(client, ids["noah"], heads["noah"])["notifications"] == []                # 29 days
+    monkeypatch.setenv("NOTIFY_WINDOW_DAYS", "60")
+    assert kinds(get_list(client, ids["noah"], heads["noah"])) == ["reminder"]                # now in
+
+
+def test_due_within_7_days_is_a_warning(client, store):
+    _hid, ids, heads = family(client)
+    add_appointment(store, ids["alex"], "2026-11-08", title="Soon")                    # 7 days
+    add_appointment(store, ids["alex"], "2026-11-09", title="Next week")               # 8 days
+    add_appointment(store, ids["alex"], "2026-11-03", kind="reminder", title="Call the office")
+    by_title = {n["title"]: n for n in get_list(client, ids["alex"], heads["alex"])["notifications"]}
+    assert by_title["Soon on Nov 8"]["severity"] == "warning"
+    assert by_title["Next week on Nov 9"]["severity"] == "info"
+    r = by_title["Reminder: Call the office, due Nov 3"]
+    assert r["kind"] == "reminder" and r["severity"] == "warning" and "in 2 days" in r["body"]
+
+
+def test_reminder_is_deduped_and_can_be_muted(client):
+    _hid, ids, heads = family(client)
+    first = get_list(client, ids["noah"], heads["noah"])
+    again = get_list(client, ids["noah"], heads["noah"])
+    assert first["notifications"] and [n["id"] for n in first["notifications"]] == [n["id"] for n in again["notifications"]]
+    r = client.put(f"/members/{ids['alex']}/notification-prefs", headers=heads["alex"],
+                   json={"app": True, "types": ["reminder", "deductible_met"]})
+    assert r.status_code == 200 and r.json()["types"] == ["reminder", "deductible_met"]
+    assert sorted(kinds(get_list(client, ids["alex"], heads["alex"]))) == ["deductible_met", "reminder"]
+
+
+def test_reminder_kind_is_accepted_by_the_database(store):
+    with connect(store.path) as c:
+        c.execute("INSERT INTO notifications (member_id, kind, title, body, dedupe_key, created_at) "
+                  "VALUES ('m-alex','reminder','t','b','reminder:1','2026-11-01T00:00:00+00:00')")
+        with pytest.raises(sqlite3.IntegrityError):
+            c.execute("INSERT INTO notifications (member_id, kind, title, body, dedupe_key, created_at) "
+                      "VALUES ('m-alex','nope','t','b','x','2026-11-01T00:00:00+00:00')")
+
+
+def test_past_appointments_are_not_generated(client, store):
+    _hid, ids, heads = family(client)
+    with connect(store.path) as c:
+        c.execute("UPDATE appointments SET due_date = '2026-10-01' WHERE member_id = ?", (ids["jordan"],))
+        c.commit()
     assert "upcoming_appointment" not in kinds(get_list(client, ids["jordan"], heads["jordan"]))
 
 
@@ -175,15 +262,15 @@ def test_mark_one_read_and_unread_filter(client):
     assert again.json()["read_at"] == r.json()["read_at"]                        # reading twice changes nothing
     unread = get_list(client, ids["alex"], heads["alex"], "?unread=1")
     assert nid not in [n["id"] for n in unread["notifications"]]
-    assert len(unread["notifications"]) == unread["unread_count"] == 3
-    assert len(get_list(client, ids["alex"], heads["alex"])["notifications"]) == 4
+    assert len(unread["notifications"]) == unread["unread_count"] == 4
+    assert len(get_list(client, ids["alex"], heads["alex"])["notifications"]) == 5
 
 
 def test_read_all(client):
     _hid, ids, heads = family(client)
     get_list(client, ids["alex"], heads["alex"])
     r = client.post(f"/members/{ids['alex']}/notifications/read-all", headers=heads["alex"])
-    assert r.status_code == 200 and r.json() == {"ok": True, "marked": 4, "unread_count": 0}
+    assert r.status_code == 200 and r.json() == {"ok": True, "marked": 5, "unread_count": 0}
     assert get_list(client, ids["alex"], heads["alex"], "?unread=1")["notifications"] == []
     assert client.post(f"/members/{ids['alex']}/notifications/read-all",
                        headers=heads["alex"]).json()["marked"] == 0
@@ -251,7 +338,7 @@ def test_muted_kinds_are_not_generated(client):
 
 def test_app_channel_off_hides_the_list_and_the_overview_count(client):
     _hid, ids, heads = family(client)
-    assert client.get(f"/members/{ids['alex']}/overview", headers=heads["alex"]).json()["notifications_unread"] == 4
+    assert client.get(f"/members/{ids['alex']}/overview", headers=heads["alex"]).json()["notifications_unread"] == 5
     client.put(f"/members/{ids['alex']}/notification-prefs", headers=heads["alex"], json={"app": False})
     body = get_list(client, ids["alex"], heads["alex"])
     assert body == {"notifications": [], "unread_count": 0, "app_enabled": False}
@@ -261,7 +348,7 @@ def test_app_channel_off_hides_the_list_and_the_overview_count(client):
 def test_overview_has_unread_count(client):
     _hid, ids, heads = family(client)
     ov = client.get(f"/members/{ids['jordan']}/overview", headers=heads["jordan"]).json()
-    assert ov["notifications_unread"] == 2
+    assert ov["notifications_unread"] == 3
     client.post(f"/members/{ids['jordan']}/notifications/read-all", headers=heads["jordan"])
     assert client.get(f"/members/{ids['jordan']}/overview", headers=heads["jordan"]).json()["notifications_unread"] == 0
 
@@ -440,10 +527,10 @@ def test_sandbox_clone_copies_prefs_not_notifications(client, store):
     assert len(prefs) == 4 and all(p["app"] == 1 and p["email"] == 0 and p["sms"] == 0 for p in prefs)
     _h2, ids2, heads2 = family(client)
     assert rows(store, "SELECT COUNT(*) AS n FROM notifications WHERE member_id = ?", (ids2["alex"],))[0]["n"] == 0
-    assert len(get_list(client, ids2["alex"], heads2["alex"])["notifications"]) == 4   # independent copy
+    assert len(get_list(client, ids2["alex"], heads2["alex"])["notifications"]) == 5   # independent copy
     # The sandbox's own read state does not touch the other family's.
     client.post(f"/members/{ids2['alex']}/notifications/read-all", headers=heads2["alex"])
-    assert get_list(client, ids["alex"], heads["alex"])["unread_count"] == 4
+    assert get_list(client, ids["alex"], heads["alex"])["unread_count"] == 5
 
 
 def test_removing_a_member_deletes_their_notification_rows(client, store):
@@ -493,7 +580,7 @@ def test_reset_restores_default_prefs_and_clears_notifications(client, store):
     assert (p["app"], p["email"], p["sms"], p["types"]) == (True, False, False, None)
     assert rows(store, "SELECT COUNT(*) AS n FROM outbox WHERE member_id LIKE '%.%'")[0]["n"] == 0
     assert rows(store, "SELECT COUNT(*) AS n FROM notifications WHERE member_id = ?", (ids["alex"],))[0]["n"] == 0
-    assert len(get_list(client, ids["alex"], heads["alex"])["notifications"]) == 4
+    assert len(get_list(client, ids["alex"], heads["alex"])["notifications"]) == 5
 
 
 def test_migration_006_applies_to_an_older_database(tmp_path):
@@ -509,7 +596,7 @@ def test_migration_006_applies_to_an_older_database(tmp_path):
         core.migrate(path)
     finally:
         core.MIGRATIONS_DIR = real
-    assert core.migrate(path) == ["006_notifications.sql"]
+    assert core.migrate(path) == ["006_notifications.sql", "007_notification_reminder_kind.sql"]
     with connect(path) as c:
         names = {r[0] for r in c.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
         assert {"notification_prefs", "notifications", "outbox"} <= names

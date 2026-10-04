@@ -32,6 +32,16 @@ How to get phones onto the app (same Wi-Fi, tunnel, public hosting): [DEMO-PHONE
 | 10 | Optional: **Plans**, tap **Premium**, **Switch to this plan**, confirm | Header changes to "Premium plan" and every page updates. Switch back with **Back to Preferred (demo plan)** and confirm |
 | 11 | Say the line: "The engine does the math. The AI only explains it." | |
 
+## Optional moment: the notification bell
+About 30 seconds. Look at the **bell** in the top right of the app bar. It shows an unread badge. On 2026-11-01 (the demo clock) the counts are: **Jordan 3** (plan year ending soon, unused cleanings, "Cleaning and exam" on Nov 18), **Alex 5**, **Noah 1** (reminder "Send student enrollment proof, due Nov 30"). Jordan also sees Maya's Dec 4 checkup under **Coming up**.
+
+1. Tap the bell. **Coming up** lists the next appointments and reminders; **Alerts** lists unread notifications.
+2. Tap an alert: it is marked read and takes you to the right page. **Mark all as read** clears the badge.
+3. Open **See all notifications** (`/notifications`): filters (All, Unread, Appointments and reminders, Benefits, Claims), and per-person settings (App, Email, Text message, which kinds, **Send me a test**). The **Delivery preview** list carries the banner "Demo only: emails and text messages are previews. Nothing is sent."
+4. Say it plainly: "Email and text are previews in this demo. Nothing is really sent."
+
+Home also has a **Notifications** card. Switching **Viewing** changes the bell to that person's alerts.
+
 ## The Monte Carlo moment: "Which plan fits us?"
 Optional, about 60 seconds. Do it after the crown, as the "what should we pick?" question.
 
@@ -95,7 +105,7 @@ Expected: `baseline_you_pay` 2300, `total_you_pay` 1405, `savings` 895 (checked 
 4. Last backup: the screen recording (record it during rehearsal).
 
 ## What is a stand-in
-Say these plainly if asked: all plan, fee and member data is synthetic. Sign-in is a demo with no passwords, and anyone with the link can start a demo family (an access code idea is not built). The plan-comparison odds are synthetic placeholders. Rate limits are counted in memory on one server. Everything runs on one server with one SQLite file.
+Say these plainly if asked: all plan, fee and member data is synthetic. Sign-in is a demo with no passwords, and anyone with the link can start a demo family (an access code idea is not built). The plan-comparison odds are synthetic placeholders. Email and text notifications are previews only; nothing is sent (a real sender such as Amazon SES or Twilio is not built). Rate limits are counted in memory on one server. Everything runs on one server with one SQLite file.
 
 ## Pre-demo checklist
 - [ ] Backend running: `cd backend && .venv/Scripts/python -m uvicorn app.main:app --port 8000` (no `--reload`); http://localhost:8000/health shows `"chat_mode":"anthropic"`
@@ -103,7 +113,7 @@ Say these plainly if asked: all plan, fee and member data is synthetic. Sign-in 
 - [ ] **Scan to try** page (`/join`) open on the big screen, and the QR scanned by one iPhone and one Android phone
 - [ ] Sign-in limits high enough for the room (`RATE_LOGIN_PER_MINUTE`, `RATE_LOGIN_PER_HOUR`; many phones share one connection)
 - [ ] Demo data fresh: **Reset demo data** on Home, or `.venv/Scripts/python -m app.db --reset` from `backend/` with the backend stopped
-- [ ] `cd backend && .venv/Scripts/python -m pytest -q` passes (391) and `cd frontend && npm run test` passes (151)
+- [ ] `cd backend && .venv/Scripts/python -m pytest -q` passes (523) and `cd frontend && npm run test` passes (205)
 - [ ] Ask the assistant one question to confirm the key and internet work
 - [ ] Rehearse the path three times
 - [ ] Screen recording saved as a backup

@@ -576,7 +576,7 @@ class SavedSimulation(BaseModel):
 # ---------- Notifications (sprint 2, B2) ----------
 
 NotificationKind = Literal["benefits_expiring", "preventive_unused", "upcoming_appointment",
-                           "procedure_planned", "deductible_met", "claim_update", "eob_ready", "test"]
+                           "reminder", "procedure_planned", "deductible_met", "claim_update", "eob_ready", "test"]
 
 
 class Notification(BaseModel):

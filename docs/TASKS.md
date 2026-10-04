@@ -1,9 +1,9 @@
 # Task Tracker
-_Last updated: 2026-10-03 (night) by the docs agent, after the demo sandboxes, rate limits, phone support, saved comparisons and AWS kit_
+_Last updated: 2026-10-04 by the docs agent, after sprint 2 stories 1 to 4 and the notifications part of story 5_
 
 Hard deadline: **hackathon demo, 2026-10-04 10:00 AM.** Plan: [../agents/tasks/PLAN.md](../agents/tasks/PLAN.md). Handoff: [../agents/HANDOFF.md](../agents/HANDOFF.md).
 
-**Where the code is:** everything below marked built is on branch `feature/choose-a-plan`. That branch is **not pushed or merged**, and its changes are not all committed yet. `main` is the production version.
+**Where the code is:** `main` is production (merged 2026-10-04 in pull request #11: Clerk sign-in removed, **Try the demo** is the only way in; backend on AWS, frontend on Netlify, see [DEPLOYMENT.md](DEPLOYMENT.md)). Sprint 2 work is on branch `sprint/family-providers-reports`, not yet merged to `main`. Plan: [sprints/SPRINT-2.md](sprints/SPRINT-2.md).
 
 ## Before the demo
 - [ ] Rehearse [DEMO.md](DEMO.md) three times. **Owner: Caleb and team**, due 2026-10-04 10:00 AM
@@ -11,7 +11,13 @@ Hard deadline: **hackathon demo, 2026-10-04 10:00 AM.** Plan: [../agents/tasks/P
 - [ ] Capture README screenshots (list at the end of `README.md`). **Owner: design lead**
 - [ ] Test the QR flow with one iPhone and one Android phone (see [DEMO-PHONES.md](DEMO-PHONES.md)); raise `RATE_LOGIN_PER_MINUTE` and `RATE_LOGIN_PER_HOUR` if many phones share one connection. **Owner: Caleb**, added 2026-10-03
 
-## In Progress
+## In Progress (sprint 2, see [sprints/SPRINT-2.md](sprints/SPRINT-2.md))
+- [ ] Story 6 Find Providers page; story 7 quote to dentist matching; story 8 Reports page and the report Q&A page. **Owner: backend, frontend, ai agents**, added 2026-10-04
+- [ ] Email and text actually sending. **Owner: backend agent**, added 2026-10-04
+  - Context: stand-in today is preview only (`backend/app/notifier.py`, `PreviewNotifier`); a real sender (Amazon SES, Twilio) would plug into the `Notifier` interface
+- [ ] Final docs pass and an independent review of sprint 2. **Owner: docs and review agents**, added 2026-10-04
+
+## In Progress (earlier)
 - [ ] Merge `feature/choose-a-plan` into `main` (commit the work, push, open a pull request). **Owner: Caleb**, added 2026-10-03
   - Context: built and tested (backend 391 passed, ruff clean, frontend 151 tests, typecheck and build clean). Not clicked through in a browser by a human for the "Which plan fits us?" step; no Playwright test. Nothing here has been pushed. `main` is what runs in production.
 - [ ] Deploy `main` to AWS. **Owner: a teammate, using Kiro**, added 2026-10-03
@@ -23,6 +29,10 @@ Hard deadline: **hackathon demo, 2026-10-04 10:00 AM.** Plan: [../agents/tasks/P
 - [ ] Login page redesign (optional; `frontend/src/pages/Login/LoginPage.tsx`). **Owner: Ulisses**
 
 ## Completed
+- [x] Sprint 2 story 1: `$NaN` on "Log a visit" fixed. Story 2: bigger chat box. Story 3: pytest suite foundation (markers, 14 regression tests, coverage 96%). **Owner: frontend and tests agents**, completed 2026-10-04
+- [x] Sprint 2 story 4: profiles and family members (date of birth, email, text number, ZIP, notes; add and remove members, demo family only), API and Family page screens. **Owner: backend and frontend agents**, completed 2026-10-04
+- [x] Sprint 2 story 5, notifications part: backend (migrations 006 and 007, `notifications.py`, `notifier.py`, routes), bell with unread badge in the app bar, `/notifications` page with filters and per-person settings, Delivery preview list, Home card. **Owner: backend and frontend agents**, completed 2026-10-04
+  - Outcome: backend 523 tests pass, ruff clean; frontend 205 tests, typecheck and build clean. `claim_update` and `eob_ready` kinds are defined but not generated yet. Email and text are previews only
 - [x] Product name is Molar Money everywhere a user can see it (it was "bitewise" on the landing page and "Dental Benefits" in the app). Completed 2026-10-03
 - [x] T36 to T38 Per-visitor demo families: `POST /auth/demo-login` with `sandbox`, 24 hour expiry, cap 300, `GET /auth/demo-accounts?household_id=`, `POST /demo/reset` for your own family only, `PUT /households/{id}/names`, one-tap **Try the demo** on the landing page and login, **Name your family**; demo accounts carry member status. **Owner: database, backend and frontend agents**, completed 2026-10-03
   - Outcome: the shared-family problem is solved; each visitor changes only their own copy. About 4.4 KB per copy

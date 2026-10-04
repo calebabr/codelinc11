@@ -25,6 +25,8 @@ Follow [DEMO.md](DEMO.md). The key moment: **$2,300 now, $1,405 optimized, you s
 - You can save a comparison to Plan My Year and open it again later. The assistant answers "Summarize the plan simulations" from the same numbers.
 - Notes: say plainly that the odds are synthetic placeholders, not a prediction. Built on `feature/choose-a-plan` (not merged to `main` yet); show it live only from a build that has it.
 
+Optional: a notification bell (top right) tells each person what is coming up (appointments, reminders) and what needs attention (benefits expiring, unused cleanings). Email and text are previews only; nothing is sent.
+
 ## 5. How it works
 - The **engine does the math**, the **AI explains it**. The model never computes a dollar amount; a number guard rejects any dollar figure that did not come from a tool.
 - Diagram: React app, FastAPI, engine, SQLite household database, Anthropic (Ollama optional). See [ARCHITECTURE.md](ARCHITECTURE.md).
@@ -33,10 +35,10 @@ Follow [DEMO.md](DEMO.md). The key moment: **$2,300 now, $1,405 optimized, you s
 ## 6. What is real and what is synthetic
 | Real and tested | Synthetic or stand-in |
 |---|---|
-| Money engine, scheduler, savings tips, plan simulation (391 backend tests) | All plan values, fees and members; the odds in "Which plan fits us?" |
+| Money engine, scheduler, savings tips, plan simulation (523 backend tests) | All plan values, fees and members; the odds in "Which plan fits us?" |
 | Household database, per-person data and access rules, a private demo family for every visitor | Sign-in is a demo with no passwords; anyone with the link can start a demo family |
 | Assistant on Anthropic with engine tools and a number guard (dollars and percentages) | Rate limits are in memory on one server; one SQLite file |
-| Six connected pages, landing, phone layout, voice input (151 frontend tests) | The AWS kit in `infra/aws/` is a reference; it was not run |
+| Six connected pages, landing, phone layout, voice input (205 frontend tests) | The AWS kit in `infra/aws/` is a reference; it was not run |
 
 ## 7. The team and the build
 - Four prototypes (Caleb, Wrigley, Sai, Ulisses) merged into one product; each is preserved.

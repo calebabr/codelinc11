@@ -4,14 +4,16 @@ Every dollar amount comes from the benefits engine (`benefits_status`); nothing 
 money. Each notification has a `dedupe_key` (plan year, appointment id or saved plan id), so
 generating again never creates a duplicate, even after the person has read the first one.
 
-Kinds generated today: benefits_expiring, preventive_unused, upcoming_appointment,
-procedure_planned, deductible_met. `claim_update` and `eob_ready` are defined for the reports work
+Kinds generated today: benefits_expiring, preventive_unused, upcoming_appointment, reminder,
+procedure_planned, deductible_met. Appointments and reminders show up to `NOTIFY_WINDOW_DAYS`
+(default 45) ahead of the demo clock; anything due in 7 days or fewer is a warning. `claim_update` and `eob_ready` are defined for the reports work
 and are not generated yet. Members whose coverage is pending get no benefit notifications.
 Wording is calm and plain, never tells anyone to put off urgent care, and carries the estimate
 disclaimer wherever an amount appears.
 """
 from __future__ import annotations
 
+import os
 from datetime import date
 from typing import Any
 
@@ -22,14 +24,24 @@ from .engine.status import benefits_status
 from .models import Usage
 from .notifier import OutboundMessage, get_notifier
 
-KINDS = ["benefits_expiring", "preventive_unused", "upcoming_appointment", "procedure_planned",
-         "deductible_met", "claim_update", "eob_ready", "test"]
-GENERATED_KINDS = ["benefits_expiring", "preventive_unused", "upcoming_appointment",
+KINDS = ["benefits_expiring", "preventive_unused", "upcoming_appointment", "reminder",
+         "procedure_planned", "deductible_met", "claim_update", "eob_ready", "test"]
+GENERATED_KINDS = ["benefits_expiring", "preventive_unused", "upcoming_appointment", "reminder",
                    "procedure_planned", "deductible_met"]
-APPOINTMENT_WINDOW_DAYS = 14
+DEFAULT_NOTIFY_WINDOW_DAYS = 45   # appointments and reminders this many days ahead (or fewer) get a notification
+SOON_DAYS = 7                     # due within this many days: severity "warning"
 EXPIRY_MONTHS = 3          # "plan year ending soon": this many months left or fewer
 DISCLAIMER = "This is an estimate. Your actual cost depends on your dentist's charges and claim review."
 URGENT = "If something hurts or feels urgent, call your dentist now; don't wait."
+
+
+def notify_window_days() -> int:
+    """`NOTIFY_WINDOW_DAYS` from the environment (default 45); a bad or negative value falls back."""
+    try:
+        n = int(os.environ.get("NOTIFY_WINDOW_DAYS", DEFAULT_NOTIFY_WINDOW_DAYS))
+    except ValueError:
+        return DEFAULT_NOTIFY_WINDOW_DAYS
+    return n if n >= 0 else DEFAULT_NOTIFY_WINDOW_DAYS
 
 
 def _short_date(d: date) -> str:
@@ -80,18 +92,30 @@ def build_notifications(*, member: dict[str, Any], plan_id: str, usage_row: dict
                 "title": "Your deductible is met for this year",
                 "body": (f"You have paid your {money(st.deductible)} deductible, so your plan starts "
                          f"sharing the cost of covered care right away for the rest of {year}. {DISCLAIMER}")})
+    window = notify_window_days()
     for a in appointments:
-        if a.get("kind") != "appointment":
+        if a.get("kind") not in ("appointment", "reminder"):
             continue
         due = date.fromisoformat(a["due_date"])
         days = (due - today).days
-        if 0 <= days <= APPOINTMENT_WINDOW_DAYS:
-            note = f" {a['note']}" if a.get("note") else ""
+        if not 0 <= days <= window:
+            continue
+        note = f" {a['note']}" if a.get("note") else ""
+        if "$" in note:                       # a dollar amount in a note carries the estimate disclaimer
+            note += f" {DISCLAIMER}"
+        severity = "warning" if days <= SOON_DAYS else "info"
+        if a["kind"] == "appointment":
             out.append({
-                "kind": "upcoming_appointment", "severity": "info", "link": "/",
+                "kind": "upcoming_appointment", "severity": severity, "link": "/",
                 "dedupe_key": f"upcoming_appointment:{a['id']}",
                 "title": f"{a['title']} on {_short_date(due)}",
                 "body": f"Your appointment is {_days_phrase(days)}, on {_short_date(due)}.{note}"})
+        else:
+            out.append({
+                "kind": "reminder", "severity": severity, "link": "/",
+                "dedupe_key": f"reminder:{a['id']}",
+                "title": f"Reminder: {a['title']}, due {_short_date(due)}",
+                "body": f"This is due {_days_phrase(days)}, on {_short_date(due)}.{note}"})
     for sp in saved_plans:
         n = len(sp.get("items") or [])
         what = f"{n} treatment(s)" if n else "a treatment plan"

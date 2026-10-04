@@ -6,6 +6,7 @@ import { NameFamilyForm } from "@/features/family/NameFamilyForm"
 import { money, formatDate } from "@/lib/format"
 import { remindersUrl } from "@/lib/api/home"
 import { useHomeData, useLogVisit, useProcedureChips, useResetDemo } from "@/features/home/useHome"
+import { HomeNotificationsCard } from "@/features/notifications/HomeNotificationsCard"
 import type { BenefitsStatus } from "@/lib/types/home"
 
 // Layout ratio for bar widths only. Dollar figures are always shown as the API returned them.
@@ -175,6 +176,8 @@ export default function HomePage() {
               </ul>
             )}
           </section>
+
+          <HomeNotificationsCard />
 
           <section aria-labelledby="log-visit" className="portal-card">
             <h2 id="log-visit" className="portal-card-title">
