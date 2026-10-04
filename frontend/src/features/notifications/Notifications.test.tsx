@@ -47,7 +47,7 @@ let schedule: unknown[]
 let prefs: Record<string, unknown>
 let outbox: unknown[]
 let calls: { method: string; url: string; body: unknown }[]
-let failNotifications: "" | "429" | "500"
+let failNotifications: "" | "429" | "500" | "410" | "401"
 let putStatus: 200 | 422 | 403
 
 function res(status: number, data: unknown) {
@@ -78,6 +78,8 @@ function mockApi() {
       if (/\/notifications(\?unread=1)?$/.test(url)) {
         if (failNotifications === "429") return { ...res(429, { detail: "slow", retry_after: 7 }) }
         if (failNotifications === "500") return res(500, { detail: "Server broke." })
+        if (failNotifications === "410") return res(410, { detail: "That demo family has expired or no longer exists. Start a new one." })
+        if (failNotifications === "401") return res(401, { detail: "Your session is not valid. Please sign in again." })
         const unreadOnly = url.includes("unread=1")
         const list = unreadOnly ? items.filter((n) => !n.read_at) : items
         return res(200, { notifications: list, unread_count: items.filter((n) => !n.read_at).length, app_enabled: true })
@@ -322,6 +324,21 @@ describe("Notifications page", () => {
     failNotifications = "500"
     renderPage()
     expect(await screen.findAllByText("Server broke.")).not.toHaveLength(0)
+  })
+
+  it("says the demo family expired on a 410, with a button to sign in", async () => {
+    failNotifications = "410"
+    renderPage()
+    expect(await screen.findAllByText("Your demo family has expired. Start a new one.")).not.toHaveLength(0)
+    expect(screen.getAllByRole("button", { name: "Start a new demo family" }).length).toBeGreaterThan(0)
+    expect(screen.queryByText(/server returned an error/)).not.toBeInTheDocument()
+  })
+
+  it("asks for a calm sign-in after a 401", async () => {
+    failNotifications = "401"
+    renderPage()
+    expect(await screen.findAllByText(/Your sign-in has timed out/)).not.toHaveLength(0)
+    expect(screen.getAllByRole("button", { name: "Sign in again" }).length).toBeGreaterThan(0)
   })
 
   describe("settings", () => {

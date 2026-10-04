@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { Link, useLocation, useNavigate } from "react-router"
 import { Bell } from "lucide-react"
 import { useSession } from "@/state/SessionContext"
+import { ErrorNote } from "@/components/ErrorNote"
 import { errorMessage, getScheduleItems, markAllRead, markRead } from "@/lib/api/notifications"
 import type { AppNotification, ScheduleItem } from "@/lib/types/notifications"
 import { announceNotificationsChanged, useNotificationFeed } from "./useNotifications"
@@ -144,14 +145,7 @@ export function NotificationBell() {
               Loading…
             </p>
           )}
-          {feed.error && (
-            <div role="alert" className="note mt-3">
-              <p>{feed.error}</p>
-              <button type="button" className="btn btn-outline mt-2" onClick={() => void feed.refresh()}>
-                Try again
-              </button>
-            </div>
-          )}
+          {feed.error && <ErrorNote className="note mt-3" message={feed.error} onRetry={() => void feed.refresh()} />}
           {actionError && (
             <p role="alert" className="mt-3 text-burgundy">
               {actionError}

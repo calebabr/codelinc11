@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from "react"
 import { useSession } from "@/state/SessionContext"
+import { ErrorNote } from "@/components/ErrorNote"
 import { ApiError, errorMessage, getProcedures } from "@/lib/api/planYear"
 import type { Procedure } from "@/lib/types/planYear"
 import type { NetworkFilter, ProviderQuery, Specialty } from "@/lib/types/providers"
 import { useProviders } from "@/features/providers/useProviders"
 import { ProviderCard } from "@/features/providers/ProviderCard"
 
+/** The ZIPs the demo directory knows (the list in the server's unknown-ZIP message, backend routers/providers.py). */
+const DEMO_ZIPS = ["36830", "30303", "19087", "46802", "27401"]
 const RADII = [10, 25, 50]
 const NETWORKS: { value: NetworkFilter; label: string }[] = [
   { value: "all", label: "All" },
@@ -122,7 +125,16 @@ export default function ProvidersPage() {
 
   const first = activeMember.name.split(" ")[0]
   const n = providers.list.length
-  const unavailable = providers.error?.includes("not available on the server") ?? false
+  // The server's message for a ZIP it does not know lists the ZIPs it does (backend routers/providers.py).
+  const unknownZip = /do not have that ZIP/i.test(providers.error ?? "")
+  const listed = unknownZip ? Array.from(new Set((providers.error ?? "").match(/\b\d{5}\b/g) ?? [])) : []
+  const tryZips = listed.length > 0 ? listed : DEMO_ZIPS
+  function pickZip(z: string) {
+    setZip(z)
+    setZipError(null)
+    writeZip(household.id, z)
+    setAppliedZip(z)
+  }
 
   return (
     <div className="space-y-6">
@@ -249,14 +261,19 @@ export default function ProvidersPage() {
           <p className="portal-card text-sm text-muted-foreground">Enter your ZIP code and tap Search to see dentists near you.</p>
         )}
         {providers.loading && <p role="status" className="portal-card text-sm">Finding dentists...</p>}
-        {providers.error && (
-          <div role="alert" className="note">
+        {providers.error && unknownZip && (
+          <div role="alert" className="note" data-testid="zip-help">
             <p>{providers.error}</p>
-            {!unavailable && (
-              <button type="button" className="btn btn-outline mt-2" onClick={providers.retry}>Try again</button>
-            )}
+            <div role="group" aria-label="ZIP codes to try" className="mt-2 flex flex-wrap gap-2">
+              {tryZips.map((z) => (
+                <button key={z} type="button" className={chip(appliedZip === z)} onClick={() => pickZip(z)}>
+                  {z}
+                </button>
+              ))}
+            </div>
           </div>
         )}
+        {providers.error && !unknownZip && <ErrorNote message={providers.error} onRetry={providers.retry} />}
         {query && !providers.loading && !providers.error && n === 0 && (
           <p className="portal-card text-sm">No dentists within {radius} miles. Try a wider radius.</p>
         )}

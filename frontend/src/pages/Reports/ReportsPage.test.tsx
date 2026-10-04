@@ -19,22 +19,49 @@ const ITEMS = [
   },
   {
     id: "r3", kind: "claim", service_date: "2026-06-01", title: "Denied claim", provider_name: "Fictional Dental", code: "D2740",
-    paid_status: "not_applicable", data: { billed: 1500, status: "denied" },
+    paid_status: "not_applicable", data: { billed: 1500, status: "denied", remark: "Denied: the crown was needed before the plan started." },
   },
 ]
 const TOTALS = { billed: 1820, allowed: 270, plan_paid: 200, you_paid: 17.5, you_owe_open: 120 }
+// The REAL server shape (backend models.ReportExplanation): lines and steps carry a `plain` sentence.
 const EXPLAIN = {
+  id: "r2",
+  kind: "eob",
   title: "Filling EOB",
   what_it_is: "This is an explanation of benefits. It shows how your plan paid for a filling.",
+  lines: [
+    { label: "Billed", amount: 200, plain: "What your dentist charged for this service." },
+    { label: "Allowed amount", amount: 150, plain: "The most your plan counts for this service." },
+    { label: "Claim number", amount: null, plain: "CLM-1001 (made-up number)." },
+  ],
   steps: [
-    { label: "Billed", amount: 200 },
-    { label: "Allowed", amount: 150 },
-    { label: "Deductible", amount: 50 },
-    { label: "Plan paid", amount: 80 },
-    { label: "You owe", amount: 120 },
+    { key: "billed", label: "Billed", amount: 200, plain: "Your dentist charged $200." },
+    { key: "allowed", label: "Allowed amount", amount: 150, plain: "Your plan allows $150 for this service." },
+    { key: "deductible", label: "Deductible", amount: 50, plain: "$50 went toward your yearly deductible. You pay this part first." },
+    { key: "plan_paid", label: "Plan paid", amount: 80, plain: "Your plan paid $80." },
+    { key: "you_owe", label: "You owe", amount: 120, plain: "You owe $120." },
   ],
   what_to_do_next: ["Pay the $120 you owe by the date on the bill.", "Keep this notice for your records."],
   balance_billing_note: "This dentist is out of network, so they can bill you the difference.",
+  lines_add_up: true,
+  synthetic_notice: "These are made-up sample documents for the demo.",
+  disclaimer: "This is an estimate.",
+}
+const EXPLAIN_DENIED = {
+  id: "r3",
+  kind: "claim",
+  title: "Denied claim",
+  what_it_is: "A claim is a request your dentist sends to your plan.",
+  lines: [
+    { label: "Billed", amount: 1500, plain: "What your dentist charged for this service." },
+    { label: "Note on the document", amount: null, plain: "Denied: the crown was needed before the plan started." },
+  ],
+  steps: [{ key: "billed", label: "Billed", amount: 1500, plain: "Your dentist charged $1,500." }],
+  what_to_do_next: ["Read the note on the document to see why the plan did not pay.", "Call your plan or your dentist's office."],
+  balance_billing_note: null,
+  lines_add_up: true,
+  synthetic_notice: "These are made-up sample documents for the demo.",
+  disclaimer: "This is an estimate.",
 }
 const SAMPLES = [
   { id: "paid-claim", title: "A paid claim", kind: "claim", text: "MOLAR MONEY SAMPLE DOCUMENT\nKind: claim" },
@@ -45,6 +72,7 @@ interface Call { url: string; method: string; body: string | null; headers: Reco
 let calls: Call[]
 let listReply: (url: string) => { status: number; body: unknown }
 let uploadReply: () => { status: number; body: unknown }
+let explainReply: (url: string) => { status: number; body: unknown }
 let items: Array<Record<string, unknown>>
 
 beforeEach(() => {
@@ -59,6 +87,7 @@ beforeEach(() => {
     return { status: 200, body: { items: list, totals: TOTALS } }
   }
   uploadReply = () => ({ status: 200, body: { id: "r9" } })
+  explainReply = (url) => ({ status: 200, body: url.includes("/r3/") ? EXPLAIN_DENIED : EXPLAIN })
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: string, init?: RequestInit) => {
@@ -69,7 +98,7 @@ beforeEach(() => {
       if (url.includes("/reports/samples") && method === "GET") return reply({ status: 200, body: SAMPLES })
       if (/\/reports\/samples\/[\w-]+$/.test(url) && method === "POST") return reply({ status: 200, body: { id: "r8" } })
       if (url.includes("/reports/upload")) return reply(uploadReply())
-      if (url.endsWith("/explain")) return reply({ status: 200, body: EXPLAIN })
+      if (url.endsWith("/explain")) return reply(explainReply(url))
       if (url.endsWith("/mark-paid")) {
         items = items.map((i) => (i.id === "r2" ? { ...i, paid_status: "paid" } : i))
         return reply({ status: 200, body: {} })
@@ -168,7 +197,18 @@ describe("Reports page", () => {
     const ex = await screen.findByTestId("explanation")
     expect(within(ex).getByText(/It shows how your plan paid for a filling/)).toBeInTheDocument()
     const steps = within(ex).getAllByTestId("explain-step")
-    expect(steps.map((s) => s.textContent)).toEqual(["Billed$200", "Allowed$150", "Deductible$50", "Plan paid$80", "You owe$120"])
+    // Each amount is shown with the server's own sentence about it.
+    expect(steps.map((s) => s.textContent)).toEqual([
+      "Billed$200Your dentist charged $200.",
+      "Allowed amount$150Your plan allows $150 for this service.",
+      "Deductible$50$50 went toward your yearly deductible. You pay this part first.",
+      "Plan paid$80Your plan paid $80.",
+      "You owe$120You owe $120.",
+    ])
+    const lines = within(ex).getByTestId("explain-lines")
+    expect(lines).toHaveTextContent("Billed: What your dentist charged for this service.")
+    expect(lines).toHaveTextContent("Claim number: CLM-1001 (made-up number).")
+    expect(within(ex).queryByTestId("doc-remark")).not.toBeInTheDocument()
     expect(within(ex).getByTestId("balance-note")).toHaveTextContent("they can bill you the difference")
     expect(
       within(ex).getByText("Pay the $120 you owe by the date on the bill. Keep this notice for your records."),
@@ -176,6 +216,21 @@ describe("Reports page", () => {
     expect(calls.some((c) => c.url.endsWith("/members/m-alex/reports/r2/explain"))).toBe(true)
     await user.click(screen.getByRole("button", { name: "Hide Filling EOB" }))
     expect(screen.queryByTestId("explanation")).not.toBeInTheDocument()
+  })
+
+  it("shows the denial reason from the document, plus the steps and next steps", async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findAllByTestId("report-item")
+    await user.click(screen.getByRole("button", { name: "Explain Denied claim" }))
+    const ex = await screen.findByTestId("explanation")
+    expect(within(ex).getByTestId("doc-remark")).toHaveTextContent("Denied: the crown was needed before the plan started.")
+    // The remark is not repeated in the list of lines.
+    expect(within(ex).getByTestId("explain-lines")).not.toHaveTextContent("crown was needed")
+    expect(within(ex).getByTestId("step-plain")).toHaveTextContent("Your dentist charged $1,500.")
+    expect(
+      within(ex).getByText("Read the note on the document to see why the plan did not pay. Call your plan or your dentist's office."),
+    ).toBeInTheDocument()
   })
 
   it("adds a sample with one tap and reloads the list", async () => {
@@ -249,6 +304,35 @@ describe("Reports page", () => {
     listReply = () => ({ status: 200, body: { items, totals: TOTALS } })
     await user.click(screen.getByRole("button", { name: "Try again" }))
     expect(await screen.findAllByTestId("report-item")).toHaveLength(3)
+  })
+
+  it("says the demo family expired on a 410 and does not claim reports are missing", async () => {
+    listReply = () => ({ status: 410, body: { detail: "That demo family has expired or no longer exists. Start a new one." } })
+    renderPage()
+    expect(await screen.findByText("Your demo family has expired. Start a new one.")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Start a new demo family" })).toBeInTheDocument()
+    expect(document.body.textContent).not.toMatch(/not available on the server/)
+  })
+
+  it("treats a missing member (an evicted family) as expired", async () => {
+    listReply = () => ({ status: 404, body: { detail: "Not found: member m-alex.f00ba4" } })
+    renderPage()
+    expect(await screen.findByText("Your demo family has expired. Start a new one.")).toBeInTheDocument()
+  })
+
+  it("keeps a short 'not available' message for a real 404 and shows no retry button", async () => {
+    listReply = () => ({ status: 404, body: { detail: "Not Found" } })
+    renderPage()
+    expect(await screen.findByText("This part is not available on the server right now.")).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument()
+  })
+
+  it("sends the person back to sign in, calmly, after a 401", async () => {
+    listReply = () => ({ status: 401, body: { detail: "Your session is not valid. Please sign in again." } })
+    renderPage()
+    expect(await screen.findByText(/Your sign-in has timed out/)).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Sign in again" })).toBeInTheDocument()
+    expect(document.body.textContent).not.toMatch(/server returned an error/)
   })
 
   it("explains when this person's documents are not visible", async () => {

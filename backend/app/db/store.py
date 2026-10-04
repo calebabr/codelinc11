@@ -489,7 +489,15 @@ class Store:
         now = _now_iso()
         with session(self.path) as conn:
             self._target(conn, viewer_id, member_id)
+            # Look first, so a poll that finds nothing new never opens a write transaction.
+            have = {r[0] for r in conn.execute(
+                "SELECT dedupe_key FROM notifications WHERE member_id = ?", (member_id,))}
+            fresh_items, seen = [], set()
             for it in items:
+                if it["dedupe_key"] not in have and it["dedupe_key"] not in seen:
+                    seen.add(it["dedupe_key"])
+                    fresh_items.append(it)
+            for it in fresh_items:
                 cur = conn.execute(
                     "INSERT OR IGNORE INTO notifications (member_id, kind, title, body, severity, link, "
                     "dedupe_key, created_at) VALUES (?,?,?,?,?,?,?,?)",

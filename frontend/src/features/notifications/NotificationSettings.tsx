@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { Link } from "react-router"
 import { ApiError } from "@/lib/api/planYear"
+import { ErrorNote } from "@/components/ErrorNote"
 import { errorMessage, getOutbox, getPrefs, putPrefs, sendTest } from "@/lib/api/notifications"
 import type { Channel, NotificationPrefs, OutboxItem } from "@/lib/types/notifications"
 import { formatDate } from "@/lib/format"
@@ -125,11 +126,7 @@ export function NotificationSettings({ token, memberId, firstName }: { token: st
         Settings for {firstName}
       </h2>
 
-      {loadError && (
-        <p role="alert" className="note mt-3">
-          {loadError}
-        </p>
-      )}
+      {loadError && <ErrorNote className="note mt-3" message={loadError} />}
       {!prefs && !loadError && (
         <p role="status" className="mt-3 text-muted-foreground">
           Loading settings…

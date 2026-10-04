@@ -1,5 +1,6 @@
 import { API_URL, ApiError, apiFailure } from "@/lib/api/planYear"
 import type {
+  ExplainLine,
   ExplainStep,
   ReportData,
   ReportExplanation,
@@ -26,7 +27,6 @@ async function call<T>(token: string, path: string, init: RequestInit = {}): Pro
   } catch {
     throw new ApiError(UNREACHABLE)
   }
-  if (res.status === 404) throw new ApiError("Reports are not available on the server yet.", 404)
   if (!res.ok) throw await apiFailure(res)
   return (await res.json()) as T
 }
@@ -122,23 +122,30 @@ export const markPaid = (token: string, memberId: string, id: string) =>
 export const deleteReport = (token: string, memberId: string, id: string) =>
   call<unknown>(token, `${base(memberId)}/${encodeURIComponent(id)}`, { method: "DELETE" })
 
-/** The plain-language explanation. Field names are read leniently: the text and amounts are the server's. */
+/**
+ * The plain-language explanation, read in the server's shape (backend ReportExplanation):
+ * `lines[{label, amount, plain}]`, `steps[{key, label, amount, plain}]`, `what_to_do_next[]`.
+ * The text and the amounts are the server's; nothing is calculated here.
+ */
 export async function getExplanation(token: string, memberId: string, id: string): Promise<ReportExplanation> {
   const raw = await call<Raw>(token, `${base(memberId)}/${encodeURIComponent(id)}/explain`)
-  const stepsRaw = Array.isArray(raw.steps) ? raw.steps : []
-  const steps: ExplainStep[] = stepsRaw.filter(isObj).map((s) => ({
-    label: str(s.label) ?? str(s.name) ?? str(s.step) ?? "",
-    amount: num(s.amount) ?? num(s.value),
-    note: str(s.note) ?? str(s.text) ?? str(s.description),
+  const steps: ExplainStep[] = (Array.isArray(raw.steps) ? raw.steps : []).filter(isObj).map((s) => ({
+    key: str(s.key) ?? undefined,
+    label: str(s.label) ?? "",
+    amount: num(s.amount),
+    plain: str(s.plain),
   }))
-  const lines = Array.isArray(raw.lines) ? raw.lines.map((l) => (typeof l === "string" ? l : isObj(l) ? str(l.text) ?? str(l.description) : null)).filter((l): l is string => !!l) : []
-  const bb = raw.balance_billing_note ?? raw.balance_billing
+  const lines: ExplainLine[] = (Array.isArray(raw.lines) ? raw.lines : [])
+    .filter(isObj)
+    .map((l) => ({ label: str(l.label) ?? "", amount: num(l.amount), plain: str(l.plain) ?? "" }))
+    .filter((l) => l.plain)
   return {
     title: str(raw.title) ?? "",
-    what_it_is: str(raw.what_it_is) ?? str(raw.summary) ?? str(raw.what) ?? "",
+    what_it_is: str(raw.what_it_is) ?? "",
     steps,
-    next_step: sentences(raw.what_to_do_next) ?? sentences(raw.next_step) ?? sentences(raw.next_steps) ?? sentences(raw.what_to_do),
-    balance_billing_note: typeof bb === "string" ? str(bb) : null,
+    next_step: sentences(raw.what_to_do_next),
+    balance_billing_note: str(raw.balance_billing_note),
     lines,
+    lines_add_up: typeof raw.lines_add_up === "boolean" ? raw.lines_add_up : null,
   }
 }

@@ -53,10 +53,19 @@ export interface ReportSample {
   text: string
 }
 
+/** One step of an explanation: the amount is the server's; `plain` is the server's sentence about it. */
 export interface ExplainStep {
+  key?: string
   label: string
   amount: number | null
-  note?: string | null
+  plain: string | null
+}
+
+/** One line of the document with a plain sentence. `amount` is null for numbers and notes. */
+export interface ExplainLine {
+  label: string
+  amount: number | null
+  plain: string
 }
 
 export interface ReportExplanation {
@@ -65,5 +74,6 @@ export interface ReportExplanation {
   steps: ExplainStep[]
   next_step: string | null
   balance_billing_note: string | null
-  lines: string[]
+  lines: ExplainLine[]
+  lines_add_up: boolean | null
 }

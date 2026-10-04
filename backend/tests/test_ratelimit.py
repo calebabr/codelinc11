@@ -140,13 +140,20 @@ def test_sandbox_login_limit_per_ip_and_trust_proxy(client, monkeypatch):
     with pytest.raises(ratelimit.RateLimited) as exc:
         ratelimit.check_sandbox_login(fake("3.3.3.3"))
     assert exc.value.retry_after == 60
-    # with TRUST_PROXY the first X-Forwarded-For hop is the key, so new addresses get their own budget
+    # with TRUST_PROXY the LAST X-Forwarded-For hop (added by the nearest proxy) is the key; the first
+    # hop is whatever the caller sent, so changing it no longer gives a new budget
     monkeypatch.setenv("TRUST_PROXY", "1")
-    ratelimit.check_sandbox_login(fake("4.4.4.4"))
-    ratelimit.check_sandbox_login(fake("5.5.5.5"))
-    ratelimit.check_sandbox_login(fake("4.4.4.4"))
+
+    def behind(ip):
+        scope = {"type": "http", "headers": [(b"x-forwarded-for", f"{ip}, 10.0.0.1".encode())],
+                 "client": ("9.9.9.9", 1)}
+        from starlette.requests import Request
+        return Request(scope)
+    ratelimit.limiter.reset()
+    ratelimit.check_sandbox_login(behind("4.4.4.4"))
+    ratelimit.check_sandbox_login(behind("5.5.5.5"))
     with pytest.raises(ratelimit.RateLimited):
-        ratelimit.check_sandbox_login(fake("4.4.4.4"))
+        ratelimit.check_sandbox_login(behind("6.6.6.6"))
 
 
 def test_plain_login_is_not_limited(client, monkeypatch):

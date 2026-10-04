@@ -1,9 +1,11 @@
 """Demo sandboxes: a private copy of the template household for each visitor.
 
 The template is the household in the seed file (`database/seeds/demo_household.json`). A sandbox
-is new rows with every id suffixed `.<sid>` (6 lowercase hex characters), listed in the
-`sandboxes` table. Cleanup (expiry by DEMO_SANDBOX_TTL_HOURS, cap by DEMO_MAX_SANDBOXES, oldest
-first) runs whenever a sandbox is created and deletes every dependent row.
+is new rows with every id suffixed `.<sid>`, listed in the `sandboxes` table. New sids are 16
+lowercase hex characters (64 random bits, so a family id cannot be guessed); sandboxes made
+before that have 6 and keep working until they expire. Cleanup (expiry by DEMO_SANDBOX_TTL_HOURS,
+then the cap DEMO_MAX_SANDBOXES, oldest first) deletes every dependent row. It runs whenever a
+sandbox is created, at startup (core.migrate) and at most every 10 minutes on any sandbox lookup.
 
 Rows are copied from the seed file, not from the live template, so a sandbox always starts
 from the original numbers and `restore` can reset it in place (same ids, tokens stay valid).
@@ -14,12 +16,17 @@ import os
 import re
 import secrets
 import sqlite3
+import threading
+import time
+from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from .core import load_seed_file, session
 
-SID_RE = re.compile(r"^[0-9a-f]{6}$")
+SID_RE = re.compile(r"^(?:[0-9a-f]{16}|[0-9a-f]{6})$")   # new ids: 16; ids made earlier: 6
+SID_BYTES = 8                                             # secrets.token_hex(8) = 16 hex characters
+CLEANUP_INTERVAL_SECONDS = 600.0
 DEFAULT_TTL_HOURS = 24.0
 DEFAULT_MAX_SANDBOXES = 300
 
@@ -30,6 +37,18 @@ CLONE_TABLES = ["households", "members", "accounts", "member_usage", "visits", "
 # Child tables keyed by member_id, deleted before the members (chat_memory is never copied: it starts empty).
 MEMBER_CHILD_TABLES = ["report_items", "outbox", "notifications", "notification_prefs", "chat_memory", "member_preferences", "member_context", "saved_simulations",
                        "saved_plans", "appointments", "visits", "member_usage"]
+
+
+# Called with the member ids of every household whose rows are deleted or reset, so in-memory
+# data keyed by member (for example chat attachments) can be dropped with them.
+_delete_hooks: list[Callable[[list[str]], None]] = []
+_cleanup_lock = threading.Lock()
+_last_cleanup: float | None = None
+
+
+def on_members_removed(hook: Callable[[list[str]], None]) -> None:
+    if hook not in _delete_hooks:
+        _delete_hooks.append(hook)
 
 
 def _utcnow() -> datetime:
@@ -132,6 +151,8 @@ def _insert_rows(conn: sqlite3.Connection, data: dict, template_hh: str, sid: st
 def _delete_household_rows(conn: sqlite3.Connection, household_id: str, keep_household: bool) -> None:
     ids = [r[0] for r in conn.execute("SELECT id FROM members WHERE household_id = ?", (household_id,))]
     marks = ",".join("?" for _ in ids) or "NULL"
+    for hook in _delete_hooks:
+        hook(ids)
     conn.execute("DELETE FROM invites WHERE household_id = ?", (household_id,))
     for table in MEMBER_CHILD_TABLES:
         conn.execute(f"DELETE FROM {table} WHERE member_id IN ({marks})", ids)
@@ -146,6 +167,8 @@ def _delete_household_rows(conn: sqlite3.Connection, household_id: str, keep_hou
 def delete_member_rows(conn: sqlite3.Connection, member_id: str) -> None:
     """Delete one member and every dependent row (usage, visits, appointments, preferences, context,
     chat memory, saved plans and comparisons, reports, account, invites)."""
+    for hook in _delete_hooks:
+        hook([member_id])
     for table in MEMBER_CHILD_TABLES:
         conn.execute(f"DELETE FROM {table} WHERE member_id = ?", (member_id,))
     conn.execute("DELETE FROM invites WHERE member_id = ? OR invited_by = ?", (member_id, member_id))
@@ -160,7 +183,8 @@ def info(row: sqlite3.Row | dict) -> dict[str, Any]:
 
 
 def cleanup(conn: sqlite3.Connection, reserve: int = 0) -> int:
-    """Delete expired sandboxes, then the oldest until at most (cap - reserve) remain.
+    """Delete expired sandboxes first, then (only if the total still exceeds the cap) the oldest
+    until at most (cap - reserve) remain. Families inside the cap are never evicted.
     Returns how many were deleted."""
     cutoff = _iso(_utcnow() - timedelta(hours=ttl_hours()))
     doomed = [r[0] for r in conn.execute(
@@ -176,6 +200,23 @@ def cleanup(conn: sqlite3.Connection, reserve: int = 0) -> int:
     return len(doomed)
 
 
+def cleanup_expired(path, force: bool = False) -> int:
+    """Delete expired sandboxes (and trim to the cap) at most once every CLEANUP_INTERVAL_SECONDS
+    per process; `force` ignores the interval (startup). Returns how many were deleted."""
+    global _last_cleanup
+    with _cleanup_lock:
+        now = time.monotonic()
+        if not force and _last_cleanup is not None and now - _last_cleanup < CLEANUP_INTERVAL_SECONDS:
+            return 0
+        _last_cleanup = now
+    try:
+        with session(path) as conn:
+            have = conn.execute("SELECT 1 FROM sqlite_master WHERE name = 'sandboxes'").fetchone()
+            return cleanup(conn) if have else 0
+    except sqlite3.Error:
+        return 0   # housekeeping must never break a sign-in or a start-up
+
+
 def create(path, template_hh: str | None = None) -> dict[str, Any]:
     """Clone the template household into a new sandbox. Returns {household_id, expires_at}."""
     data = load_seed_file()
@@ -183,7 +224,7 @@ def create(path, template_hh: str | None = None) -> dict[str, Any]:
     with session(path) as conn:
         cleanup(conn, reserve=1)
         while True:
-            sid = secrets.token_hex(3)
+            sid = secrets.token_hex(SID_BYTES)
             if not conn.execute("SELECT 1 FROM sandboxes WHERE sid = ?", (sid,)).fetchone():
                 break
         _insert_rows(conn, data, template_hh, sid, with_household=True)
@@ -194,7 +235,9 @@ def create(path, template_hh: str | None = None) -> dict[str, Any]:
 
 
 def get(path, household_id: str) -> dict[str, Any] | None:
-    """The sandbox info if it exists and has not expired, else None."""
+    """The sandbox info if it exists and has not expired, else None. (An unknown id and an expired
+    one are the same answer.)"""
+    cleanup_expired(path)
     with session(path) as conn:
         row = conn.execute("SELECT * FROM sandboxes WHERE household_id = ?", (household_id,)).fetchone()
     if row is None:

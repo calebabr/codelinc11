@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Link } from "react-router"
 import { useSession } from "@/state/SessionContext"
+import { ErrorNote } from "@/components/ErrorNote"
 import { deleteReport, errorMessage, markPaid } from "@/lib/api/reports"
 import { money } from "@/lib/format"
 import type { ReportKindFilter, ReportOrder } from "@/lib/types/reports"
@@ -104,14 +105,9 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            {actionError && <p role="alert" className="note">{actionError}</p>}
+            {actionError && <ErrorNote message={actionError} />}
             {reports.loading && <p role="status" className="portal-card text-sm">Loading documents...</p>}
-            {reports.error && (
-              <div role="alert" className="note">
-                <p>{reports.error}</p>
-                <button type="button" className="btn btn-outline mt-2" onClick={() => void reports.reload()}>Try again</button>
-              </div>
-            )}
+            {reports.error && <ErrorNote message={reports.error} onRetry={() => void reports.reload()} />}
             {!reports.loading && !reports.error && items.length === 0 && (
               <p className="portal-card text-sm" data-testid="empty">
                 {kind === "all"

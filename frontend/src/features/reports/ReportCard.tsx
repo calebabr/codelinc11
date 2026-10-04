@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { ErrorNote } from "@/components/ErrorNote"
 import { errorMessage, getExplanation } from "@/lib/api/reports"
 import { formatDate, money } from "@/lib/format"
 import type { ReportExplanation, ReportItem } from "@/lib/types/reports"
@@ -31,14 +32,17 @@ function Steps({ ex }: { ex: ReportExplanation }) {
               <div className="h-2 rounded-full bg-burgundy" style={{ width: `${Math.max(2, (Math.abs(s.amount) / top) * 100)}%` }} />
             </div>
           )}
-          {s.note && <p className="mt-0.5 text-xs text-muted-foreground">{s.note}</p>}
+          {s.plain && <p className="mt-0.5 text-xs text-muted-foreground" data-testid="step-plain">{s.plain}</p>}
         </li>
       ))}
     </ol>
   )
 }
 
-function Explain({ token, memberId, id }: { token: string; memberId: string; id: string }) {
+/** The server names this line "Note on the document"; it holds the remark (for example a denial reason). */
+const REMARK_LABEL = "Note on the document"
+
+function Explain({ token, memberId, id, remark }: { token: string; memberId: string; id: string; remark?: string | null }) {
   const [ex, setEx] = useState<ReportExplanation | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [attempt, setAttempt] = useState(0)
@@ -55,20 +59,28 @@ function Explain({ token, memberId, id }: { token: string; memberId: string; id:
     }
   }, [token, memberId, id, attempt])
 
-  if (err)
-    return (
-      <div role="alert" className="note mt-3">
-        <p>{err}</p>
-        <button type="button" className="btn btn-outline mt-2" onClick={() => setAttempt((n) => n + 1)}>Try again</button>
-      </div>
-    )
+  if (err) return <ErrorNote className="note mt-3" message={err} onRetry={() => setAttempt((n) => n + 1)} />
   if (!ex) return <p role="status" className="mt-3 text-sm">Reading this document...</p>
+  const noteLine = ex.lines.find((l) => l.label === REMARK_LABEL)
+  const note = remark?.trim() || noteLine?.plain || null
+  const lines = ex.lines.filter((l) => l.label !== REMARK_LABEL)
+  const stepLabels = new Set(ex.steps.map((s) => s.label))
   return (
     <div className="mt-3 space-y-3 rounded-2xl border border-line bg-white p-3" data-testid="explanation">
       {ex.what_it_is && <p className="text-sm">{ex.what_it_is}</p>}
-      {ex.lines.length > 0 && (
-        <ul className="list-disc space-y-1 pl-5 text-sm">
-          {ex.lines.map((l, i) => <li key={i}>{l}</li>)}
+      {note && (
+        <p className="note text-sm" data-testid="doc-remark">
+          <span className="font-semibold">Note on the document: </span>{note}
+        </p>
+      )}
+      {lines.length > 0 && (
+        <ul className="list-disc space-y-1 pl-5 text-sm" aria-label="What each line means" data-testid="explain-lines">
+          {lines.map((l, i) => (
+            <li key={i}>
+              <span className="font-semibold">{l.label}</span>
+              {l.amount !== null && !stepLabels.has(l.label) ? ` ${money(l.amount)}` : ""}: {l.plain}
+            </li>
+          ))}
         </ul>
       )}
       {ex.steps.length > 0 && <Steps ex={ex} />}
@@ -151,7 +163,7 @@ export function ReportCard({ item, token, memberId, open, onToggle, busy, onMark
           </button>
         )}
       </div>
-      {open && <Explain token={token} memberId={memberId} id={item.id} />}
+      {open && <Explain token={token} memberId={memberId} id={item.id} remark={d.remark} />}
     </li>
   )
 }

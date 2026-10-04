@@ -127,10 +127,52 @@ describe("Find providers page", () => {
     expect(screen.queryByTestId("provider-card")).not.toBeInTheDocument()
   })
 
-  it("shows a plain message on a 404", async () => {
+  // The wording changed with the shared error messages (planYear.ts); a real unknown route still says "not available".
+  it("shows a short 'not available' message on a real 404, with no retry button", async () => {
     providerReply = () => ({ status: 404, body: { detail: "Not Found" } })
     renderPage()
-    expect(await screen.findByText("Finding dentists is not available on the server yet.")).toBeInTheDocument()
+    expect(await screen.findByText("This part is not available on the server right now.")).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument()
+    expect(screen.queryByText(/demo family has expired/)).not.toBeInTheDocument()
+  })
+
+  it("says the demo family has expired on a 410, with a button to sign in", async () => {
+    providerReply = () => ({ status: 410, body: { detail: "That demo family has expired or no longer exists. Start a new one." } })
+    renderPage()
+    expect(await screen.findByText("Your demo family has expired. Start a new one.")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Start a new demo family" })).toBeInTheDocument()
+    expect(screen.queryByText(/not available on the server/)).not.toBeInTheDocument()
+  })
+
+  it("treats a missing member (an evicted family) as expired, not as 'not available'", async () => {
+    providerReply = () => ({ status: 404, body: { detail: "Not found: member m-jordan.abc123" } })
+    renderPage()
+    expect(await screen.findByText("Your demo family has expired. Start a new one.")).toBeInTheDocument()
+  })
+
+  it("asks the person to sign in again after a 401", async () => {
+    providerReply = () => ({ status: 401, body: { detail: "Your session is not valid. Please sign in again." } })
+    renderPage()
+    expect(await screen.findByText(/Your sign-in has timed out/)).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Sign in again" })).toBeInTheDocument()
+    expect(screen.queryByText(/server returned an error/)).not.toBeInTheDocument()
+  })
+
+  it("offers the known ZIPs as tappable chips on an unknown ZIP, with no retry button", async () => {
+    const user = userEvent.setup()
+    const UNKNOWN = "We do not have that ZIP code in the demo. Try 36830, 30303, 19087, 46802 or 27401."
+    providerReply = () => ({ status: 422, body: { detail: UNKNOWN } })
+    renderPage()
+    expect(await screen.findByText(UNKNOWN)).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument()
+    const chips = within(screen.getByRole("group", { name: "ZIP codes to try" })).getAllByRole("button")
+    expect(chips.map((c) => c.textContent)).toEqual(["36830", "30303", "19087", "46802", "27401"])
+    providerReply = () => ({ status: 200, body: [IN] })
+    await user.click(screen.getByRole("button", { name: "30303" }))
+    await waitFor(() => expect(lastQuery().get("zip")).toBe("30303"))
+    expect(screen.getByLabelText("ZIP code")).toHaveValue("30303")
+    expect(await screen.findAllByTestId("provider-card")).toHaveLength(1)
+    expect(localStorage.getItem("dental.providersZip.v1.hh-rivera")).toBe("30303")
   })
 
   it("shows the empty state with the radius", async () => {

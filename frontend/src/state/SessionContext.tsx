@@ -146,9 +146,10 @@ function writeFamily(rec: FamilyRecord | null) {
   }
 }
 
-/** A demo-family id ends in a six-character suffix ("<id>.3f9a1c"). The template id is what comes before it. */
+/** A demo-family id ends in a hex suffix ("<id>.3f9a1c4be07d22a1"; older families have six characters).
+ *  The template id is what comes before it. */
 function templateId(id: string): string {
-  return id.replace(/\.[0-9a-f]{6}$/, "")
+  return id.replace(/\.(?:[0-9a-f]{16}|[0-9a-f]{6})$/, "")
 }
 
 export function toHousehold(h: FamilyHousehold): Household {

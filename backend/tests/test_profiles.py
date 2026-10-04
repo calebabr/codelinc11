@@ -396,7 +396,7 @@ def test_add_a_child_and_an_adult(client, store):
         "phone": "334-555-0150", "zip": "36830"})
     assert r.status_code == 201, r.text
     lily = r.json()
-    assert re.fullmatch(r"m-[0-9a-f]{6}\.[0-9a-f]{6}", lily["id"])
+    assert re.fullmatch(r"m-[0-9a-f]{6}\.[0-9a-f]{16}", lily["id"])
     assert lily["household_id"] == hid and lily["role"] == "managed" and lily["age"] == 6
     assert lily["has_login"] is False and lily["status"] == "active" and lily["relationship"] == "child"
     assert lily["dob"] == "2020-02-29" and lily["phone"] == "3345550150" and lily["notes"] is None

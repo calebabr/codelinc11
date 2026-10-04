@@ -41,6 +41,7 @@ from ..reports import (
     list_samples,
     parse_document,
 )
+from .chat import read_limited_body
 from .session import StoreDep, Viewer, guarded
 
 router = APIRouter(tags=["reports"])
@@ -94,9 +95,7 @@ async def upload(
     ctype = request.headers.get("content-type", "").split(";")[0].strip().lower()
     if ctype != "text/plain":
         raise HTTPException(status_code=415, detail="Send the document as plain text (text/plain).")
-    raw = await request.body()
-    if len(raw) > MAX_UPLOAD_BYTES:
-        raise HTTPException(status_code=413, detail="That file is too big. The limit is 20 KB.")
+    raw = await read_limited_body(request, MAX_UPLOAD_BYTES, "That file is too big. The limit is 20 KB.")
     guarded(lambda: store.check_profile_access(viewer, member_id))
     try:
         text = raw.decode("utf-8")

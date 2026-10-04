@@ -16,7 +16,7 @@ from app.main import app
 from app.routers.session import get_store
 
 HH = "hh-rivera"
-SID_ID = re.compile(r"^.+\.[0-9a-f]{6}$")
+SID_ID = re.compile(r"^.+\.[0-9a-f]{16}$")
 
 
 @pytest.fixture()
@@ -76,7 +76,7 @@ def test_clone_has_unique_suffixed_ids_and_template_numbers(client, store):
     before = counts(store)
     d, h = enter(client, "m-alex")
     sb = d["sandbox"]
-    assert re.match(r"^hh-rivera\.[0-9a-f]{6}$", sb["household_id"])
+    assert re.match(r"^hh-rivera\.[0-9a-f]{16}$", sb["household_id"])
     assert d["household"]["id"] == sb["household_id"]
     assert d["member"]["id"].startswith("m-alex.") and d["member"]["role"] == "adult"
     assert d["household"]["plan_tier"]["id"] == "preferred"

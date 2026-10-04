@@ -3,6 +3,8 @@ import { FileText, Loader2, Mic, Paperclip, Send, Trash2, X } from "lucide-react
 import { useSpeechRecognition } from "@/lib/useSpeechRecognition"
 import { MAX_PDF_BYTES } from "@/lib/api/assistant"
 import { Disclaimer } from "@/components/Disclaimer"
+import { ErrorNote } from "@/components/ErrorNote"
+import { EXPIRED_MESSAGE, SIGNIN_MESSAGE } from "@/lib/api/planYear"
 import { useChat, useSuggestions } from "./useAssistant"
 import type { Message } from "./threads"
 import type { ChatScope } from "@/lib/types/assistant"
@@ -77,7 +79,8 @@ function Bubble({ m, onRetry }: { m: Message; onRetry: () => void }) {
             Thinking…
           </p>
         )}
-        {failed && (
+        {failed && (m.note === EXPIRED_MESSAGE || m.note === SIGNIN_MESSAGE) && <ErrorNote message={m.note} />}
+        {failed && m.note !== EXPIRED_MESSAGE && m.note !== SIGNIN_MESSAGE && (
           <div role="alert" className="note">
             <p>{m.note}</p>
             <RetryButton onRetry={onRetry} waitSeconds={m.retryAfter} />

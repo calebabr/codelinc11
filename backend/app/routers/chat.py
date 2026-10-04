@@ -17,6 +17,8 @@ import contextlib
 import json
 import os
 import secrets
+import threading
+import time
 from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Annotated, Any, Literal
@@ -30,6 +32,7 @@ from ..agent.context import MemberContext, build_member_context
 from ..agent.loop import run_chat
 from ..agent.providers import Provider, select_provider
 from ..agent.suggestions import suggest_questions
+from ..db import sandbox as sandboxes
 from ..models import ChatRequest
 from .session import StoreDep, Viewer, guarded, read_token
 
@@ -37,6 +40,9 @@ router = APIRouter(tags=["assistant"])
 
 MAX_PDF_BYTES = 5 * 1024 * 1024
 MAX_ATTACHMENTS_PER_CHAT = 3
+MAX_ATTACHMENTS_PER_HOUSEHOLD = 3     # stored at once; a new upload pushes out that family's oldest
+MAX_ATTACHMENTS_TOTAL = 50            # stored at once across everyone; the oldest goes first
+DEFAULT_ATTACHMENT_TTL_MINUTES = 30.0
 SAMPLE_NOTICE = "Demo only: upload sample documents, not real health records."
 SAVED_MODES = {"anthropic", "ollama", "template"}
 
@@ -53,9 +59,77 @@ class _Attachment:
     member_id: str
     filename: str
     data: bytes
+    household_id: str = ""
+    created: float = 0.0     # _clock() when stored
 
 
-_ATTACHMENTS: dict[str, _Attachment] = {}   # in memory only; cleared when the server restarts
+# In memory only; cleared when the server restarts. Bounded by count (per family and in total), by
+# age (ATTACHMENT_TTL_MINUTES, cleaned lazily on every upload and lookup) and by the family's
+# lifetime (dropped when its demo family expires or is reset).
+_ATTACHMENTS: dict[str, _Attachment] = {}
+_attach_lock = threading.Lock()
+
+
+def _clock() -> float:
+    """Seconds, monotonic (tests replace this to check expiry)."""
+    return time.monotonic()
+
+
+def attachment_ttl_seconds() -> float:
+    try:
+        return max(0.0, float(os.environ.get("ATTACHMENT_TTL_MINUTES", DEFAULT_ATTACHMENT_TTL_MINUTES))) * 60
+    except ValueError:
+        return DEFAULT_ATTACHMENT_TTL_MINUTES * 60
+
+
+def _prune_expired() -> None:
+    """Drop attachments older than the TTL. Caller holds _attach_lock."""
+    cutoff = _clock() - attachment_ttl_seconds()
+    for aid in [a for a, att in _ATTACHMENTS.items() if att.created <= cutoff]:
+        del _ATTACHMENTS[aid]
+
+
+def _store_attachment(aid: str, att: _Attachment) -> None:
+    with _attach_lock:
+        _prune_expired()
+        mine = [a for a, x in _ATTACHMENTS.items() if x.household_id == att.household_id]
+        for old in mine[:max(0, len(mine) - (MAX_ATTACHMENTS_PER_HOUSEHOLD - 1))]:   # dicts keep insertion order
+            del _ATTACHMENTS[old]
+        while len(_ATTACHMENTS) >= MAX_ATTACHMENTS_TOTAL:
+            del _ATTACHMENTS[next(iter(_ATTACHMENTS))]
+        _ATTACHMENTS[aid] = att
+
+
+def _find_attachment(aid: str) -> _Attachment | None:
+    with _attach_lock:
+        _prune_expired()
+        return _ATTACHMENTS.get(aid)
+
+
+def _drop_members_attachments(member_ids: list[str]) -> None:
+    ids = set(member_ids)
+    with _attach_lock:
+        for aid in [a for a, x in _ATTACHMENTS.items() if x.member_id in ids]:
+            del _ATTACHMENTS[aid]
+
+
+sandboxes.on_members_removed(_drop_members_attachments)
+
+
+async def read_limited_body(request: Request, limit: int, too_big: str) -> bytes:
+    """The request body, refusing (413) as soon as it is known to exceed `limit` bytes: from
+    Content-Length before reading anything, or while reading in chunks when none was sent."""
+    declared = request.headers.get("content-length")
+    if declared and declared.isdigit() and int(declared) > limit:
+        raise HTTPException(status_code=413, detail=too_big)
+    chunks: list[bytes] = []
+    size = 0
+    async for chunk in request.stream():
+        size += len(chunk)
+        if size > limit:
+            raise HTTPException(status_code=413, detail=too_big)
+        chunks.append(chunk)
+    return b"".join(chunks)
 
 
 def get_provider() -> Provider | None:
@@ -133,7 +207,7 @@ def chat(req: MemberChatRequest, store: StoreDep, provider: ProviderDep,
     if len(req.attachment_ids) > MAX_ATTACHMENTS_PER_CHAT:
         raise HTTPException(status_code=422, detail="Too many attachments.")
     for aid in req.attachment_ids:
-        att = _ATTACHMENTS.get(aid)
+        att = _find_attachment(aid)
         if att is None or att.viewer_id != viewer or att.member_id != req.member_id:
             raise HTTPException(status_code=404, detail="Attachment not found.")
         documents.append({"media_type": "application/pdf",
@@ -175,18 +249,14 @@ def clear_chat(member_id: str, store: StoreDep, viewer: Viewer) -> dict:
 async def upload_attachment(request: Request, store: StoreDep, viewer: Viewer,
                             member_id: str, filename: str = "document.pdf") -> dict:
     """Upload one PDF as the raw request body (Content-Type: application/pdf, max 5 MB)."""
-    guarded(lambda: store.get_member(viewer, member_id))  # same visibility rule as chat
+    member = guarded(lambda: store.get_member(viewer, member_id))  # same visibility rule as chat
     if (request.headers.get("content-type") or "").split(";")[0].strip().lower() != "application/pdf":
         raise HTTPException(status_code=415, detail="Only PDF files can be attached.")
-    declared = request.headers.get("content-length")
-    if declared and declared.isdigit() and int(declared) > MAX_PDF_BYTES:
-        raise HTTPException(status_code=413, detail="That file is too large (limit 5 MB).")
-    data = await request.body()
-    if len(data) > MAX_PDF_BYTES:
-        raise HTTPException(status_code=413, detail="That file is too large (limit 5 MB).")
+    data = await read_limited_body(request, MAX_PDF_BYTES, "That file is too large (limit 5 MB).")
     if not data.startswith(b"%PDF-"):
         raise HTTPException(status_code=415, detail="That file is not a PDF.")
     aid = "att-" + secrets.token_hex(6)
     safe_name = "".join(ch for ch in filename if ch.isalnum() or ch in "._- ")[:80] or "document.pdf"
-    _ATTACHMENTS[aid] = _Attachment(viewer, member_id, safe_name, data)
+    _store_attachment(aid, _Attachment(viewer, member_id, safe_name, data,
+                                       household_id=member["household_id"], created=_clock()))
     return {"attachment_id": aid, "filename": safe_name, "size": len(data), "notice": SAMPLE_NOTICE}

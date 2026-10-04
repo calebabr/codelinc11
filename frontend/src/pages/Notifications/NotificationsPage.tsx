@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { useLocation, useNavigate } from "react-router"
 import { useSession } from "@/state/SessionContext"
+import { ErrorNote } from "@/components/ErrorNote"
 import { errorMessage, markAllRead, markRead } from "@/lib/api/notifications"
 import { formatDate } from "@/lib/format"
 import type { AppNotification } from "@/lib/types/notifications"
@@ -76,19 +77,8 @@ export default function NotificationsPage() {
           Loading…
         </p>
       )}
-      {feed.error && (
-        <div role="alert" className="note">
-          <p>{feed.error}</p>
-          <button type="button" className="btn btn-outline mt-2" onClick={() => void feed.refresh()}>
-            Try again
-          </button>
-        </div>
-      )}
-      {actionError && (
-        <p role="alert" className="text-burgundy">
-          {actionError}
-        </p>
-      )}
+      {feed.error && <ErrorNote message={feed.error} onRetry={() => void feed.refresh()} />}
+      {actionError && <ErrorNote message={actionError} className="text-burgundy" />}
 
       {feed.data && shown.length === 0 && (
         <p className="portal-card" data-testid="notif-empty">

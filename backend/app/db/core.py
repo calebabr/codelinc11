@@ -35,11 +35,37 @@ def db_path() -> Path:
     return Path(os.environ.get("BENEFITS_DB_PATH", DEFAULT_DB_PATH))
 
 
+BUSY_TIMEOUT_MS = 5000
+_wal_done: set[str] = set()   # databases already switched to WAL (the mode is stored in the file)
+
+
 def connect(path: str | Path) -> sqlite3.Connection:
-    conn = sqlite3.connect(str(path))
+    """Open the database: foreign keys on, WAL journal (readers do not block the writer), a 5 s
+    busy timeout and synchronous=NORMAL (safe with WAL)."""
+    if not Path(path).exists():
+        _wal_done.discard(str(path))   # a new file: its journal mode must be set again
+    conn = sqlite3.connect(str(path), timeout=BUSY_TIMEOUT_MS / 1000)
     conn.row_factory = sqlite3.Row
+    conn.execute(f"PRAGMA busy_timeout = {BUSY_TIMEOUT_MS}")
+    key = str(path)
+    if key not in _wal_done:
+        # Set once per database: it persists in the file. In-memory databases ignore it.
+        conn.execute("PRAGMA journal_mode = WAL")
+        if key != ":memory:":
+            _wal_done.add(key)
+    conn.execute("PRAGMA synchronous = NORMAL")
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
+
+
+def remove_database_files(path: str | Path) -> None:
+    """Delete the database file and its WAL side files (-wal and -shm)."""
+    p = Path(path)
+    _wal_done.discard(str(path))
+    for suffix in ("", "-wal", "-shm"):
+        f = Path(str(p) + suffix)
+        if f.exists():
+            f.unlink()
 
 
 @contextmanager
@@ -70,6 +96,8 @@ def migrate(path: str | Path) -> list[str]:
     seed_reference(path)
     backfill_template_reports(path)
     upgrade_template_names(path)
+    from . import sandbox  # late import: sandbox imports this module
+    sandbox.cleanup_expired(path, force=True)
     return applied_now
 
 
@@ -217,8 +245,7 @@ def seed(path: str | Path) -> None:
 def reset(path: str | Path) -> None:
     """Delete the database file, then create it and load the seeds."""
     p = Path(path)
-    if p.exists():
-        p.unlink()
+    remove_database_files(p)
     p.parent.mkdir(parents=True, exist_ok=True)
     migrate(p)
     seed(p)

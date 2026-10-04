@@ -27,7 +27,6 @@ export async function getProviders(q: ProviderQuery, token: string, signal?: Abo
     if ((e as { name?: string })?.name === "AbortError") throw e
     throw new ApiError("We can't reach the server right now. Please try again in a moment.")
   }
-  if (res.status === 404) throw new ApiError("Finding dentists is not available on the server yet.", 404)
   if (!res.ok) throw await apiFailure(res)
   return (await res.json()) as Provider[]
 }

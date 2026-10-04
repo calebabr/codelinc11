@@ -52,6 +52,24 @@ function turnsOf(thread: Message[]): ChatTurn[] {
     .map((m) => ({ role: m.role, content: m.content }))
 }
 
+/** The server accepts at most 20 messages per request (backend models.py). */
+export const MAX_CHAT_MESSAGES = 20
+
+/** The most recent messages that fit in one request. The first one sent is always from the user. */
+export function fitHistory(turns: ChatTurn[]): ChatTurn[] {
+  const recent = turns.slice(-MAX_CHAT_MESSAGES)
+  const firstUser = recent.findIndex((t) => t.role === "user")
+  return firstUser <= 0 ? recent : recent.slice(firstUser)
+}
+
+const CHAT_FAILED = "That message could not be sent. Please try again. If it keeps happening, clear the chat and start fresh."
+
+/** Plain words for a failed chat call. A 422 is the server's validation text, which people should never see. */
+function chatErrorMessage(e: unknown): string {
+  if (e instanceof ApiError && e.status === 422) return CHAT_FAILED
+  return errorMessage(e)
+}
+
 /** Chat state for one member. Switching the member shows that person's own thread. */
 export function useChat(token: string, memberId: string, scope?: ChatScope) {
   // A scoped chat (for example reports) keeps its own conversation, apart from the general one.
@@ -98,7 +116,7 @@ export function useChat(token: string, memberId: string, scope?: ChatScope) {
         else if (e.event === "error") failed = true
       }
       try {
-        await streamChat(token, memberId, history, ids, onEvent, undefined, scope)
+        await streamChat(token, memberId, fitHistory(history), ids, onEvent, undefined, scope)
         if (unavailable) patch((m) => ({ ...m, status: "unavailable", note: UNAVAILABLE }))
         else if (failed)
           patch((m) => ({ ...m, status: "error", note: "Something went wrong while answering. Please try again." }))
@@ -108,7 +126,7 @@ export function useChat(token: string, memberId: string, scope?: ChatScope) {
         }
       } catch (e) {
         const wait = e instanceof ApiError && e.status === 429 ? e.retryAfter : undefined
-        patch((m) => ({ ...m, status: "error", note: errorMessage(e), retryAfter: wait }))
+        patch((m) => ({ ...m, status: "error", note: chatErrorMessage(e), retryAfter: wait }))
       }
     },
     [token, memberId, threadKey, scope],

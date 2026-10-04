@@ -13,15 +13,27 @@ export const API_URL: string = (import.meta.env.VITE_API_URL as string | undefin
 /** The demo clock is fixed to November so timing advice is stable (PLAN.md). */
 export const DEMO_MONTH = 11
 
+/** What went wrong with the sign-in, when the server tells us. Pages show a button for the first two. */
+export type ApiErrorKind = "expired" | "signin" | "no-route" | "not-found"
+
+/** Shown when the demo family is gone (410, or its member or household no longer exists). */
+export const EXPIRED_MESSAGE = "Your demo family has expired. Start a new one."
+/** Shown after a 401: the sign-in lasts 12 hours. */
+export const SIGNIN_MESSAGE = "Your sign-in has timed out. Please sign in again to keep going."
+export const NO_ROUTE_MESSAGE = "This part is not available on the server right now."
+export const NOT_FOUND_MESSAGE = "We couldn't find that. It may have been deleted."
+
 export class ApiError extends Error {
   status?: number
   /** Seconds to wait before trying again. Set on a 429 (too many requests). */
   retryAfter?: number
-  constructor(message: string, status?: number, retryAfter?: number) {
+  kind?: ApiErrorKind
+  constructor(message: string, status?: number, retryAfter?: number, kind?: ApiErrorKind) {
     super(message)
     this.name = "ApiError"
     this.status = status
     this.retryAfter = retryAfter
+    this.kind = kind
   }
 }
 
@@ -49,6 +61,15 @@ export async function apiFailure(res: Response): Promise<ApiError> {
       retry = Number.isFinite(header) && header > 0 ? header : 30
     }
     return new ApiError(waitMessage(retry), 429, Math.max(1, Math.ceil(retry)))
+  }
+  if (res.status === 410) return new ApiError(EXPIRED_MESSAGE, 410, undefined, "expired")
+  if (res.status === 401) return new ApiError(SIGNIN_MESSAGE, 401, undefined, "signin")
+  if (res.status === 404) {
+    // The server words a missing member or household as "Not found: member ..." (an expired demo family),
+    // another missing record as "Not found: report ...", and an unknown route as plain "Not Found".
+    if (/^Not found: (member|household|account)\b/i.test(detail)) return new ApiError(EXPIRED_MESSAGE, 404, undefined, "expired")
+    if (/^Not found:/i.test(detail)) return new ApiError(NOT_FOUND_MESSAGE, 404, undefined, "not-found")
+    if (!detail || /^not found$/i.test(detail)) return new ApiError(NO_ROUTE_MESSAGE, 404, undefined, "no-route")
   }
   return new ApiError(detail || `The server returned an error (${res.status}).`, res.status)
 }

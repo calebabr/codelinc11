@@ -38,7 +38,7 @@ Set `BENEFITS_DB_PATH` to use another file. `*.db` is git-ignored. Every schema 
 | `member_context` | Plan highlights text per member |
 | `member_preferences` | Preferences and must-haves per member |
 | `chat_memory` | The assistant's saved chat turns per member |
-| `sandboxes` | Which households are per-visitor demo sandboxes (migration 004): household id, 6-hex `sid`, created time. Used for expiry and the cap |
+| `sandboxes` | Which households are per-visitor demo sandboxes (migration 004): household id, `sid` (16 hex for new families, 6 for older ones), created time. Used for expiry and the cap |
 | `saved_simulations` | Saved "Which plan fits us?" comparisons per member (migration 003): name, request (JSON: the choices), summary (JSON: the headline the server computed with `simulate()` when saving), created and updated times. Max 20 per member |
 | `saved_plans` | Saved Plan My Year plans per member: name, items (JSON: id, code, urgency, after; no dollar amounts), created and updated times. AC has one seeded (the S2 case) |
 | `notification_prefs` | Per member (migration 006): `app` (default on), `email` and `sms` (default off), `types_json` (JSON list of enabled kinds, NULL = all). Seeded for the four demo people (app on); copied into every sandbox |

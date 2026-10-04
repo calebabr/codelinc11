@@ -25,6 +25,9 @@ The app is full stack: a **FastAPI backend** (SQLite database, AI assistant) and
 
 The full list with defaults is in [`.env.example`](../.env.example).
 
+### Settings that protect the demo
+The backend port can be reached directly, so a caller can forge `X-Forwarded-For`. With `TRUST_PROXY=1` the server believes `X-Nf-Client-Connection-Ip` (Netlify) or else the last `X-Forwarded-For` hop, never the first; set it only when all traffic really passes through your proxy. Three limits do not depend on any header: `DEMO_GLOBAL_LOGIN_PER_MINUTE` / `DEMO_GLOBAL_LOGIN_PER_HOUR` (`60`, `600`: new demo families across everyone), `RATE_CHAT_PER_IP_PER_MINUTE` / `RATE_CHAT_PER_IP_PER_DAY` (`20`, `300`: assistant messages per address, also counted on the socket address; behind a proxy that shared socket bucket is allowed 10 times as much) and `RATE_PROBE_PER_MINUTE` (`10`: unknown or expired family ids one address may try a minute). New family ids are 16 hex characters and cannot be guessed. `ATTACHMENT_TTL_MINUTES` (`30`) is how long an uploaded chat document is kept in memory (at most 3 per family, 50 in total). The database uses WAL mode with a 5 s busy timeout (`benefits.db-wal` and `-shm` files appear next to it; keep them together when copying the database). Expired families are deleted at start-up and at most every 10 minutes on a family lookup.
+
 ## Frontend settings (Netlify, build time)
 | Variable | Value |
 |---|---|
