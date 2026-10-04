@@ -38,6 +38,7 @@ const PROCS = [
 let calls: { url: string; auth: string | null; body: Record<string, unknown> | null }[]
 let saved = false
 let routesLive = true
+let visitCovered = true
 function mockApi(fail = false, emptySchedule = false) {
   calls = []
   saved = false
@@ -68,7 +69,8 @@ function mockApi(fail = false, emptySchedule = false) {
           ok: true,
           status: 201,
           json: async () => ({
-            estimate: { code: "D1110", name: "Cleaning (adult)", covered: true, deductible_applied: 0, plan_pays: 120, you_pay: 0, max_used_after: 1220 },
+            // Same shape as the real API: flat, with in_network as a boolean
+            estimate: { code: "D1110", name: "Cleaning (adult)", in_network: true, covered: visitCovered, deductible_applied: 0, plan_pays: visitCovered ? 120 : 0, you_pay: visitCovered ? 0 : 120, max_used_after: 1220 },
             usage: { max_used: 1220, deductible_met: 50, history: ["D1110"] },
             benefits: benefits(1220, 280, 50, 2, "Only $280 left."),
           }),
@@ -96,6 +98,7 @@ function renderPage(id = "m-alex") {
 
 beforeEach(() => {
   routesLive = true
+  visitCovered = true
   mockApi()
 })
 afterEach(() => vi.restoreAllMocks())
@@ -142,6 +145,18 @@ describe("Home page", () => {
     expect(post.auth).toBe("Bearer tok-m-jordan")
     expect(calls.some((c) => c.url.endsWith("/estimate"))).toBe(false)
     expect(calls.filter((c) => c.url.includes("/overview")).length).toBeGreaterThanOrEqual(2)
+  })
+
+  it("shows the real amounts for a visit over the frequency limit (no $NaN)", async () => {
+    visitCovered = false
+    const user = userEvent.setup()
+    renderPage("m-alex")
+    await user.click(await screen.findByRole("button", { name: "Log Cleaning (adult)" }))
+    const result = await screen.findByTestId("visit-result")
+    await waitFor(() => expect(result).toHaveTextContent("You pay $120"))
+    expect(result).toHaveTextContent("The plan pays $0")
+    expect(result).toHaveTextContent("Not covered because of a frequency limit.")
+    expect(result).not.toHaveTextContent("NaN")
   })
 
   it("shows a plain message when the visit route is not available yet", async () => {

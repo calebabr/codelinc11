@@ -81,7 +81,10 @@ export function useLogVisit(token: string, memberId: string, onSaved: () => Prom
       setError(null)
       try {
         const res = await postVisit(token, memberId, code)
-        const last = (res.estimate as { in_network?: VisitEstimate }).in_network ?? (res.estimate as VisitEstimate)
+        // The estimate is flat ({ covered, you_pay, ..., in_network: true }). Some estimate endpoints
+        // nest it as { in_network: {...}, out_of_network: {...} } instead, so only unwrap an object.
+        const nested = (res.estimate as { in_network?: unknown }).in_network
+        const last = typeof nested === "object" && nested !== null ? (nested as VisitEstimate) : res.estimate
         setLogged((l) => ({ ...l, [memberId]: { usage: res.usage, benefits: res.benefits, last } }))
         await onSaved()
       } catch (e) {
