@@ -20,7 +20,7 @@ python -m venv .venv
 ```
 
 - API: http://localhost:8000. Interactive docs: http://localhost:8000/docs. Health check: http://localhost:8000/health
-- Run the tests: `.venv/Scripts/python -m pytest -q` (391 tests, about 2 minutes, no internet or model needed)
+- Run the tests: `.venv/Scripts/python -m pytest -q` (523 tests, about 2 minutes, no internet or model needed)
 - Lint: `.venv/Scripts/python -m ruff check .`
 
 ## Frontend
@@ -30,7 +30,7 @@ From `frontend/`:
 npm install
 npm run dev          # http://localhost:5173
 npm run dev:lan      # same, but phones on your Wi-Fi can open it (see DEMO-PHONES.md)
-npm run test         # 151 tests, about 1 minute
+npm run test         # 205 tests, about 1 minute
 npm run typecheck
 npm run build
 ```

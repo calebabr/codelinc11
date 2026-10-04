@@ -27,14 +27,14 @@ Turn the demo into something that feels like a real insurance portal: families c
 - Every story ships with its own tests; the test story adds the shared suite structure and regression coverage.
 
 ## Sequencing (waves; backend work is serial because stories share `db/store.py`, `models.py` and `main.py`)
-| Wave | Backend | Frontend | Tests / docs |
-|---|---|---|---|
-| 1 | **B1** profile fields and family member API | **F1** fix `$NaN` (Home) and **F2** enlarge chatbot | **T1** pytest suite foundation (markers, structure, coverage, CI) |
-| 2 | **B2** notifications and preferences | **F3** Family edit UI (profile, add member) | |
-| 3 | **B3** providers directory and search | **F4** notifications bell, page and settings | |
-| 4 | **B4** reports (claims, EOBs, samples, explain) and quote to provider matching | **F5** Find Providers page | |
-| 5 | **A1** assistant: reports Q&A tool and scope | **F6** quote provider display and **F7** Reports pages and report Q&A page | |
-| 6 | Hardening fixes from review | | **T2** regression and feature test consolidation, **D1** docs, **R1** review |
+| Wave | Backend | Frontend | Tests / docs | Status |
+|---|---|---|---|---|
+| 1 | **B1** profile fields and family member API | **F1** fix `$NaN` (Home) and **F2** enlarge chatbot | **T1** pytest suite foundation (markers, structure, coverage, CI) | Done |
+| 2 | **B2** notifications and preferences | **F3** Family edit UI (profile, add member) | | Done |
+| 3 | **B3** providers directory and search | **F4** notifications bell, page and settings | | F4 done; B3 providers not started |
+| 4 | **B4** reports (claims, EOBs, samples, explain) and quote to provider matching | **F5** Find Providers page | | Not started |
+| 5 | **A1** assistant: reports Q&A tool and scope | **F6** quote provider display and **F7** Reports pages and report Q&A page | | Not started |
+| 6 | Hardening fixes from review | | **T2** regression and feature test consolidation, **D1** docs, **R1** review | Not started |
 
 ## Contracts (all routes need the bearer token and follow the existing visibility rules: a primary sees everyone in the household, an adult only themself, managed members have no login)
 
@@ -72,3 +72,6 @@ See the table at the bottom of this file; each wave records what shipped, what w
 
 ### Log
 - 2026-10-04: sprint planned; wave 1 started.
+- 2026-10-04: story 1 (`$NaN` fix), story 2 (bigger chat), story 3 (pytest suite foundation: markers, 14 regression tests, coverage 96%) and story 4 (profiles and family members: API and screens) done.
+- 2026-10-04: notifications part of story 5 done: backend (migrations 006 and 007), bell with unread badge, `/notifications` page (filters, per-person settings, Delivery preview), Home card. Checked by the orchestrator in the live app and by running the suites: backend 523 tests pass, ruff clean; frontend 205 tests, typecheck and build clean. Email and text only write `preview` rows (a database check forbids anything else).
+- Still to do: story 6 Find Providers, story 7 quote to dentist matching, story 8 Reports (and the report Q&A page), email and text actually sending (stand-in: preview only), then final docs and an independent review.
