@@ -60,6 +60,32 @@ File: [`frontend/vercel.json`](../frontend/vercel.json) (Netlify alternative:
 | Vercel (frontend) | `VITE_API_URL` | the Render URL | No |
 | Vercel | `VITE_CLERK_PUBLISHABLE_KEY` | Clerk publishable key | No (publishable) |
 
+## 4. Auto-deploy on push to `main` (optional)
+
+[`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) redeploys both
+hosts automatically — but **only after the CI workflow passes on `main`**, so a
+broken build never ships. It triggers each host with a **deploy-hook URL** stored
+as a GitHub repository secret (the URLs themselves never go in the repo).
+
+Set these up once:
+
+1. **Render deploy hook:** Render service → **Settings → Deploy Hook** → copy the URL.
+2. **Vercel deploy hook:** Vercel project → **Settings → Git → Deploy Hooks** →
+   create one for the `main` branch → copy the URL.
+3. In GitHub: repo **Settings → Secrets and variables → Actions → New repository
+   secret**, add:
+   - `RENDER_DEPLOY_HOOK_URL`
+   - `VERCEL_DEPLOY_HOOK_URL`
+
+That's it — every push to `main` now runs CI, and on success triggers both deploys.
+If a secret is missing, that host is simply skipped (the workflow stays harmless
+until you add the hooks). Both Render and Vercel also offer their own built-in
+auto-deploy-on-push; this workflow is the CI-gated alternative if you'd rather a
+green build be a hard requirement before shipping.
+
+> **Never** paste a deploy-hook URL, API token, or secret key into a file, a commit,
+> or chat. They go only in the host dashboard or as a GitHub Actions secret.
+
 ## Notes
 
 - **AI assistant in prod:** Ollama (local model) won't run on a small host — use
