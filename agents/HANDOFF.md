@@ -1,5 +1,17 @@
 # Handoff: pick up exactly where we stopped
 
+## Update 2026-10-03 night (second machine, `C:\hackathon\codelinc11`)
+Caleb continued on a second machine. Done in this session:
+- Fresh setup verified (venv, `npm install`, `app.db --reset`); backend **262 tests pass** (one new), ruff clean; frontend **75 pass**, typecheck and build clean.
+- `.claude/launch.json` now uses a relative backend path so it works on any machine.
+- **Section 4 item 1 done:** every page checked live. No sideways scrolling at 375 px on any page (the FamilyTree overflow from the earlier measurement did not reproduce; the nav strip scrolls inside itself by design). Demo path works on screen: Jordan sign-in, switch to Alex, Plan My Year demo case $2,300 → $1,405 saves $895; assistant answers $800 vs $625 on Anthropic; Costs crown $625 / $925 ($300 balance billing); plan switch Preferred ↔ Premium; 403/401 access rules.
+- Fixed: the "ask about a cheaper option" tip showed twice when a treatment was listed twice (`backend/app/engine/tips.py`, test in `tests/test_tips.py`).
+- **Section 4 item 2 done:** README, DEMO (now starts landing → login → Jordan), PRESENTATION, ARCHITECTURE, SETUP, MATH, PROJECT-STORY, TASKS rewritten to the built product.
+- Left: rehearsal + backup recording (humans), merge to `main` (Caleb's call), Wrigley's text to speech, backlog in `docs/TASKS.md`.
+
+---
+
+
 Written 2026-10-03 late evening by the orchestrator session, at the user's request ("stop work, someone else picks up exactly where we left off"). The demo is **Sunday 2026-10-04, 10:00 AM**. Caleb leads the team (git identity `calebabr`, `cjabrantes06@gmail.com`). Teammates: **Wrigley** (chatbot; owns text to speech), **Sai** (portal prototype; gets code as a tarball because git does not work for him), **Ulisses** (landing page and login design).
 
 ## 0. Read this first: state in one paragraph

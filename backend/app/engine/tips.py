@@ -131,11 +131,13 @@ def _preventive_tip(plan: Plan, usage: Usage, catalog: dict[str, Procedure],
 def _alternative_tips(items: list[TreatmentItem], procs: list[Procedure], plan: Plan,
                       usage: Usage, catalog: dict[str, Procedure]) -> list[SavingsTip]:
     tips: list[SavingsTip] = []
+    seen: set[tuple[str, str]] = set()   # one tip per swap, even if the treatment is listed twice
     for item, proc in zip(items, procs, strict=True):
         for alt_code in proc.alternative_codes:
             alt = catalog.get(alt_code)
-            if alt is None:
+            if alt is None or (proc.code, alt_code) in seen:
                 continue
+            seen.add((proc.code, alt_code))
             chosen = estimate(proc, plan, usage, True)
             other = estimate(alt, plan, usage, True)
             after = other.you_pay

@@ -71,8 +71,8 @@ Maximum remaining, deductible remaining, frequency used and left, and the value 
 
 Orthodontia is stored but the engine does not use it yet. The database stores the same tiers in cents (`database/seeds/demo_household.json`).
 
-## Not built yet
-The annual-cost calculator on the engine (T05) and a plan-comparison simulation. Not described here until they exist.
+## Yearly cost for a plan (`engine/annual_cost.py`, `POST /annual-cost`)
+Premiums (monthly premium x 12 x covered people) plus expected care. Each covered person has their own deductible, yearly maximum and frequency counts (nobody shares one maximum); each person's care runs in order through the same `estimate()` used everywhere else. Used by the Costs page "Yearly cost" tab. A plan-comparison simulation (Monte Carlo) is not built.
 
 ## Rounding
 Dollar amounts are rounded to cents in the engine. The database stores whole cents.

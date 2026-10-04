@@ -171,3 +171,8 @@ def test_golden_numbers_untouched():
     assert (r.plan_pays, r.you_pay) == (400, 800)
     r = estimate(cat["D2740"], demo, Usage(), False)
     assert (r.plan_pays, r.you_pay, r.balance_bill) == (575, 925, 300)
+
+
+def test_same_swap_listed_twice_gives_one_tip():
+    r = post(usage=S2_USAGE, current_month=11, items=S2_ITEMS)
+    assert len(tips_by_kind(r)["alternative"]) == 1

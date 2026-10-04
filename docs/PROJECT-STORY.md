@@ -1,6 +1,6 @@
 # PROJECT STORY
 
-A factual build story for resumes and interviews. Facts as of 2026-10-03 (Stage 0 of the build). Numbers were checked by running the tests that day. No claim here goes beyond what exists.
+A factual build story for resumes and interviews. Facts as of 2026-10-03 (the integrated product on `integration/main-product`, ready for the 2026-10-04 demo). Numbers were checked by running the tests that day. No claim here goes beyond what exists.
 
 ## The problem
 People with employer dental plans rarely know what a procedure will cost, and they lose unused benefits when the plan year resets. The hackathon challenge (codeLinc 11, Path 1, dental) asks for a tool that helps with that.
@@ -26,22 +26,23 @@ The team decided what to keep from each one (feature catalog and decision log in
 ## Key decisions (see the decision log)
 Family, not one person (D1); a sign-in on a real household data model (D2, F1); an API chatbot with Anthropic first and Ollama as the local option, no keyword answers (D3); six pages (D4); Sai's portal look (D5); three plan tiers (D6); per-person context stored on the server (D9); dental only (D10).
 
-## Measurable outcomes (2026-10-03, Stage 0)
+## Measurable outcomes (2026-10-03)
 | Measure | Value |
 |---|---|
-| Backend tests | 148 passing (includes 17 database tests) |
-| Frontend tests | 10 passing |
+| Backend tests | 262 passing |
+| Frontend tests | 75 passing (typecheck and production build clean) |
 | Golden scenarios | G1 to G6 and S2 pass (S2: $2,300 to $1,405, saves $895) |
-| API endpoints built | 12 routes (health, plans x2, procedures, estimate, schedule, benefits-status, reminders.ics, savings-tips, questions, treatment-plan/parse, chat) |
-| Frontend routes | 6 pages plus `/login` placeholder and `/style` |
-| Database tables | 11 in the migration (plus a migration tracker), including per-person usage and context |
+| API endpoints built | 30 routes (engine, demo sign-in, household, member overview, visits, saved plans, plan switching, assistant) |
+| Frontend routes | Landing (`/welcome`), demo sign-in (`/login`), six pages (Home, Plans, Family, Costs, Plan My Year, Assistant) |
+| Database tables | 12 across two migrations, including per-person usage, visits, saved plans and assistant memory |
 | Procedure codes | 16 |
 | Plan tiers | 3 |
 | Lint | `ruff check .` clean |
 
-End-to-end tests, CI and the real pages are not done yet.
+Not done: browser end-to-end tests (Playwright), and the CI workflow has not run on GitHub yet.
 
 ## What I would say honestly
-- The engine and database are real and tested. The frontend is a shell with placeholders and a mock household. Backend and frontend are not connected yet.
-- All plan values and fees are placeholders.
-- The assistant works with a local model today; the Anthropic version is planned.
+- The engine, database, API and all six pages are real, connected and tested; each person in the household sees their own numbers.
+- The assistant runs on Anthropic (`claude-haiku-4-5`) and calls the engine through tools; a number guard checks every dollar figure. It needs internet and a key.
+- Sign-in is a demo "choose your account" screen, not real passwords.
+- All plan values, fees and members are synthetic placeholders.

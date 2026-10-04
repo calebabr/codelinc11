@@ -1,50 +1,38 @@
 # Task Tracker
-_Last updated: 2026-10-03 by stage0-foundation (docs pass T15)_
+_Last updated: 2026-10-03 (evening) by the orchestrator, after a live check of every page_
 
-Hard deadline: **hackathon demo, 2026-10-04 10:00 AM.** Plan: [../agents/tasks/PLAN.md](../agents/tasks/PLAN.md). Cut from the bottom if time runs short; never cut tests for P0 items or fake a result.
+Hard deadline: **hackathon demo, 2026-10-04 10:00 AM.** Plan: [../agents/tasks/PLAN.md](../agents/tasks/PLAN.md). Handoff: [../agents/HANDOFF.md](../agents/HANDOFF.md).
 
-## In Progress
-- [ ] T05 Household, auth and overview API. **Owner: backend agent**, due 2026-10-04 10:00 AM
-  - Context: not started. Needs T03 and T04 (both done). Adds demo sign-in, household, member overview and schedule, invites, `POST /annual-cost`. Wires `backend/app/db/` into the API.
-- [ ] T06 Provider interface and per-person assistant (Anthropic first, Ollama second). **Owner: AI agent**, due 2026-10-04 10:00 AM
-  - Context: not started. Replaces the seam in `backend/app/agent/loop.py`. Needs a key in `backend/.env` (added by Caleb, never in chat). Adds `/chat/suggestions` and `/chat/attachments`.
-- [ ] T07 Home page and member switcher with real data. **Owner: frontend agent**, due 2026-10-04 10:00 AM
-  - Context: needs T05. Shell and mock switcher exist.
-- [ ] T08 Family page. **Owner: frontend agent**, due 2026-10-04 10:00 AM (needs T05)
-- [ ] T09 Plan My Year page. **Owner: frontend agent**, due 2026-10-04 10:00 AM
-  - Context: the engine and `POST /schedule` are ready, so this can start now. Must show $2,300 to $1,405, save $895.
-- [ ] T10 Assistant page and global chat button. **Owner: frontend agent**, due 2026-10-04 10:00 AM (needs T06)
-- [ ] T11 Costs page (P1). **Owner: frontend agent**, due 2026-10-04 10:00 AM (calculator needs T05)
-- [ ] T12 Plans page (P1). **Owner: frontend agent**, due 2026-10-04 10:00 AM (needs T05)
-- [ ] T13 End-to-end and contract tests. **Owner: tests agent**, due 2026-10-04 10:00 AM
-  - Context: `tests/e2e`, `tests/contract`, `tests/fixtures` are empty. Needs T07 to T10.
-- [ ] T14 Review and fix list. **Owner: review agent**, due 2026-10-04 10:00 AM
-- [ ] T16 CI, run script, environment. **Owner: devops agent**, due 2026-10-04 10:00 AM
-  - Context: `.github/workflows/` is empty. Planned checks: `ruff check .`, `pytest -q`, `npm ci`, `npm run typecheck`, `npm run test`, `npm run build`.
-- [ ] T17 Login UI. **Owner: Ulisses (by hand)**, due 2026-10-04 10:00 AM
-  - Context: `/login` is a placeholder route in `frontend/src/App.tsx`. Needs the integration branch pushed and T05.
-- [ ] T15 Docs pass, rerun after each stage. **Owner: docs agent**
-  - Context: Stage 0 pass done 2026-10-03. Rerun after T05, T06, T09 and update `DEMO.md`, `PRESENTATION.md`, `ARCHITECTURE.md`, `AI.md` and the summaries.
+## Before the demo
+- [ ] Rehearse [DEMO.md](DEMO.md) three times. **Owner: Caleb and team**, due 2026-10-04 10:00 AM
+- [ ] Record a backup screen recording of the demo path. **Owner: Caleb**, due 2026-10-04 10:00 AM
+- [ ] Decide whether to merge `integration/main-product` into `main` (pull request on GitHub). **Owner: Caleb**
+- [ ] Capture README screenshots (list at the end of `README.md`). **Owner: design lead**
+
+## In Progress (teammates)
+- [ ] Text-to-speech for assistant answers. **Owner: Wrigley**, branch `fe/text-to-speech` off `integration/main-product`
+- [ ] Login page redesign (optional; `frontend/src/pages/Login/LoginPage.tsx`). **Owner: Ulisses**
 
 ## Completed
-- [x] T01 Portal tokens and style guide. **Owner: design agent**, completed 2026-10-03
-  - Outcome: tokens in `frontend/src/index.css`, style guide at `/style`, rules in `docs/design/portal-look.md`.
-- [x] T02 Portal shell and six routes. **Owner: frontend agent**, completed 2026-10-03
-  - Outcome: six routes, `/login` placeholder, member switcher, assistant button, mock Rivera household; 10 frontend tests.
-- [x] T03 Port Caleb's backend onto main. **Owner: integration agent**, completed 2026-10-03
-  - Outcome: engine, search, quote parser, questions, agent seam; three tiers; keyword fallback removed; 148 tests pass; golden numbers G1 to G6 and S2 pass.
-- [x] T04 Households, members and context in the database. **Owner: database agent**, completed 2026-10-03
-  - Outcome: SQLite schema and seed for the Rivera household, access layer, 17 tests.
-- [x] T15 Docs pass, Stage 0. **Owner: docs agent**, completed 2026-10-03
-  - Outcome: README, SETUP, ARCHITECTURE, MATH, AI, DEMO, PRESENTATION, PROJECT-STORY, summaries and a session summary.
+- [x] T01 to T04 Stage 0: portal tokens, shell, backend port, household database. Completed 2026-10-03
+- [x] T05 Household, demo sign-in, member overview, invites, `POST /annual-cost`, visits, saved plans, plan switching, demo reset. Completed 2026-10-03
+- [x] T06 Per-person assistant on Anthropic (Ollama optional), suggestions, PDF attachments, tips and dentist-question pre-step. Completed 2026-10-03
+- [x] T07 to T12 Home, Family, Plan My Year, Assistant, Costs, Plans pages on real data. Completed 2026-10-03
+- [x] T14 Review (`docs/reviews/review-2026-10-03.md`) and fixes (login flow, chat auth, token expiry, seed-if-empty). Completed 2026-10-03
+- [x] T16 CI workflow and dev scripts written (`.github/workflows/ci.yml`, `scripts/`). Completed 2026-10-03
+- [x] T17 Login page on Ulisses's `AuthLayout` with demo accounts. Completed 2026-10-03
+- [x] Landing page (Ulisses) and voice input (Wrigley) merged. Completed 2026-10-03
+- [x] Live check of every page at desktop and 375 px: no sideways scrolling; golden numbers on screen. Completed 2026-10-03
+- [x] Fix: the same "ask about a cheaper option" tip showed twice when a treatment was listed twice. Completed 2026-10-03
+- [x] T15 Docs pass: README, DEMO, PRESENTATION, ARCHITECTURE, SETUP, MATH, PROJECT-STORY updated to the built product. Completed 2026-10-03
 
-## Backlog
-- [ ] Remove old unrouted prototype pages from `frontend/src/pages/` once ported. **Owner: frontend agent**, added 2026-10-03
-  - Context: `Chatbot`, `Coverage`, `Dashboard`, `Estimate`, `GetStarted`, `Home.tsx`, `PlanYear.tsx`, `Profiles` still exist.
-- [ ] Remove or update stale text in `frontend/README.md` (top sections still describe the old prototype). **Owner: frontend agent**, added 2026-10-03
-- [ ] `FEATURES.md` F5 says max 6 tool steps; code uses 5. Decide which is right. **Owner: orchestrator**, added 2026-10-03
-- [ ] Real plan values and FAIR Health fees (D7). **Owner: M (human)**, added 2026-10-03
-- [ ] Stored data location (D8) is still marked open in the decision log although the database exists. **Owner: orchestrator**, added 2026-10-03
-- [ ] Capture screenshots for the README and a backup demo recording. **Owner: design lead**, added 2026-10-03
-- [ ] Add `.env.example` entries for `OLLAMA_*`, `BENEFITS_DB_PATH` and `VITE_API_URL` (names are in `infra/README.md`). **Owner: devops agent**, added 2026-10-03
-- [ ] Invites UI and schedule polish (P2). **Owner: frontend agent**, added 2026-10-03
+## Backlog (after the demo)
+- [ ] Browser end-to-end test (Playwright) for the demo path; `tests/e2e` and `tests/contract` are empty. **Owner: tests agent**
+- [ ] Run the CI workflow on GitHub for the first time; `scripts/dev.ps1` and `dev.sh` were only syntax-checked. **Owner: devops agent**
+- [ ] Treatment builder and quote items default to "flexible"; consider asking the user for urgency. **Owner: frontend agent**
+- [ ] Number guard checks `$` amounts only. **Owner: AI agent**
+- [ ] Generate frontend types from `models.py` instead of hand-written types; remove unused shadcn components. **Owner: frontend agent**
+- [ ] Hide the `/style` page in production; stop hard-coding golden figures on the landing page. **Owner: frontend agent**
+- [ ] The "Viewing" member resets to the signed-in person on a full page reload. **Owner: frontend agent**
+- [ ] Real plan values and FAIR Health fees (D7). **Owner: M (human)**
+- [ ] `FEATURES.md` F5 says max 6 tool steps; code uses 5. **Owner: orchestrator**

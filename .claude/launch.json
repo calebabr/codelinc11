@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "backend",
-      "runtimeExecutable": "C:\Users\cal3b\OneDrive\FilesforCaleb\AuburnUniversity\codelinc11\backend\.venv\Scripts\python.exe",
+      "runtimeExecutable": "backend/.venv/Scripts/python.exe",
       "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--app-dir", "backend", "--port", "8000"],
       "port": 8000
     },
