@@ -10,7 +10,6 @@ from ..data import load_catalog, load_plans
 from ..db import DEMO_TODAY
 from ..engine.estimate import estimate
 from ..engine.status import benefits_status
-from ..notifications import sync_notifications
 from ..models import (
     MemberOverview,
     MemberUsageDollars,
@@ -21,6 +20,7 @@ from ..models import (
     VisitRequest,
     VisitResponse,
 )
+from ..notifications import sync_notifications
 from .households import member_model, tier_model
 from .session import StoreDep, Viewer, guarded
 

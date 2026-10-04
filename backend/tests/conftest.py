@@ -33,7 +33,7 @@ def _no_rate_limits(monkeypatch):
 # marked without anyone remembering to. Add a pattern here when you add a new kind of file.
 # Run a group with `pytest -m unit`, `pytest -m "api and not slow"`, and so on.
 # ---------------------------------------------------------------------------------------------
-import fnmatch  # noqa: E402
+import fnmatch
 
 _FILE_MARKERS: list[tuple[str, tuple[str, ...]]] = [
     ("test_engine*.py", ("unit",)),
@@ -57,6 +57,7 @@ _FILE_MARKERS: list[tuple[str, tuple[str, ...]]] = [
     ("test_ratelimit.py", ("api",)),
     ("test_household_plan.py", ("api", "db")),
     ("test_profiles.py", ("api", "db")),
+    ("test_notifications.py", ("api", "db")),
     ("test_t25.py", ("api", "db")),
     ("test_demo_accounts_status.py", ("api", "db")),
 ]
@@ -72,6 +73,10 @@ _SLOW = {
     "test_contract_api.py::test_every_documented_endpoint_is_in_openapi",
     "test_chat.py::test_sse_over_http_event_order",
     "test_api.py::test_chat_endpoint_streams_sse",
+    "test_agent_compare_plans.py::test_overrides_and_known_codes_change_the_result",
+    "test_agent_compare_plans.py::test_chat_loop_uses_the_tool_and_falls_back_to_template_on_invented_numbers",
+    "test_simulate.py::test_shares_sum_to_100_and_histograms_sum_to_n",
+    "test_simulate.py::test_same_seed_identical_and_different_seed_changes_numbers",
 }
 
 

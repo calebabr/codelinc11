@@ -140,7 +140,7 @@ def test_migration_005_upgrades_an_older_database(tmp_path):
                   "VALUES ('m-jordan','hh-x','Jordan Rivera','self',41,'primary',1)")
         c.execute("INSERT INTO member_usage (member_id, plan_year) VALUES ('m-jordan', 2026)")
         c.commit()
-    assert migrate(path) == ["005_profiles.sql"]
+    assert migrate(path)[0] == "005_profiles.sql"   # later migrations may follow
     with connect(path) as c:
         m = dict(c.execute("SELECT * FROM members WHERE id = 'm-jordan'").fetchone())
         assert m["age"] == 41 and m["dob"] == "1985-03-14" and m["email"] == "jordan.rivera@example.test"
