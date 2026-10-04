@@ -200,7 +200,7 @@ export default function Hero({ zoom = false }: { zoom?: boolean }) {
                   <span className="size-2.5 rounded-full bg-[var(--line)]" />
                   <span className="size-2.5 rounded-full bg-[var(--line)]" />
                   <span className="ml-3 h-6 flex-1 rounded-full bg-white px-3 text-[11px] leading-6 text-muted-foreground">
-                    molarmoney.app/coverage
+                    molarmoney.app/plans
                   </span>
                 </motion.div>
                 <motion.div
