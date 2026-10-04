@@ -1,6 +1,6 @@
 # PROJECT STORY
 
-A factual build story for resumes and interviews. Facts as of 2026-10-04: `main` is production (backend on AWS, frontend on Netlify; sign-in is **Try the demo** only), and sprint 2 work (profiles, notifications) is on branch `sprint/family-providers-reports`, not yet merged. Numbers were checked by running the tests that day. No claim here goes beyond what exists.
+A factual build story for resumes and interviews. Facts as of 2026-10-04: the live product has the backend on AWS EC2 (Docker) and the frontend on Netlify; sign-in is **Try the demo** only. Sprint 2 (profiles, notifications, Find Providers, Reports) was built on branch `sprint/family-providers-reports` and is merged into `main` (pull request #12 and direct pushes on 2026-10-04). Test counts are from the orchestrator's run. No claim here goes beyond what exists.
 
 ## The problem
 People with employer dental plans rarely know what a procedure will cost, and they lose unused benefits when the plan year resets. The hackathon challenge (codeLinc 11, Path 1, dental) asks for a tool that helps with that.
@@ -29,26 +29,26 @@ Family, not one person (D1); a sign-in on a real household data model (D2, F1); 
 ## Measurable outcomes (2026-10-03)
 | Measure | Value |
 |---|---|
-| Backend tests | 523 passing on the sprint branch (391 before sprint 2; 262 before the Monte Carlo plan comparison, demo sandboxes and rate limits); coverage 96% |
-| Frontend tests | 205 passing on the sprint branch (151 before sprint 2). Typecheck and production build clean |
+| Backend tests | 633 passing (391 before sprint 2; 262 before the Monte Carlo plan comparison, demo sandboxes and rate limits); coverage was 96% when last measured (earlier in sprint 2) |
+| Frontend tests | 240 passing (151 before sprint 2). Typecheck and production build clean |
 | First page load on a phone | about 162 kB of JavaScript, gzipped (other pages load on demand) |
 | Golden scenarios | G1 to G6 and S2 pass (S2: $2,300 to $1,405, saves $895) |
-| API endpoints built | 36 routes on `feature/choose-a-plan` (engine, plan simulation, demo sign-in with per-visitor families, household and renaming, member overview, visits, saved plans, saved plan comparisons, plan switching, assistant) |
-| Frontend routes | Landing (`/welcome`), demo sign-in (`/login`), Scan to try (`/join`), six pages (Home, Plans, Family, Costs, Plan My Year, Assistant) |
-| Database tables | 14 across four migrations, including per-person usage, visits, saved plans, saved plan comparisons, demo sandboxes and assistant memory |
+| API endpoints built | 57 route handlers counted in `backend/app` (engine, plan simulation, demo sign-in with per-visitor families, households, profiles, member overview, visits, saved plans and comparisons, notifications, providers, reports, assistant) |
+| Frontend routes | Landing (`/welcome`), demo sign-in (`/login`), Scan to try (`/join`), Home, Plans, Family, Costs, Plan My Year, Find Providers (`/providers`), Reports (`/reports`, `/reports/ask`), Assistant, Notifications |
+| Database | Nine migrations (`001` to `009`): household, per-person usage, visits, saved plans and comparisons, demo sandboxes, profiles, notifications, providers, reports, assistant memory |
 | Procedure codes | 16 |
 | Plan tiers | 3 |
 | Lint | `ruff check .` clean |
 
-Not done: browser end-to-end tests (Playwright); the CI workflow has not run on GitHub yet; the AWS kit in `infra/aws/` has not been run in AWS (a teammate deploys `main`); an access code for the demo is an idea, not built.
+Not done: browser end-to-end tests (Playwright); the CI workflow has not run on GitHub yet; the AWS kit in `infra/aws/` has not been run (the live server is a Docker container on EC2, see [DEPLOYMENT.md](DEPLOYMENT.md)); an access code for the demo is an idea, not built.
 
-## Sprint 2 so far (branch `sprint/family-providers-reports`)
-Done: the `$NaN` fix, a bigger chat box, a pytest suite foundation (markers, 14 regression tests), editable profiles and family members (demo family only), and notifications: a bell with an unread badge, a `/notifications` page with filters and per-person settings, a Home card, and notifications made from the person's data and the benefits engine. Email and text are **delivery previews only**; a `Notifier` interface marks where a real sender would plug in. Not built yet: Find Providers, quote to dentist matching, Reports, and real email or text sending.
+## Sprint 2 (branch `sprint/family-providers-reports`)
+Done: the `$NaN` fix, a bigger chat box, a pytest suite foundation, editable profiles and family members (demo family only), notifications (bell, `/notifications` page, Home card), **Find Providers** (`/providers`, fictional dentists by ZIP), **quote to dentist matching** on Costs, and **Reports** (`/reports`, `/reports/ask`) with synthetic claims, EOBs and copays and an assistant scope for report questions. Email and text are **delivery previews only**; a `Notifier` interface marks where a real sender would plug in. Text-to-speech was dropped. Not built: real email or text sending.
 
 ## What I would say honestly
 - Every visitor gets their own private demo family (a clone of the seeded household, 24 hours, cap of 300), so a public demo is not spoiled by one person. In-memory rate limits protect the Anthropic key. The app was made to work on phones, with a QR page to join.
-- On `feature/choose-a-plan` (not yet merged) the Plans page can also simulate 5,000 possible years for the household and show how often each plan is cheapest. It prices through the same engine; the odds are synthetic placeholders, not claims data.
-- The engine, database, API and all six pages are real, connected and tested; each person in the household sees their own numbers.
+- The Plans page can also simulate 5,000 possible years for the household and show how often each plan is cheapest. It prices through the same engine; the odds are synthetic placeholders, not claims data.
+- The engine, database, API and all the pages are real, connected and tested; each person in the household sees their own numbers.
 - The assistant runs on Anthropic (`claude-haiku-4-5`) and calls the engine through tools; a number guard checks every dollar figure. It needs internet and a key.
 - Sign-in is a demo with no passwords, and anyone with the link can start a demo family. Rate limits are in memory on one server, and the data is one SQLite file.
 - All plan values, fees and members are synthetic placeholders.

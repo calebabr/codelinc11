@@ -1,6 +1,6 @@
 # PRESENTATION outline
 
-One idea per slide. About 8 slides for a 3 to 5 minute demo plus talk. Everything below is built and was checked live on 2026-10-03. Numbers match the golden numbers in [FEATURES.md](FEATURES.md) section 2.
+One idea per slide. About 8 slides for a 3 to 5 minute demo plus talk. Everything below is built (checked 2026-10-03 and 2026-10-04). Numbers match the golden numbers in [FEATURES.md](FEATURES.md) section 2.
 
 ## 1. The problem
 - Dental plans are hard to read. People do not know what a crown will cost, and they lose unused benefits every December.
@@ -12,7 +12,7 @@ One idea per slide. About 8 slides for a 3 to 5 minute demo plus talk. Everythin
 
 ## 3. The solution
 - Three answers: What will I owe? When should I schedule care? What do I have left?
-- Six pages: Home, Plans, Family, Costs, Plan My Year, Assistant, plus an assistant button on every page and a landing page.
+- Pages: Home, Plans, Family, Costs, Plan My Year, Find Providers, Reports (and a page to ask questions about reports), Assistant, a notification bell and a landing page, plus an assistant button on every page.
 - Molar Money is the product name. Anyone can scan a QR code, tap **Try the demo**, and get their own private demo family. Works on a phone.
 
 ## 4. Live demo
@@ -21,11 +21,11 @@ Follow [DEMO.md](DEMO.md). The key moment: **$2,300 now, $1,405 optimized, you s
 
 ### Moment 2: "Which plan fits us?" (Monte Carlo)
 - One idea: nobody knows next year's dental care, so we simulate 5,000 possible years for the family and show how often each plan costs the least. Same engine, same seed, same answer.
-- Numbers (Halog household, average care, seed 42): Basic is cheapest in 82% of years; with AC's crown as known care, Preferred is cheapest in 54%.
+- Numbers (Halog household, average care, seed 42, in network): Basic 82%, Preferred 17%, Premium 1%; with AC's crown as known care, Preferred is cheapest in 54%.
 - You can save a comparison to Plan My Year and open it again later. The assistant answers "Summarize the plan simulations" from the same numbers.
-- Notes: say plainly that the odds are synthetic placeholders, not a prediction. Built on `feature/choose-a-plan` (not merged to `main` yet); show it live only from a build that has it.
+- Notes: say plainly that the odds are synthetic placeholders, not a prediction. Present from the live site or a build that has it. Day-of runbook: [DEMO-DAY.md](DEMO-DAY.md).
 
-Optional: a notification bell (top right) tells each person what is coming up (appointments, reminders) and what needs attention (benefits expiring, unused cleanings). Email and text are previews only; nothing is sent.
+Optional: **Find Providers** (ZIP 36830) lists fictional dentists, and **Reports** shows synthetic claims, EOBs and copays (Marc Halog owes $90 on one EOB). A notification bell (top right) tells each person what is coming up and what needs attention. Email and text are previews only; nothing is sent.
 
 ## 5. How it works
 - The **engine does the math**, the **AI explains it**. The model never computes a dollar amount; a number guard rejects any dollar figure that did not come from a tool.
@@ -35,10 +35,10 @@ Optional: a notification bell (top right) tells each person what is coming up (a
 ## 6. What is real and what is synthetic
 | Real and tested | Synthetic or stand-in |
 |---|---|
-| Money engine, scheduler, savings tips, plan simulation (523 backend tests) | All plan values, fees and members; the odds in "Which plan fits us?" |
+| Money engine, scheduler, savings tips, plan simulation (633 backend tests) | All plan values, fees, members, dentists, claims and EOBs; the odds in "Which plan fits us?" |
 | Household database, per-person data and access rules, a private demo family for every visitor | Sign-in is a demo with no passwords; anyone with the link can start a demo family |
 | Assistant on Anthropic with engine tools and a number guard (dollars and percentages) | Rate limits are in memory on one server; one SQLite file |
-| Six connected pages, landing, phone layout, voice input (205 frontend tests) | The AWS kit in `infra/aws/` is a reference; it was not run |
+| Connected pages, landing, phone layout, voice input (240 frontend tests) | Email and text are previews; report uploads take only sample documents |
 
 ## 7. The team and the build
 - Four prototypes (Caleb, Wrigley, Sai, Ulisses) merged into one product; each is preserved.
@@ -47,7 +47,7 @@ Optional: a notification bell (top right) tells each person what is coming up (a
 
 ## 8. What is next
 - Real plan values and fees (decision D7) and real sign-in (an access code for the demo is an idea, not built).
-- Merge to `main` and deploy (a teammate deploys `main`).
+- Real email and text sending (today previews).
 - Browser end-to-end tests and CI on GitHub.
-- Text-to-speech answers (Wrigley), more procedures, and real claims data to replace the placeholder odds in the plan comparison.
+- More procedures, and real claims data to replace the placeholder odds in the plan comparison.
 - Never imply the product replaces the dentist or the insurer: results are estimates.

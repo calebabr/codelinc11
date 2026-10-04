@@ -7,7 +7,7 @@ How the pieces fit. Everything below is built and connected; checked against the
 ```mermaid
 flowchart LR
   subgraph Browser
-    UI[React app<br/>landing, login, six pages,<br/>member switcher, assistant button]
+    UI[React app<br/>landing, login, pages (Home to Reports),<br/>member switcher, assistant button]
   end
   subgraph Backend[FastAPI backend]
     MAIN[main.py and routers/]

@@ -18,7 +18,9 @@ Index of the project documentation.
 | [ARCHITECTURE.md](ARCHITECTURE.md) | System diagram, data flow, API table, folder map |
 | [MATH.md](MATH.md) | How each cost is calculated, with the golden examples |
 | [AI.md](AI.md) | How the assistant works today and what is planned |
-| [DEMO.md](DEMO.md) | The 10:00 AM demo script with fallback and checklist |
+| [DEMO-DAY.md](DEMO-DAY.md) | One-page runbook for the presenter: checklist, order, fallbacks |
+| [DEMO.md](DEMO.md) | The 10:00 AM demo script with every click, fallback and checklist |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Live setup, settings, how the backend is updated and backed up |
 | [DEMO-PHONES.md](DEMO-PHONES.md) | Getting phones onto the demo: QR code, same Wi-Fi, tunnel, public hosting |
 | [features/](features/F7-choose-a-plan-monte-carlo.md) | Feature write-ups (F7: Which plan fits us?) |
 | [PRESENTATION.md](PRESENTATION.md) | Slide-by-slide outline |

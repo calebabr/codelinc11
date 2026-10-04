@@ -69,6 +69,7 @@ def migrate(path: str | Path) -> list[str]:
             applied_now.append(f.name)
     seed_reference(path)
     backfill_template_reports(path)
+    upgrade_template_names(path)
     return applied_now
 
 
@@ -117,6 +118,78 @@ def backfill_template_reports(path: str | Path) -> None:
                 cols = ", ".join(row)
                 conn.execute(f"INSERT INTO report_items ({cols}) VALUES ({', '.join('?' for _ in row)})",
                              list(row.values()))
+
+
+# The template family was renamed in the seed file (ids never changed). The old defaults, in the
+# seed's member order. Everything else (ids, new values) is read from the seed file, so no family
+# name or id is hard-coded here.
+_OLD_HOUSEHOLD_NAME = "Rivera household"
+_OLD_MEMBER_NAMES = ["Jordan Rivera", "Alex Rivera", "Maya Rivera", "Noah Rivera"]
+_OLD_EMAIL_LOCALS = ["jordan.rivera", "alex.rivera", None, "noah.rivera"]
+
+
+def _rename_plan() -> list[tuple[str, str, str, str, str]]:
+    """(table, row id, column, old default, new value) for every template value that was renamed."""
+    seed_data = load_seed_file()
+    plan: list[tuple[str, str, str, str, str]] = []
+    for h in seed_data["households"]:
+        plan.append(("households", h["id"], "name", _OLD_HOUSEHOLD_NAME, h["name"]))
+    old_name: dict[str, str] = {}
+    old_email: dict[str, str | None] = {}
+    for i, m in enumerate(seed_data["members"][:len(_OLD_MEMBER_NAMES)]):
+        old_name[m["id"]] = _OLD_MEMBER_NAMES[i]
+        local = _OLD_EMAIL_LOCALS[i]
+        old_email[m["id"]] = f"{local}@example.test" if local else None
+        plan.append(("members", m["id"], "name", _OLD_MEMBER_NAMES[i], m["name"]))
+        if m.get("email") and old_email[m["id"]]:
+            plan.append(("members", m["id"], "email", old_email[m["id"]], m["email"]))
+    for a in seed_data["accounts"]:
+        mid = a["member_id"]
+        if mid in old_name:
+            plan.append(("accounts", a["id"], "display_name", old_name[mid], a["display_name"]))
+            if old_email[mid]:
+                plan.append(("accounts", a["id"], "email", old_email[mid], a["email"]))
+    return plan
+
+
+def _note_plan() -> list[tuple[str, str, str]]:
+    """(member id, old note, new note) for template appointment notes that name the person."""
+    seed_data = load_seed_file()
+    names = {m["id"]: m["name"] for m in seed_data["members"]}
+    olds = {m["id"]: _OLD_MEMBER_NAMES[i].split()[0]
+            for i, m in enumerate(seed_data["members"][:len(_OLD_MEMBER_NAMES)])}
+    out = []
+    for ap in seed_data.get("appointments", []):
+        mid, note = ap["member_id"], ap.get("note")
+        if note and mid in olds and names[mid] in note:
+            out.append((mid, note.replace(names[mid], olds[mid]), note))
+    return out
+
+
+def upgrade_template_names(path: str | Path) -> int:
+    """Rename the shared template family in an older database (run after every migrate).
+
+    Updates only the template rows (the ids in the seed file), only where the stored value is
+    still exactly the old default, so it is idempotent and never overwrites a change made on
+    purpose. Demo sandboxes (ids with a dot suffix) are not touched: they expire on their own.
+    Free text (chat memory, member notes) is left alone because it cannot be matched safely.
+    Returns the number of values changed."""
+    changed = 0
+    with session(path) as conn:
+        have = {r["name"] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+        for table, row_id, col, old, new in _rename_plan():
+            if table not in have or col not in {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}:
+                continue
+            # accounts.email is unique: skip if the new address is already taken by another row.
+            clash = (table, col) == ("accounts", "email")
+            extra = " AND NOT EXISTS (SELECT 1 FROM accounts WHERE email = ?)" if clash else ""
+            args = [new, row_id, old] + ([new] if extra else [])
+            changed += conn.execute(f"UPDATE {table} SET {col} = ? WHERE id = ? AND {col} = ?{extra}", args).rowcount
+        if "appointments" in have:
+            for member_id, old, new in _note_plan():
+                changed += conn.execute("UPDATE appointments SET note = ? WHERE member_id = ? AND note = ?",
+                                        (new, member_id, old)).rowcount
+    return changed
 
 
 def load_seed_file() -> dict:

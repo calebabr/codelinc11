@@ -3,7 +3,7 @@
 The app is full stack: a **FastAPI backend** (SQLite database, AI assistant) and a **Vite single page frontend**.
 
 ## What is live
-- **Backend:** AWS (set up by a teammate), built from `backend/Dockerfile`. The container seeds the demo database when it is empty, applies any new database migrations on start, then serves the API. The SQLite file must sit on a persistent disk (`BENEFITS_DB_PATH`).
+- **Backend:** AWS EC2 (set up by a teammate), a Docker container `dental-api` built from `backend/Dockerfile`, data on the volume `dental-data`. The container seeds the demo database when it is empty, applies any new database migrations on start, then serves the API. The SQLite file must sit on a persistent disk (`BENEFITS_DB_PATH`).
 - **Frontend:** Netlify, from `netlify.toml` at the repo root (build in `frontend/`, single page app routing, security headers). Netlify rebuilds when `main` changes.
 - **Sign-in:** none. Visitors tap **Try the demo** and get their own demo family. There is no Clerk or other account service.
 - **`main` is production.** A change merged to `main` goes live (the frontend automatically, the backend when it is redeployed). Merge only through a reviewed pull request with the tests green.
@@ -28,18 +28,49 @@ The full list with defaults is in [`.env.example`](../.env.example).
 ## Frontend settings (Netlify, build time)
 | Variable | Value |
 |---|---|
-| `VITE_API_URL` | `/api`. Netlify forwards `/api/*` to the AWS backend (`netlify.toml`, Elastic IP `3.149.89.171`, port 8000), so the browser only talks HTTPS to the Netlify site. Needs `TRUST_PROXY=1` on the backend and port 8000 open in its security group |
+| `VITE_API_URL` | `/api`. Netlify forwards `/api/*` to the AWS backend (`netlify.toml`; the target is the hostname `3-149-89-171.sslip.io` on port 8000, which points at the server's Elastic IP; Netlify gives up on a forwarded request after about 26 seconds), so the browser only talks HTTPS to the Netlify site. Needs `TRUST_PROXY=1` on the backend and port 8000 open in its security group |
 
 Changing it needs a redeploy, because Vite bakes it into the build. The old `VITE_CLERK_PUBLISHABLE_KEY` setting is no longer used and can be deleted.
 
-## After every release (checklist)
-1. The backend container starts and `GET /health` answers with `"chat_mode":"anthropic"`.
-2. Open the Netlify address, tap **Try the demo**, and land on Home as the account holder in a new family ("Welcome back, ...").
-3. Ask the assistant "What will a crown cost me?" and expect $800 for AC-type usage; open **Plans**, scroll to "Which plan fits us?" and expect shares that add to 100.
-4. On a phone (cellular, not the office Wi-Fi), open `/join` and scan the code.
-5. Watch the daily chat cap and the Anthropic usage page for the first day.
+## How the live backend is updated
+The live backend runs as the Docker container `dental-api` on an AWS EC2 server. The SQLite file lives on the Docker volume `dental-data` (mounted at `/data`). Settings come from an env file on the server (never in the repo). The frontend needs no manual step: Netlify rebuilds when `main` changes.
 
-**Database upgrades** run automatically on start (new tables and the profile columns). Take a copy of `benefits.db` before the first release that includes migrations 003 to 006 so there is a way back. Rolling back the code does not undo a migration; restore the copy if needed.
+### Manual update (what a person does)
+Run these on the server, from the folder that holds the repo clone. Details such as the folder name and the env file path are not in this repo (not verified); use the ones on your server.
+```
+git pull origin main
+docker build -f backend/Dockerfile -t dental-api .
+docker stop dental-api && docker rm dental-api
+docker run -d --name dental-api --restart unless-stopped \
+  -p 8000:8000 -v dental-data:/data --env-file <path to your env file> dental-api
+curl http://localhost:8000/health
+```
+The Dockerfile builds from the repo root (it copies `backend/` and `database/`). Back up the volume first (below) when the release adds a migration.
+
+### Optional auto-update timer
+A teammate's branch `infra/ec2-auto-update` adds a timer on the server that does the same pull, build and swap on a schedule. It was **not on `main` and not read for this page**, so how it works and whether it is switched on is not verified. Ask the teammate before relying on it. If it is on, a merge to `main` reaches the backend without a manual step; if you need to hold a release back, stop the timer first.
+
+### What a restart does to the database
+- On start the container runs `python -m app.db`, then the API. The API start applies any **new migration files** in `database/migrations/` (nine today, `001` to `009`). Each is recorded in `schema_migrations` and runs once.
+- A restart **does not reseed**. Seed data loads only when the database is empty, so existing demo families and saved data stay.
+- To reseed on purpose, use `python -m app.db --reset` inside the container. That erases the data, so back up first.
+- Rolling back the code does not undo a migration. Restore the backup if you need to go back.
+
+### Backup of the data volume
+Copy the volume to a dated file on the server:
+```
+docker run --rm -v dental-data:/data -v "$PWD":/backup alpine \
+  tar czf /backup/dental-data-$(date +%F).tgz -C /data .
+```
+Copy that file off the server too. To restore, stop the container and untar the file into the volume.
+
+## After every release (checklist)
+1. The container is running (`docker ps`) and `GET /health` answers with `"chat_mode":"anthropic"`.
+2. Open the Netlify address, tap **Try the demo**, and land on Home as **Marc Halog** in a new family.
+3. **Reports** shows $90 owed for Marc; **Find Providers** with ZIP 36830 lists dentists.
+4. Ask the assistant "What will a crown cost me?" and wait for the full answer (Netlify cuts forwarded requests at about 26 seconds). Open **Plans**, scroll to "Which plan fits us?" and expect shares that add to 100.
+5. On a phone (cellular, not the office Wi-Fi), open `/join` and scan the code.
+6. Check `docker logs dental-api` for errors, and watch the daily chat cap and the Anthropic usage page for the first day.
 
 ## Alternatives that are configured but not used
 - **Render** (backend): [`render.yaml`](../render.yaml) with a persistent disk.

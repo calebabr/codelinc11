@@ -2,7 +2,9 @@
 
 A 3 to 5 minute path. The numbers below were checked live in the browser and against the API on 2026-10-03, except where a step says otherwise. All data is synthetic. Say so out loud in the demo.
 
-**What to run:** the demo works on `main` (the production version) and on `feature/choose-a-plan` (the Monte Carlo "Which plan fits us?" step, saved comparisons and the phone features). Step 10 ("Which plan fits us?") was checked against the API and by component tests, and the orchestrator checked the one-tap demo, Name your family, rate limits and phones live; a human has not yet clicked step 10 through in a browser. Run the demo from the branch that has everything you plan to show.
+**Runbook:** on the day, follow the one-page [DEMO-DAY.md](DEMO-DAY.md) (checklist, order, fallbacks). This file has every click.
+
+**What to run:** the live site (Netlify frontend, AWS backend) or a local copy. Check that the build you present from has everything you plan to show (Which plan fits us?, Find Providers, Reports, the bell). Which branch is live is not tracked in this file; check [TASKS.md](TASKS.md).
 
 ## Story
 AC (39) has a root canal that cannot wait, a crown, and two fillings. It is November and only $400 of the $1,500 yearly maximum is left. The app shows how to pay $895 less.
@@ -30,7 +32,11 @@ How to get phones onto the app (same Wi-Fi, tunnel, public hosting): [DEMO-PHONE
 | 8 | Open the **Assistant** (page or the orange button on any page) as AC and ask "How much would a crown cost me?" | A streamed answer: **$800 now, or $625 if you wait until January** |
 | 9 | Optional: **Costs**, pick **Crown, porcelain/ceramic**, toggle **Out of network** | In network you pay **$625** (Marc, fresh deductible); out of network **$925**, of which **$300 is balance billing** |
 | 10 | Optional: **Plans**, tap **Premium**, **Switch to this plan**, confirm | Header changes to "Premium plan" and every page updates. Switch back with **Back to Preferred (demo plan)** and confirm |
-| 11 | Say the line: "The engine does the math. The AI only explains it." | |
+| 11 | Optional: **Find Providers** (`/providers`), enter ZIP **36830** | Fictional dentists with distance, in or out of network; pick a procedure to see your estimate there |
+| 12 | Optional: **Costs**, paste a dentist quote | The quote is matched to a dentist in the directory |
+| 13 | Optional: **Reports** (`/reports`) as Marc Halog | Synthetic claims, EOBs and copays in date order. One unpaid EOB for a filling: **you owe $90**. Uploads accept only the sample documents |
+| 14 | Optional: **Reports**, ask page (`/reports/ask`) | Ask the assistant about the reports ("What do I owe right now?") |
+| 15 | Say the line: "The engine does the math. The AI only explains it." | |
 
 ## Optional moment: the notification bell
 About 30 seconds. Look at the **bell** in the top right of the app bar. It shows an unread badge. On 2026-11-01 (the demo clock) the counts are: **Marc 3** (plan year ending soon, unused cleanings, "Cleaning and exam" on Nov 18), **AC 5**, **Hannah 1** (reminder "Send student enrollment proof, due Nov 30"). Marc also sees Sophia's Dec 4 checkup under **Coming up**.
@@ -64,10 +70,10 @@ Every result shows: "This is an estimate. Your actual cost depends on your denti
 - Optional voice input: the mic button in the assistant (Chrome or Edge; needs microphone permission). Over plain `http://` on a Wi-Fi address phones block the mic, so voice works only on HTTPS (a tunnel).
 
 ## If the assistant is slow
-The model runs over the internet, so a slow venue connection slows it. In order:
+The model runs over the internet, so a slow venue connection slows it. On the live site, Netlify also cuts a forwarded request after about 26 seconds. In order:
 1. Wait about 10 seconds; answers stream in, so text should start appearing.
 2. Say: "While it thinks, the numbers on the other pages come straight from the engine." Show Plan My Year or Costs. They do not need the model.
-3. Check `http://localhost:8000/health`: `chat_mode` should be `anthropic`.
+3. Check `/health` (local: `http://localhost:8000/health`; live: `/api/health` on the Netlify site): `chat_mode` should be `anthropic`.
 4. If you see "Too many requests" or a message to wait, a rate limit was hit (chat: 12 a minute and 200 a day per family; 3,000 a day for everyone). Wait the number of seconds it says, or raise the limits in `backend/.env` and restart the backend (see [SETUP.md](SETUP.md)).
 5. Tap a suggested-question chip instead of typing, or ask something short like "What do I have left this year?".
 6. Switch to the fallback below.
@@ -105,7 +111,7 @@ Expected: `baseline_you_pay` 2300, `total_you_pay` 1405, `savings` 895 (checked 
 4. Last backup: the screen recording (record it during rehearsal).
 
 ## What is a stand-in
-Say these plainly if asked: all plan, fee and member data is synthetic. Sign-in is a demo with no passwords, and anyone with the link can start a demo family (an access code idea is not built). The plan-comparison odds are synthetic placeholders. Email and text notifications are previews only; nothing is sent (a real sender such as Amazon SES or Twilio is not built). Rate limits are counted in memory on one server. Everything runs on one server with one SQLite file.
+Say these plainly if asked: all plan, fee and member data is synthetic. Sign-in is a demo with no passwords, and anyone with the link can start a demo family (an access code idea is not built). The plan-comparison odds are synthetic placeholders. Reports, claims, EOBs and dentists are fictional, and report uploads accept only the sample documents. Email and text notifications are previews only; nothing is sent (a real sender such as Amazon SES or Twilio is not built). Rate limits are counted in memory on one server. Everything runs on one server with one SQLite file.
 
 ## Pre-demo checklist
 - [ ] Backend running: `cd backend && .venv/Scripts/python -m uvicorn app.main:app --port 8000` (no `--reload`); http://localhost:8000/health shows `"chat_mode":"anthropic"`
@@ -113,7 +119,7 @@ Say these plainly if asked: all plan, fee and member data is synthetic. Sign-in 
 - [ ] **Scan to try** page (`/join`) open on the big screen, and the QR scanned by one iPhone and one Android phone
 - [ ] Sign-in limits high enough for the room (`RATE_LOGIN_PER_MINUTE`, `RATE_LOGIN_PER_HOUR`; many phones share one connection)
 - [ ] Demo data fresh: **Reset demo data** on Home, or `.venv/Scripts/python -m app.db --reset` from `backend/` with the backend stopped
-- [ ] `cd backend && .venv/Scripts/python -m pytest -q` passes (523) and `cd frontend && npm run test` passes (205)
+- [ ] `cd backend && .venv/Scripts/python -m pytest -q` passes (633) and `cd frontend && npm run test` passes (240)
 - [ ] Ask the assistant one question to confirm the key and internet work
 - [ ] Rehearse the path three times
 - [ ] Screen recording saved as a backup
