@@ -58,7 +58,7 @@ export default function TryDemoButton({
         onClick={() => void go()}
         disabled={busy}
         className={cn(
-          "inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-primary px-7 text-base font-bold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-70",
+          "inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-orange-dark px-7 text-base font-bold text-white transition-colors hover:bg-[#b83208] disabled:opacity-70",
           className,
         )}
       >

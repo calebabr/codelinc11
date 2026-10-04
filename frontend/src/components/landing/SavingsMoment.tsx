@@ -21,7 +21,7 @@ function CompareBar({ row, i }: { row: (typeof rows)[number]; i: number }) {
       </div>
       <div className="mt-3 flex h-4 overflow-hidden rounded-full bg-muted" role="img" aria-label={`${row.label}: plan pays ${row.plan.amount}, you pay ${row.you.amount}`}>
         <motion.span
-          className="h-full bg-primary"
+          className="h-full bg-[linear-gradient(90deg,var(--burgundy),var(--orange))]"
           initial={{ width: 0 }}
           whileInView={{ width: `${(row.plan.value / TOTAL) * 100}%` }}
           viewport={{ once: true }}

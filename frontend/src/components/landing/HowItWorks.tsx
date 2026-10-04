@@ -76,7 +76,7 @@ function ScrollSteps() {
             <div className="relative mt-10 pl-8">
               {/* Progress line: gray track, burgundy fill that grows with the scroll */}
               <div className="absolute inset-y-0 left-0 w-[2px] bg-[var(--line)]" aria-hidden>
-                <motion.div className="h-full w-full origin-top bg-primary" style={{ scaleY: scrollYProgress }} />
+                <motion.div className="h-full w-full origin-top bg-[linear-gradient(180deg,var(--burgundy),var(--orange))]" style={{ scaleY: scrollYProgress }} />
               </div>
 
               <ol className="space-y-3">

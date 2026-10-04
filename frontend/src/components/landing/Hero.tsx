@@ -234,7 +234,7 @@ export default function Hero({ zoom = false }: { zoom?: boolean }) {
                 <p className="mt-1 text-xs font-bold tracking-wide text-muted-foreground uppercase">You pay</p>
                 <p className="money text-[34px] text-primary">$40</p>
                 <div className="mt-2 flex h-2 overflow-hidden rounded-full" aria-hidden>
-                  <span className="w-4/5 bg-primary" />
+                  <span className="w-4/5 bg-[linear-gradient(90deg,var(--burgundy),var(--orange))]" />
                   <span className="w-1/5 bg-[var(--track)]" />
                 </div>
                 <p className="mt-1.5 text-[11px] text-muted-foreground">Plan pays $160</p>

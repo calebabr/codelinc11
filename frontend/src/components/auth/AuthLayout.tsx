@@ -32,7 +32,7 @@ export default function AuthLayout({ title, subtitle, children }: { title: React
         </motion.main>
       </div>
 
-      <aside className="relative m-4 hidden overflow-hidden rounded-[32px] bg-primary lg:block" aria-hidden>
+      <aside className="hero-banner relative m-4 hidden overflow-hidden rounded-[32px] lg:block" aria-hidden>
         <LogoMark className="absolute -top-16 -right-16 size-80 text-white/[0.06]" />
         <motion.div
           initial={{ opacity: 0, y: 24 }}
