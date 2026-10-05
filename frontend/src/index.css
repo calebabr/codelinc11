@@ -400,16 +400,22 @@
   Fonts are literal in the theme, so the landing sets its own families below.
 */
 .landing {
-  --primary: #6b0f2a;
-  --secondary: #fbeff2;
-  --secondary-foreground: #6b0f2a;
-  --accent: #fbeff2;
-  --accent-foreground: #6b0f2a;
-  --foreground: #1c0a12;
-  --muted-foreground: #4b5563;
-  --border: #ece6e8;
-  --savings: #ff4f17;
-  --savings-ink: #c2410c;
+  /* Colors come from the product palette (decision D5) so the landing matches the app. */
+  --primary: var(--burgundy);
+  --secondary: var(--muted-surface);
+  --secondary-foreground: var(--burgundy);
+  --accent: var(--muted-surface);
+  --accent-foreground: var(--burgundy);
+  --foreground: var(--ink);
+  --muted-foreground: var(--muted);
+  --border: var(--line);
+  --savings: var(--orange-dark);
+  --savings-ink: var(--orange-dark);
+  /* The landing's tints (bg-blush, bg-peach, bg-mint) in product colors */
+  --blush: var(--muted-surface);
+  --peach: var(--tint-orange);
+  --mint: var(--tint-ok);
+  --mint-ink: var(--ok-ink);
   --radius: 1.25rem;
   font-family: 'Manrope Variable', system-ui, sans-serif;
   scroll-behavior: smooth;

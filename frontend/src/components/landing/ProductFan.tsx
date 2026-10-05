@@ -9,8 +9,8 @@ const CAPTION = 'One plan, three questions answered: whatâ€™s covered, what youâ
 // Final state (end of the scroll). Radii are divided by the scale so the corners *look* 28px.
 const CENTER_END = { scale: 0.72, radius: 28 / 0.72 }
 const SIDE_END = { scale: 0.62, radius: 28 / 0.62, rotate: 6 }
-const SHADOW_OFF = '0 40px 80px -30px rgba(107, 15, 42, 0)'
-const SHADOW_ON = '0 40px 80px -30px rgba(107, 15, 42, 0.35)'
+const SHADOW_OFF = '0 40px 80px -30px rgba(101,0,48, 0)'
+const SHADOW_ON = '0 40px 80px -30px rgba(101,0,48, 0.35)'
 
 // How far the side cards slide out: 340px on wide screens, less on tablets
 function sideOffset(vw: number) {
@@ -99,8 +99,10 @@ function ScrollFan({ desktop, handoff }: { desktop: boolean; handoff: boolean })
       className={cn(
         'relative overflow-x-clip',
         desktop ? 'h-[250vh]' : 'h-[160vh]',
-        // Handoff: slide up under the hero's last pinned screen so the zoomed screenshot becomes this card with no seam
-        handoff && 'z-10 -mt-[100vh]',
+        // Handoff: slide up under the hero's last pinned screen so the zoomed screenshot becomes this card with no seam.
+        // pointer-events-none: while it overlaps the hero it is invisible but would still catch clicks (the hero's
+        // "Try the demo" button). Nothing in this section is clickable, so let every click through.
+        handoff && 'pointer-events-none z-10 -mt-[100vh]',
       )}
     >
       <motion.div style={{ visibility }} className={cn('sticky top-0 h-screen', handoff && 'bg-background')}>
@@ -135,9 +137,39 @@ function StaticFan({ desktop }: { desktop: boolean }) {
 
 // Right after the hero: the Coverage screen shrinks into a card while Estimate and Plan My Year fan out beside it.
 // `handoff`: the hero's zoom ends on this section's first frame, so start pinned on top of it.
+// Phones: no pinned section and no tall empty stage, just the card and the caption in the page flow,
+// fading up once as they scroll into view (instantly with Reduce Motion).
+function CompactFan() {
+  const { src, srcSet, alt } = screens.coverage
+  return (
+    <section aria-label="The Molar Money app" className="px-6 py-12">
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="mx-auto max-w-md"
+      >
+        <img
+          src={src}
+          srcSet={srcSet}
+          sizes={SCREEN_SIZES}
+          alt={alt}
+          width={SCREEN_W}
+          height={SCREEN_H}
+          loading="lazy"
+          decoding="async"
+          className="aspect-[4/3] w-full rounded-[20px] bg-white object-cover object-top shadow-[0_24px_48px_-20px_rgba(101,0,48,0.35)]"
+        />
+        <p className="mt-6 text-center font-display text-[22px] leading-snug text-foreground">{CAPTION}</p>
+      </motion.div>
+    </section>
+  )
+}
+
 export default function ProductFan({ handoff = false }: { handoff?: boolean }) {
   const desktop = useViewportWidth() >= 768
   const reduce = useReducedMotion()
-  // Phones get the finished fan with no scroll animation (cheaper and no jumpy pinned section).
-  return reduce || !desktop ? <StaticFan desktop={desktop} /> : <ScrollFan desktop={desktop} handoff={handoff} />
+  if (!desktop) return <CompactFan />
+  return reduce ? <StaticFan desktop={desktop} /> : <ScrollFan desktop={desktop} handoff={handoff} />
 }

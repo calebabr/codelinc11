@@ -18,11 +18,10 @@ export function NavBar() {
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-white shadow-sm">
       <div className="mx-auto flex max-w-6xl items-center gap-6 px-4">
-        {/* The logo goes to the landing page; the Home tab is the app's home. The landing page's
-            "Continue your demo family" button brings a signed-in visitor straight back. */}
+        {/* The logo goes to the app's Home, like the Home tab. */}
         <Link
-          to="/welcome"
-          aria-label="Molar Money: back to the welcome page"
+          to="/"
+          aria-label="Molar Money: home"
           className="hidden min-h-11 shrink-0 items-center gap-2 py-3 sm:flex"
         >
           <LogoMark className="size-6 text-burgundy" />

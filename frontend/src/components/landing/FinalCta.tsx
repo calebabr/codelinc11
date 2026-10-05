@@ -12,7 +12,7 @@ export default function FinalCta() {
       <Reveal>
         <motion.div
           variants={rise}
-          className="relative overflow-hidden rounded-[32px] bg-primary px-8 py-16 text-center md:px-16 md:py-24"
+          className="hero-banner relative overflow-hidden rounded-[32px] px-8 py-16 text-center md:px-16 md:py-24"
         >
           <LogoMark className="pointer-events-none absolute -right-10 -bottom-16 size-80 text-white/[0.06]" />
           <SplitHeading
