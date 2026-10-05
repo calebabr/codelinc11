@@ -30,7 +30,7 @@ Build `simulate()` (Monte Carlo plan comparison), `POST /simulate`, and the assi
 - Spot-check a few simulated years against `estimate()` directly.
 - Shares sum to exactly 100; histogram counts sum to n for every plan.
 - Limits (n above 20,000, no members, bad level) give 422; 401 without a token; unknown plan 404.
-- Performance: Halog household (4 people, n 5,000) under 2 seconds locally; assert under 5 seconds in the test for CI margin.
+- Performance: Lincoln household (4 people, n 5,000) under 2 seconds locally; assert under 5 seconds in the test for CI margin.
 - The assistant tool returns the same shares as `simulate()`; the guard accepts them and rejects an invented figure.
 - Full `pytest -q` and `ruff check --no-cache .` pass.
 
@@ -38,4 +38,4 @@ Build `simulate()` (Monte Carlo plan comparison), `POST /simulate`, and the assi
 Run git write commands; start or stop servers; read or print `backend/.env`.
 
 ## Report
-Format in agents/README.md. Include the measured time for the Halog household, the exact route contract if you changed anything, and the numbers for the Halog household (average care, no known care) so the frontend and docs can quote them.
+Format in agents/README.md. Include the measured time for the Lincoln household, the exact route contract if you changed anything, and the numbers for the Lincoln household (average care, no known care) so the frontend and docs can quote them.

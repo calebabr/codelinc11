@@ -69,8 +69,8 @@ Copy that file off the server too. To restore, stop the container and untar the 
 
 ## After every release (checklist)
 1. The container is running (`docker ps`) and `GET /health` answers with `"chat_mode":"anthropic"`.
-2. Open the Netlify address, tap **Try the demo**, and land on Home as **Marc Halog** in a new family.
-3. **Reports** shows $90 owed for Marc; **Find Providers** with ZIP 36830 lists dentists.
+2. Open the Netlify address, tap **Try the demo**, and land on Home as **Abraham Lincoln** in a new family.
+3. **Reports** shows $90 owed for Abraham; **Find Providers** with ZIP 36830 lists dentists.
 4. Ask the assistant "What will a crown cost me?" and wait for the full answer (Netlify cuts forwarded requests at about 26 seconds). Open **Plans**, scroll to "Which plan fits us?" and expect shares that add to 100.
 5. On a phone (cellular, not the office Wi-Fi), open `/join` and scan the code.
 6. Check `docker logs dental-api` for errors, and watch the daily chat cap and the Anthropic usage page for the first day.

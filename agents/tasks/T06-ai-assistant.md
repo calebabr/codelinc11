@@ -25,7 +25,7 @@ The money engine, `backend/app/models.py` (ask the orchestrator for contract cha
 
 ## Acceptance checks
 - Tests with no network and no real model: a scripted fake provider drives the tool loop; the "unavailable" path; the number check rejects an invented amount; member isolation (member A's memory never appears in B's prompt); primary vs adult visibility.
-- With a real key (manual check by the orchestrator): "What will a crown cost me?" for AC in November with $1,100 used returns **$800**; "What if I wait until January?" returns **$625 versus $800**.
+- With a real key (manual check by the orchestrator): "What will a crown cost me?" for Mary in November with $1,100 used returns **$800**; "What if I wait until January?" returns **$625 versus $800**.
 - Suggestions differ by member (for example a child profile gets different ones from the primary).
 - `pytest -q` and `ruff check .` pass.
 

@@ -456,3 +456,39 @@ def test_lookup_cleanup_runs_at_most_every_ten_minutes(store, monkeypatch):
     now[0] += 600
     store.get_sandbox(old)                           # ten minutes later: runs again
     assert count_sandboxes(store.path) == 0
+
+
+def test_connect_survives_a_disk_that_cannot_do_wal(tmp_path, monkeypatch):
+    """If SQLite refuses WAL (some mounts), the app must still open the database."""
+    import sqlite3
+
+    from app.db import core
+
+    real_connect = sqlite3.connect
+
+    class NoWal:
+        def __init__(self, conn):
+            self._c = conn
+            self.row_factory = None
+
+        def execute(self, sql, *a):
+            if "journal_mode" in sql:
+                raise sqlite3.OperationalError("disk I/O error")
+            return self._c.execute(sql, *a)
+
+        def __getattr__(self, name):
+            return getattr(self._c, name)
+
+        def __setattr__(self, name, value):
+            if name in ("_c", "row_factory"):
+                object.__setattr__(self, name, value)
+                if name == "row_factory" and hasattr(self, "_c"):
+                    self._c.row_factory = value
+            else:
+                setattr(self._c, name, value)
+
+    monkeypatch.setattr(core.sqlite3, "connect", lambda *a, **k: NoWal(real_connect(*a, **k)))
+    path = tmp_path / "nowal.db"
+    conn = core.connect(path)
+    assert conn.execute("SELECT 1").fetchone()[0] == 1
+    conn.close()

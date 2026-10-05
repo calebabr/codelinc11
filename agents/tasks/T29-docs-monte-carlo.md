@@ -10,7 +10,7 @@ Make every doc that mentions plan comparison, the engine, the API or the demo re
 `docs/features/F7-choose-a-plan-monte-carlo.md` (status, final numbers, what was built), `docs/FEATURES.md` (F7 section: tick what is done, fix the acceptance line to match), `docs/MATH.md` and `docs/AI.md` (only to fix errors against the code), `docs/ARCHITECTURE.md` (endpoint table and folder map), `docs/DEMO.md` (add an optional extra demo moment: "Which plan fits us?"), `docs/PRESENTATION.md` (one slide), `docs/TASKS.md`, `docs/PROJECT-STORY.md`, `README.md` (feature list and test counts), `frontend/README.md`, `backend/README.md`, `tests/README.md`, `docs/summaries/`.
 
 ## Rules
-Verify each number by running the tests and one request through `TestClient`; quote the Halog household result only as it actually comes out. Say plainly that the odds are synthetic placeholders. Update test counts from real runs.
+Verify each number by running the tests and one request through `TestClient`; quote the Lincoln household result only as it actually comes out. Say plainly that the odds are synthetic placeholders. Update test counts from real runs.
 
 ## Report
 Format in agents/README.md. List anything not verified.

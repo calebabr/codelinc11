@@ -8,9 +8,9 @@ Write the project docs so a presenter, a recruiter and a new teammate can each u
 
 ## Facts to document now (Stage 0, verified by the orchestrator)
 - **Design (T01):** portal tokens in `frontend/src/index.css`, style guide at `/style`, rules in `docs/design/portal-look.md`.
-- **Frontend (T02):** shell with six routes (`/`, `/plans`, `/family`, `/costs`, `/plan-year`, `/assistant`), `/login` placeholder, member switcher, assistant button; mock Halog household in `SessionContext`; 10 frontend tests. Old prototype pages remain unrouted in `frontend/src/pages/` until ported.
+- **Frontend (T02):** shell with six routes (`/`, `/plans`, `/family`, `/costs`, `/plan-year`, `/assistant`), `/login` placeholder, member switcher, assistant button; mock Lincoln household in `SessionContext`; 10 frontend tests. Old prototype pages remain unrouted in `frontend/src/pages/` until ported.
 - **Backend (T03):** Caleb's engine, search, quote parser, questions and agent seam ported; three tiers (`basic`, `preferred`, `premium`); keyword fallback removed (chat reports "unavailable" without a model); 148 backend tests pass; golden numbers G1-G6 and S2 pass.
-- **Database (T04):** SQLite via `backend/app/db/`, schema `database/migrations/001_households.sql`, seed `database/seeds/demo_household.json` (Halog household: Marc, AC, Sophia, Hannah), 17 tests, access rules (primary sees all, adults see themselves, managed members have no login).
+- **Database (T04):** SQLite via `backend/app/db/`, schema `database/migrations/001_households.sql`, seed `database/seeds/demo_household.json` (Lincoln household: Abraham, Mary, Tad, Robert), 17 tests, access rules (primary sees all, adults see themselves, managed members have no login).
 - **Not built yet:** household API (T05), AI assistant on Anthropic (T06), the six real pages (T07 to T12), login UI (Ulisses, T17), CI.
 
 ## You may edit

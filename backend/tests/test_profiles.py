@@ -97,7 +97,7 @@ def test_household_members_carry_profile_fields_and_old_fields(client):
     hid = d["household"]["id"]
     members = {m["id"].split(".")[0]: m for m in client.get(f"/households/{hid}", headers=h).json()["members"]}
     jordan = members["m-jordan"]
-    assert jordan["dob"] == "1985-03-14" and jordan["email"] == "marc.halog@example.test"
+    assert jordan["dob"] == "1985-03-14" and jordan["email"] == "abraham.lincoln@example.test"
     assert jordan["phone"] == "3345550142" and jordan["zip"] == "36830" and jordan["notes"] is None
     assert jordan["primary_dentist_id"] is None
     assert jordan["age"] == 41 and jordan["role"] == "primary" and jordan["has_login"] is True
@@ -108,7 +108,7 @@ def test_adult_sees_only_their_own_profile(client):
     hid, ids, _hj, heads = family(client)
     members = client.get(f"/households/{hid}", headers=heads["alex"]).json()["members"]
     assert [m["id"] for m in members] == [ids["alex"]]
-    assert members[0]["email"] == "ac.halog@example.test"
+    assert members[0]["email"] == "mary.lincoln@example.test"
 
 
 def test_template_household_also_has_profiles(client):
@@ -137,13 +137,13 @@ def test_migration_005_upgrades_an_older_database(tmp_path):
         c.execute("INSERT INTO plan_tiers VALUES ('preferred','Preferred',4400,150000,5000,100,80,50,50)")
         c.execute("INSERT INTO households VALUES ('hh-x','X household','preferred')")
         c.execute("INSERT INTO members (id, household_id, name, relationship, age, role, has_login) "
-                  "VALUES ('m-jordan','hh-x','Marc Halog','self',41,'primary',1)")
+                  "VALUES ('m-jordan','hh-x','Abraham Lincoln','self',41,'primary',1)")
         c.execute("INSERT INTO member_usage (member_id, plan_year) VALUES ('m-jordan', 2026)")
         c.commit()
     assert migrate(path)[0] == "005_profiles.sql"   # later migrations may follow
     with connect(path) as c:
         m = dict(c.execute("SELECT * FROM members WHERE id = 'm-jordan'").fetchone())
-        assert m["age"] == 41 and m["dob"] == "1985-03-14" and m["email"] == "marc.halog@example.test"
+        assert m["age"] == 41 and m["dob"] == "1985-03-14" and m["email"] == "abraham.lincoln@example.test"
         assert c.execute("SELECT COUNT(*) FROM member_usage").fetchone()[0] == 1
         c.execute("INSERT INTO members (id, household_id, name, relationship, age, role, has_login) "
                   "VALUES ('m-p','hh-x','Pat','partner',30,'adult',0)")
@@ -159,11 +159,11 @@ def test_migration_005_upgrades_an_older_database(tmp_path):
 def test_primary_edits_anyone_and_response_is_the_member(client):
     hid, ids, hj, _ = family(client)
     r = client.patch(f"/members/{ids['maya']}/profile", headers=hj, json={
-        "name": "Sophia R.", "email": "maya@example.test", "phone": "(334) 555-0148", "zip": "36830",
+        "name": "Tad R.", "email": "maya@example.test", "phone": "(334) 555-0148", "zip": "36830",
         "notes": "Likes the blue chair."})
     assert r.status_code == 200, r.text
     m = r.json()
-    assert m["id"] == ids["maya"] and m["name"] == "Sophia R." and m["email"] == "maya@example.test"
+    assert m["id"] == ids["maya"] and m["name"] == "Tad R." and m["email"] == "maya@example.test"
     assert m["phone"] == "3345550148"                      # punctuation stripped, digits only
     assert m["zip"] == "36830" and m["notes"] == "Likes the blue chair."
     assert m["age"] == 9 and m["role"] == "managed" and m["dob"] == "2017-05-09"
@@ -201,8 +201,8 @@ def test_unsent_fields_are_left_alone(client):
     _hid, ids, hj, _ = family(client)
     r = client.patch(f"/members/{ids['alex']}/profile", headers=hj, json={"zip": "36832"})
     m = r.json()
-    assert m["zip"] == "36832" and m["email"] == "ac.halog@example.test" and m["phone"] == "3345550143"
-    assert m["dob"] == "1987-07-22" and m["name"] == "AC"
+    assert m["zip"] == "36832" and m["email"] == "mary.lincoln@example.test" and m["phone"] == "3345550143"
+    assert m["dob"] == "1987-07-22" and m["name"] == "Mary"
 
 
 def test_phone_formats_are_normalised(client):
@@ -492,10 +492,10 @@ def member_row_counts(store, mid):
 def test_delete_removes_every_dependent_row_and_leaves_no_orphans(client, store):
     hid, ids, hj, heads = family(client)
     alex = ids["alex"]
-    # Give AC a row in every dependent table.
+    # Give Mary a row in every dependent table.
     store.append_member_context(alex, alex, "chat", "hello", role="user")
     store.create_saved_simulation(alex, alex, "Compare", {"a": 1}, {"b": 2})
-    with connect(store.path) as c:   # an invite that mentions AC, and one he sent
+    with connect(store.path) as c:   # an invite that mentions Mary, and one she sent
         c.execute("INSERT INTO invites (id, household_id, invited_by, member_id, email, token, status, created_at) "
                   "VALUES ('inv-a', ?, ?, ?, 'x@example.test', 'tok-a', 'pending', '2026-11-01')",
                   (hid, ids["jordan"], alex))
@@ -506,7 +506,7 @@ def test_delete_removes_every_dependent_row_and_leaves_no_orphans(client, store)
     before = member_row_counts(store, alex)
     assert all(n >= 1 for n in before.values()), before
     # Another person's rows must survive.
-    def others_now():   # (the invite Marc sent to AC is AC's, so invites are not compared)
+    def others_now():   # (the invite Abraham sent to Mary is Mary's, so invites are not compared)
         return {k: {t: n for t, n in member_row_counts(store, ids[k]).items() if t != "invites"}
                 for k in ("jordan", "maya", "noah")}
     others = others_now()
@@ -562,7 +562,7 @@ def test_editing_one_sandbox_does_not_touch_another(client, store):
     assert len(client.get(f"/households/{hid2}", headers=hj2).json()["members"]) == 4
     # The shared template and the seed are untouched too.
     tm = client.get(f"/households/{TEMPLATE_HH}", headers=template_headers(client)).json()["members"]
-    assert [m["name"] for m in tm] == ["Marc Halog", "AC", "Sophia", "Hannah"]
+    assert [m["name"] for m in tm] == ["Abraham Lincoln", "Mary", "Tad", "Robert"]
     assert tm[1]["dob"] == "1987-07-22" and tm[1]["notes"] is None
 
 
@@ -589,7 +589,7 @@ def test_reset_restores_the_seed_profile_values_and_the_family(client):
 # ---- golden numbers and contact privacy --------------------------------------------------------
 
 def test_golden_numbers_for_alex_still_hold(client):
-    """AC has $1,100 of $1,500 used: $400 left, a crown costs him $800 (G3). Profile edits and
+    """Mary has $1,100 of $1,500 used: $400 left, a crown costs her $800 (G3). Profile edits and
     a family change do not move the numbers."""
     hid, ids, hj, heads = family(client)
     client.patch(f"/members/{ids['alex']}/profile", headers=hj, json={"dob": "1980-01-01", "zip": "30301"})
@@ -628,7 +628,7 @@ def test_contact_details_never_reach_the_model(client, store):
                  json={"email": "maya.private@example.test", "phone": "3345550198"})
     needles = ["secret.mail@example.test", "3345550199", "334-555-0199", "(334) 555-0199", "36849",
                "Private note about the family", "maya.private@example.test", "3345550198",
-               "ac.halog@example.test", "1987-07-22", "example.test"]
+               "mary.lincoln@example.test", "1987-07-22", "example.test"]
 
     # The context object, its prompt text and the "what the assistant knows" panel.
     mc = build_member_context(store, ids["jordan"], alex)
@@ -640,18 +640,18 @@ def test_contact_details_never_reach_the_model(client, store):
     fake = FakeProvider([
         Reply(tool_calls=[ToolCall("1", "get_household_coverage", {})]),
         Reply(tool_calls=[ToolCall("2", "get_member_eligibility", {})]),
-        Reply(text="AC is covered. This is an estimate, not a guarantee."),
+        Reply(text="Mary is covered. This is an estimate, not a guarantee."),
     ])
     chat = FastAPI()
     chat.include_router(chat_router.router)
     chat.dependency_overrides[get_store] = lambda: store
     chat.dependency_overrides[chat_router.get_provider] = lambda: fake
     r = TestClient(chat).post("/chat", headers=hj, json={
-        "messages": [{"role": "user", "content": "Who is covered and what do you know about AC?"}],
+        "messages": [{"role": "user", "content": "Who is covered and what do you know about Mary?"}],
         "member_id": alex})
     assert r.status_code == 200
     everything = json.dumps(fake.calls) + r.text
-    assert "AC" in everything and "get_household_coverage" in everything
+    assert "Mary" in everything and "get_household_coverage" in everything
     for n in needles:
         assert n not in everything, n
     # And the stored chat memory.

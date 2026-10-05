@@ -12,7 +12,7 @@ from app.routers.session import get_store, make_token
 
 JORDAN, ALEX, MAYA = "m-jordan", "m-alex", "m-maya"
 REQ = {
-    "members": [{"id": "m-alex", "name": "AC", "age": 39, "care_level": "average",
+    "members": [{"id": "m-alex", "name": "Mary", "age": 39, "care_level": "average",
                  "known_care": [{"code": "D2740", "count": 1}]}],
     "plan_ids": ["basic", "preferred", "premium"], "n": 500, "seed": 42, "in_network": True,
 }

@@ -11,7 +11,7 @@ An assistant for people with employer dental insurance. It answers three questio
 |---|---|
 | **Landing** (`/welcome`) | What Molar Money is, with a worked crown example and a one-tap **Try the demo** button |
 | **Scan to try** (`/join`) | A big QR code page for a screen or projector; phones scan it and land on `/welcome` |
-| **Sign in** (`/login`) | **Try the demo** creates your own copy of the demo family. Then pick Marc Halog (primary account holder), AC (spouse) or Hannah (23, waiting for student verification). Sophia (9) has no login |
+| **Sign in** (`/login`) | **Try the demo** creates your own copy of the demo family. Then pick Abraham Lincoln (primary account holder), Mary (spouse) or Robert (23, waiting for student verification). Tad (9) has no login |
 | **Home** | What is left this plan year, deductible, cleanings used, a "use it before it resets" banner, log a visit, calendar reminders, a **Notifications** card, a one-time **Name your family** card (primary only) |
 | **Plans** | Compare Basic, Preferred and Premium side by side; **Which plan fits us?** simulates 5,000 possible years for your household and shows how often each plan is cheapest (synthetic odds) and can save a comparison to Plan My Year; the primary can switch the family plan |
 | **Family** | Household tree; tap a person to see their own maximum, deductible and what they can use; edit profiles (date of birth, email, text number, ZIP), add and remove family members |
@@ -24,7 +24,7 @@ An assistant for people with employer dental insurance. It answers three questio
 
 Each person in the household has their own usage, history, saved plans and assistant memory. The primary account holder sees everyone; an adult sees only themselves.
 
-**Every visitor gets their own demo family.** "Try the demo" (`POST /auth/demo-login` with `sandbox: true`) clones the demo Halog household into a private copy that lasts 24 hours (at most 300 at once, about 4.4 KB each). Changes, resets and renames stay inside that copy, so one visitor cannot change another's demo. The primary can rename the family with **Name your family** (`PUT /households/{id}/names`, demo copies only). **Reset demo data** restores only your own copy.
+**Every visitor gets their own demo family.** "Try the demo" (`POST /auth/demo-login` with `sandbox: true`) clones the demo Lincoln household into a private copy that lasts 24 hours (at most 300 at once, about 4.4 KB each). Changes, resets and renames stay inside that copy, so one visitor cannot change another's demo. The primary can rename the family with **Name your family** (`PUT /households/{id}/names`, demo copies only). **Reset demo data** restores only your own copy.
 
 **Phones.** The app works at 375 px: pages load on demand (the first JavaScript download is about 162 kB gzip), inputs are 16 px, tap targets are 44 px, the assistant is a full-screen panel, and there is a web manifest and icons for "Add to Home Screen". Show the QR code at `/join` (or make one with `scripts/make_qr.py`). Three ways to get phones onto it (same Wi-Fi, tunnel, public hosting) are in [docs/DEMO-PHONES.md](docs/DEMO-PHONES.md).
 
@@ -122,6 +122,6 @@ Built by a five-person team (listed in the order given, without ranking):
 ## More
 [docs/FEATURES.md](docs/FEATURES.md) (features and golden numbers) · [docs/DEMO-DAY.md](docs/DEMO-DAY.md) · [docs/DEMO.md](docs/DEMO.md) · [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) · [docs/DEMO-PHONES.md](docs/DEMO-PHONES.md) · [docs/PRESENTATION.md](docs/PRESENTATION.md) · [docs/CONVENTIONS.md](docs/CONVENTIONS.md) · [docs/GIT-WORKFLOW.md](docs/GIT-WORKFLOW.md)
 
-Screenshots to capture for this README (add them from the live site): landing hero with Try the demo, Scan to try page, Home for Marc, Family tree, Plan My Year savings card for AC ($2,300 to $1,405), Costs crown out of network, Find Providers, Reports, Assistant answer.
+Screenshots to capture for this README (add them from the live site): landing hero with Try the demo, Scan to try page, Home for Abraham, Family tree, Plan My Year savings card for Mary ($2,300 to $1,405), Costs crown out of network, Find Providers, Reports, Assistant answer.
 
 All figures are estimates, not guarantees.

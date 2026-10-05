@@ -18,14 +18,14 @@ The router, shell and shared context (T02), other pages, `backend/`.
 
 ## Interfaces
 - Data: `GET /households/{id}`, `GET /members/{id}/overview`, `POST /households/{id}/invites`.
-- **Diagram:** a clickable family tree (SVG or HTML) with each person as a node: initial, name, relationship and age, a "pending" style for Hannah, and a small "has login" marker for adults. Click a person to select them (this also sets the page's detail view; it does not need to change the signed-in member).
+- **Diagram:** a clickable family tree (SVG or HTML) with each person as a node: initial, name, relationship and age, a "pending" style for Robert, and a small "has login" marker for adults. Click a person to select them (this also sets the page's detail view; it does not need to change the signed-in member).
 - **Detail panel for the selected person:** chips for each service (preventive, basic, major, orthodontia) shown as available, not available, or pending verification; their own **maximum used and left**, deductible and visits; the age rule that applies ("covered to 19, or 26 as a full-time student"); a note for pending status; and a "View as this person" action that switches the active member if the signed-in account may.
 - **Invite:** for the primary, an "Invite" action on adult members without a login (adults 18 and over only); shows the pending invite state. Demo-level only.
 - Respect visibility: the primary sees everyone; an adult sees themself only (the page shows just their node).
 - Plain wording, no dropdowns, 375 px layout.
 
 ## Acceptance checks
-- The Halog household shows four nodes; Hannah is pending with his note; Sophia is a managed profile with no login marker.
+- The Lincoln household shows four nodes; Robert is pending with his note; Tad is a managed profile with no login marker.
 - Selecting each person shows **that person's** numbers (not a household total).
 - Signing in as an adult who is not primary shows only their own node.
 - Tests read exact values from mocked API responses. `npm run typecheck`, `npm run test`, `npm run build` pass.

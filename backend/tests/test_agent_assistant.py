@@ -183,7 +183,7 @@ def test_crown_for_alex_in_november_is_800(client_for):
     assert ev[-1][1]["mode"] == "anthropic"
     assert "$800" in answer_text(ev)
     end = next(d for n, d in ev if n == "tool_end")
-    assert end["result"]["in_network"]["you_pay"] == 800  # engine number, from AC's own usage
+    assert end["result"]["in_network"]["you_pay"] == 800  # engine number, from Mary's own usage
 
 
 def test_wait_until_january_returns_625_versus_800(client_for):
@@ -262,33 +262,33 @@ def test_stateless_chat_uses_the_request_plan_and_saves_nothing(client_for, stor
 # ---------------------------------------------------------------- per-person context and memory
 
 def test_prompt_has_only_the_active_members_context(client_for):
-    fake = FakeProvider([say("Hello, AC. This is an estimate, not a guarantee.")])
+    fake = FakeProvider([say("Hello, Mary. This is an estimate, not a guarantee.")])
     ask(client_for(fake), ALEX, "hi")
     system = fake.calls[0]["system"]
-    assert "AC" in system and "stay with the current dentist" in system
-    assert "Likes morning appointments" not in system       # Marc's preference
-    assert "Sophia" not in system and "Nervous at the dentist" not in system
-    assert "Marc" not in system
+    assert "Mary" in system and "stay with the current dentist" in system
+    assert "Likes morning appointments" not in system       # Abraham's preference
+    assert "Tad" not in system and "Nervous at the dentist" not in system
+    assert "Abraham" not in system
 
 
 def test_memory_is_saved_per_person_and_never_crosses(client_for, store):
-    c = client_for(FakeProvider([say("Sure, AC. This is an estimate, not a guarantee.")]))
+    c = client_for(FakeProvider([say("Sure, Mary. This is an estimate, not a guarantee.")]))
     ask(c, ALEX, "I always forget my cleaning")
     mem = store.get_member_context(ALEX, ALEX)["chat_memory"]
     assert [m["role"] for m in mem] == ["user", "assistant"]
     assert store.get_member_context(JORDAN, JORDAN)["chat_memory"] == []
-    fake = FakeProvider([say("Hi Marc. This is an estimate, not a guarantee.")])
+    fake = FakeProvider([say("Hi Abraham. This is an estimate, not a guarantee.")])
     ask(client_for(fake), JORDAN, "hello")
     assert "forget my cleaning" not in fake.calls[0]["system"]
-    # AC's own next chat does see his memory
+    # Mary's own next chat does see her memory
     fake2 = FakeProvider([say("Welcome back. This is an estimate, not a guarantee.")])
     ask(client_for(fake2), ALEX, "hello again")
     assert "forget my cleaning" in fake2.calls[0]["system"]
 
 
 def test_clear_chat_deletes_only_that_persons_memory(client_for, store):
-    c = client_for(FakeProvider([say("Hi AC. This is an estimate, not a guarantee."),
-                                 say("Hi Marc. This is an estimate, not a guarantee.")]))
+    c = client_for(FakeProvider([say("Hi Mary. This is an estimate, not a guarantee."),
+                                 say("Hi Abraham. This is an estimate, not a guarantee.")]))
     ask(c, ALEX, "hello")
     ask(c, JORDAN, "hello")
     r = c.delete(f"/members/{ALEX}/chat", headers=auth(ALEX))
@@ -314,14 +314,14 @@ def test_context_loads_that_persons_plan_usage_and_history(store):
     assert ctx.plan_id == "preferred"
     assert ctx.usage.max_used == 1100 and ctx.usage.deductible_met == 50
     assert "D1110" in ctx.usage.history
-    assert [p["name"] for p in ctx.household] == ["AC"]   # an adult sees only themself
+    assert [p["name"] for p in ctx.household] == ["Mary"]   # an adult sees only themself
     assert len(build_member_context(store, JORDAN, MAYA).household) == 4  # the primary sees all
 
 
 # ---------------------------------------------------------------- visibility
 
 def test_primary_may_chat_about_a_child_but_an_adult_may_not_about_others(client_for):
-    ok = ask(client_for(FakeProvider([say("Sophia's plan covers checkups. This is an estimate, not a guarantee.")])),
+    ok = ask(client_for(FakeProvider([say("Tad's plan covers checkups. This is an estimate, not a guarantee.")])),
              MAYA, "What is covered?", viewer=JORDAN)
     assert ok.status_code == 200
     assert ask(client_for(FakeProvider([])), JORDAN, "x", viewer=ALEX).status_code == 403
@@ -367,8 +367,8 @@ def test_suggestions_default_to_the_viewer_and_respect_visibility(client_for):
 def test_assistant_context_panel(client_for):
     c = client_for(FakeProvider([]))
     ok = c.get(f"/members/{ALEX}/assistant-context", headers=auth(ALEX)).json()
-    assert ok["name"] == "AC" and ok["usage"]["max_used"] == 1100
-    assert ok["must_haves"] and "Marc" not in json.dumps(ok)
+    assert ok["name"] == "Mary" and ok["usage"]["max_used"] == 1100
+    assert ok["must_haves"] and "Abraham" not in json.dumps(ok)
     assert c.get(f"/members/{JORDAN}/assistant-context", headers=auth(ALEX)).status_code == 403
     assert c.get(f"/members/{ALEX}/assistant-context", headers=auth(JORDAN)).status_code == 200
 
@@ -382,11 +382,11 @@ def test_suggestion_rules_without_http(store):
 
 def test_eligibility_and_household_tools(client_for):
     fake = FakeProvider([call("get_member_eligibility"), call("get_household_coverage"),
-                         say("Hannah's coverage is pending. This is an estimate, not a guarantee.")])
+                         say("Robert's coverage is pending. This is an estimate, not a guarantee.")])
     ev = parse_sse(ask(client_for(fake), NOAH, "Am I covered?").text)
     results = [d["result"] for n, d in ev if n == "tool_end"]
     assert results[0]["status"] == "pending" and results[0]["covered_now"] is False
-    assert [m["name"] for m in results[1]["members"]] == ["Hannah"]
+    assert [m["name"] for m in results[1]["members"]] == ["Robert"]
 
 
 # ---------------------------------------------------------------- attachments (sample PDFs)

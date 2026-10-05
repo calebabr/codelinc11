@@ -200,7 +200,7 @@ def test_ollama_not_called_without_unmatched(monkeypatch):
 
 
 REALISTIC = (
-    "SMILE FIRST FAMILY DENTISTRY\nPatient: AC     Exam date: 10/02/2026\n\nTREATMENT PLAN\n"
+    "SMILE FIRST FAMILY DENTISTRY\nPatient: Mary     Exam date: 10/02/2026\n\nTREATMENT PLAN\n"
     "Phase 1 (urgent: pain, lower left)\n  #19   D3330   Root canal, molar    $1,100.00\n\nPhase 2\n"
     "  #19   D2740   Crown, porcelain/ceramic    $1,600.00\n"
     "  #14   D2392   Filling, 2 surfaces (composite)    $200.00\n"
@@ -224,7 +224,7 @@ def test_realistic_office_quote():
 @pytest.mark.parametrize(
     "line",
     [
-        "Patient: AC     Exam date: 10/02/2026",
+        "Patient: Mary     Exam date: 10/02/2026",
         "Exam 2026",
         "Exam date: 2026-10-02",
         "Periodic exam Oct 2, 2026",

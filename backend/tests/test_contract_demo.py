@@ -1,4 +1,4 @@
-"""The demo moment end to end through the API (T13): sign in as AC, see $400 left, run Plan My Year
+"""The demo moment end to end through the API (T13): sign in as Mary, see $400 left, run Plan My Year
 for the S2 treatment list, then ask the assistant, with a scripted fake provider (no model, no network).
 Every dollar figure the assistant says must come from a tool result."""
 import json
@@ -80,13 +80,13 @@ def test_alex_demo_flow(store):
     try:
         client = TestClient(app)
 
-        # 1. Sign in as AC: $400 left.
+        # 1. Sign in as Mary: $400 left.
         login = client.post("/auth/demo-login", json={"member_id": ALEX}).json()
         headers = {"Authorization": f"Bearer {login['token']}"}
         overview = client.get(f"/members/{ALEX}/overview", headers=headers).json()
         assert overview["benefits"]["max_remaining"] == 400
 
-        # 2. Plan My Year with AC's own usage gives the golden numbers.
+        # 2. Plan My Year with Mary's own usage gives the golden numbers.
         usage = {"max_used": overview["usage"]["max_used"],
                  "deductible_met": overview["usage"]["deductible_met"], "history": []}
         sched = client.post("/schedule", json={

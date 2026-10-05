@@ -61,19 +61,19 @@ def test_old_names_become_new_on_migrate(path, client):
     migrate(path)
     accounts = client.get("/auth/demo-accounts").json()
     names = {a["member_id"]: (a["display_name"], a["email"]) for a in accounts}
-    assert names["m-jordan"] == ("Marc Halog", "marc.halog@example.test")
-    assert names["m-alex"] == ("AC", "ac.halog@example.test")
-    assert names["m-noah"] == ("Hannah", "hannah.halog@example.test")
+    assert names["m-jordan"] == ("Abraham Lincoln", "abraham.lincoln@example.test")
+    assert names["m-alex"] == ("Mary", "mary.lincoln@example.test")
+    assert names["m-noah"] == ("Robert", "robert.lincoln@example.test")
     assert not any("Rivera" in str(a) for a in accounts)
     d = client.post("/auth/demo-login", json={"member_id": "m-jordan"}).json()
-    assert d["household"]["name"] == "Halog household"
-    assert sorted(m["name"] for m in d["household"]["members"]) == ["AC", "Hannah", "Marc Halog", "Sophia"]
+    assert d["household"]["name"] == "Lincoln household"
+    assert sorted(m["name"] for m in d["household"]["members"]) == ["Abraham Lincoln", "Mary", "Robert", "Tad"]
     headers = {"Authorization": f"Bearer {d['token']}"}
     ov = client.get("/members/m-jordan/overview", headers=headers)
     assert ov.status_code == 200 and "Rivera" not in ov.text
     with connect(path) as c:
         assert c.execute("SELECT note FROM appointments WHERE member_id='m-noah'").fetchone()[0] == \
-            "Needed to keep Hannah covered."
+            "Needed to keep Robert covered."
 
 
 def test_ids_do_not_change(path):
@@ -109,7 +109,7 @@ def test_a_value_changed_on_purpose_is_not_overwritten(path):
     with connect(path) as c:
         assert c.execute("SELECT name FROM members WHERE id='m-jordan'").fetchone()[0] == "Jordan R. Custom"
         assert c.execute("SELECT name FROM households WHERE id='hh-rivera'").fetchone()[0] == "Our family"
-        assert c.execute("SELECT name FROM members WHERE id='m-alex'").fetchone()[0] == "AC"
+        assert c.execute("SELECT name FROM members WHERE id='m-alex'").fetchone()[0] == "Mary"
 
 
 def test_fresh_seed_is_untouched(path):
@@ -125,7 +125,7 @@ def test_sandbox_created_after_upgrade_has_new_names(path, client):
     r = client.post("/auth/demo-login", json={"member_id": "m-jordan", "sandbox": True})
     assert r.status_code == 200
     d = r.json()
-    assert d["household"]["name"] == "Halog household"
+    assert d["household"]["name"] == "Lincoln household"
     assert "Rivera" not in str(d["household"]["members"])
     # sandbox rows are never touched by the upgrade (they come from the new seed file already)
     sb = d["sandbox"]["household_id"]
@@ -133,4 +133,4 @@ def test_sandbox_created_after_upgrade_has_new_names(path, client):
     migrate(path)
     assert snapshot(path) == snap
     with connect(path) as c:
-        assert c.execute("SELECT name FROM households WHERE id = ?", (sb,)).fetchone()[0] == "Halog household"
+        assert c.execute("SELECT name FROM households WHERE id = ?", (sb,)).fetchone()[0] == "Lincoln household"

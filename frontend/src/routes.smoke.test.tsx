@@ -43,7 +43,7 @@ function mockApi() {
       if (m?.[2] === 'schedule') return ok([])
       if (url.includes('/assistant-context'))
         return ok({
-          member_id: 'm-jordan', name: 'Marc Halog', plan: 'Preferred', plan_highlights: 'Cleanings 100%.',
+          member_id: 'm-jordan', name: 'Abraham Lincoln', plan: 'Preferred', plan_highlights: 'Cleanings 100%.',
           history: [], preferences: [], must_haves: [], chat_memory: [], attachments: [], shared_with_assistant: ['plan', 'usage'],
         })
       if (url.includes('/chat/suggestions')) return ok({ member_id: 'm-jordan', suggestions: [] })

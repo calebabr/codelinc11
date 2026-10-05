@@ -293,7 +293,7 @@ describe("Reports page", () => {
   it("shows a friendly empty state", async () => {
     listReply = () => ({ status: 200, body: { items: [], totals: { billed: 0, allowed: 0, plan_paid: 0, you_paid: 0, you_owe_open: 0 } } })
     renderPage()
-    expect(await screen.findByTestId("empty")).toHaveTextContent("No documents yet for AC")
+    expect(await screen.findByTestId("empty")).toHaveTextContent("No documents yet for Mary")
   })
 
   it("shows an error with a retry", async () => {
@@ -338,7 +338,7 @@ describe("Reports page", () => {
   it("explains when this person's documents are not visible", async () => {
     listReply = () => ({ status: 403, body: { detail: "No access." } })
     renderPage("m-maya")
-    expect(await screen.findByTestId("no-access")).toHaveTextContent("You can't see Sophia's documents")
+    expect(await screen.findByTestId("no-access")).toHaveTextContent("You can't see Tad's documents")
     expect(screen.queryByTestId("totals")).not.toBeInTheDocument()
   })
 

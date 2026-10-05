@@ -21,11 +21,11 @@ Follow [DEMO.md](DEMO.md). The key moment: **$2,300 now, $1,405 optimized, you s
 
 ### Moment 2: "Which plan fits us?" (Monte Carlo)
 - One idea: nobody knows next year's dental care, so we simulate 5,000 possible years for the family and show how often each plan costs the least. Same engine, same seed, same answer.
-- Numbers (Halog household, average care, seed 42, in network): Basic 82%, Preferred 17%, Premium 1%; with AC's crown as known care, Preferred is cheapest in 54%.
+- Numbers (Lincoln household, average care, seed 42, in network): Basic 82%, Preferred 17%, Premium 1%; with Mary's crown as known care, Preferred is cheapest in 54%.
 - You can save a comparison to Plan My Year and open it again later. The assistant answers "Summarize the plan simulations" from the same numbers.
 - Notes: say plainly that the odds are synthetic placeholders, not a prediction. Present from the live site or a build that has it. Day-of runbook: [DEMO-DAY.md](DEMO-DAY.md).
 
-Optional: **Find Providers** (ZIP 36830) lists fictional dentists, and **Reports** shows synthetic claims, EOBs and copays (Marc Halog owes $90 on one EOB). A notification bell (top right) tells each person what is coming up and what needs attention. Email and text are previews only; nothing is sent.
+Optional: **Find Providers** (ZIP 36830) lists fictional dentists, and **Reports** shows synthetic claims, EOBs and copays (Abraham Lincoln owes $90 on one EOB). A notification bell (top right) tells each person what is coming up and what needs attention. Email and text are previews only; nothing is sent.
 
 ## 5. How it works
 - The **engine does the math**, the **AI explains it**. The model never computes a dollar amount; a number guard rejects any dollar figure that did not come from a tool.

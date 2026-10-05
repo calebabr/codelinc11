@@ -50,7 +50,7 @@ beforeEach(() => {
       const json = (d: unknown) => new Response(JSON.stringify(d), { status: 200 })
       if (/\/chat\/suggestions/.test(url)) return json({ member_id: "m-alex", suggestions: [] })
       if (/assistant-context/.test(url))
-        return json({ member_id: "m-alex", name: "AC", age: 40, relationship: "self", status: "active", plan: "Preferred",
+        return json({ member_id: "m-alex", name: "Mary", age: 40, relationship: "self", status: "active", plan: "Preferred",
           plan_highlights: "", history: [], preferences: [], must_haves: [], chat_memory: [], shared_with_assistant: [] })
       if (url.endsWith("/chat")) {
         bodies.push(JSON.parse(String(init?.body)))

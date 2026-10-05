@@ -34,7 +34,7 @@ def by_service(overview):
 # ---- sign-in ----
 def test_demo_accounts_lists_logins_only(client):
     ids = {a["member_id"] for a in client.get("/auth/demo-accounts").json()}
-    assert ids == {JORDAN, ALEX, NOAH}  # Sophia is managed, no login
+    assert ids == {JORDAN, ALEX, NOAH}  # Tad is managed, no login
 
 
 def test_demo_login_returns_token_member_household(client):
@@ -127,7 +127,7 @@ def test_schedule_per_member(client):
     s = client.get(f"/members/{ALEX}/schedule", headers=login(client, ALEX)).json()
     assert [e["due_date"] for e in s] == ["2026-12-15"] and s[0]["kind"] == "reminder"
     s = client.get(f"/members/{JORDAN}/schedule", headers=login(client, JORDAN)).json()
-    assert s[0]["title"] == "Cleaning and exam" and s[0]["member_name"] == "Marc Halog"
+    assert s[0]["title"] == "Cleaning and exam" and s[0]["member_name"] == "Abraham Lincoln"
 
 
 # ---- invites ----

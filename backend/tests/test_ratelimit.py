@@ -77,7 +77,7 @@ def test_chat_429_has_retry_after_and_friendly_body(client, monkeypatch, clock):
 def test_household_shared_but_other_households_isolated(client, monkeypatch):
     monkeypatch.setenv("RATE_CHAT_PER_MINUTE", "1")
     assert client.post("/chat", json=CHAT_BODY, headers=auth("m-jordan")).status_code == 200
-    # AC is in the same household as Marc, so shares the budget
+    # Mary is in the same household as Abraham, so shares the budget
     assert client.post("/chat", json=CHAT_BODY, headers=auth("m-alex")).status_code == 429
     # a caller with no household falls back to its IP key and is counted separately
     assert client.post("/chat", json=CHAT_BODY).status_code != 429

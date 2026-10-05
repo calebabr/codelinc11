@@ -60,15 +60,15 @@ def test_record_visit_in_new_year_creates_that_years_row(store):
 def test_context_isolation_between_members(store):
     store.append_member_context(ALEX, ALEX, "chat", "What does my crown cost?", role="user")
     store.append_member_context(ALEX, ALEX, "must_have", "Keep the same dentist")
-    store.append_member_context(JORDAN, MAYA, "chat", "Sophia is nervous", role="user")
+    store.append_member_context(JORDAN, MAYA, "chat", "Tad is nervous", role="user")
     alex = store.get_member_context(ALEX, ALEX)
     maya = store.get_member_context(JORDAN, MAYA)
     assert [c["content"] for c in alex["chat_memory"]] == ["What does my crown cost?"]
-    assert [c["content"] for c in maya["chat_memory"]] == ["Sophia is nervous"]
+    assert [c["content"] for c in maya["chat_memory"]] == ["Tad is nervous"]
     assert "Keep the same dentist" in alex["must_haves"]
     assert "Keep the same dentist" not in maya["must_haves"]
-    assert alex["name"] == "AC" and maya["name"] == "Sophia"
-    # nothing from AC's history appears under Sophia
+    assert alex["name"] == "Mary" and maya["name"] == "Tad"
+    # nothing from Mary's history appears under Tad
     assert {v["description"] for v in maya["history"]} == {"Cleaning and sealants"}
 
 

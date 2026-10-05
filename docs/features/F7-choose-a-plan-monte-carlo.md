@@ -16,8 +16,8 @@ Original sketch: [../planning/path1-deep-dive.md](../planning/path1-deep-dive.md
 | Rate limit | `/simulate` counts toward `RATE_COMPUTE_PER_MINUTE` (60 a minute per household) |
 | Tests | `backend/tests/test_simulate.py`, `test_simulate_api.py`, `test_agent_compare_plans.py`, `test_agent_sim_followups.py`, `test_saved_simulations.py`; `frontend/src/features/plans/WhichPlanFits.test.tsx`, `SaveComparison.test.tsx` |
 
-### Result for the Halog household (checked 2026-10-03)
-Marc 41, AC 39, Sophia 9, Hannah 23, everyone on average care, 5,000 years, seed 42, in network. It runs in about 0.1 to 0.2 seconds. Premiums per year: Basic $1,344, Preferred $2,112, Premium $2,928.
+### Result for the Lincoln household (checked 2026-10-03)
+Abraham 41, Mary 39, Tad 9, Robert 23, everyone on average care, 5,000 years, seed 42, in network. It runs in about 0.1 to 0.2 seconds. Premiums per year: Basic $1,344, Preferred $2,112, Premium $2,928.
 
 | | Cheapest in | Typical year (median) | Bad year (90th percentile) |
 |---|---|---|---|
@@ -25,7 +25,7 @@ Marc 41, AC 39, Sophia 9, Hannah 23, everyone on average care, 5,000 years, seed
 | Basic | 82% | $1,939 | $3,294 |
 | Preferred | 17% | $2,392 | $3,092 |
 | Premium | 1% | $3,123 | $3,528 |
-| **With AC's crown (D2740 x 1) as known care** | | | |
+| **With Mary's crown (D2740 x 1) as known care** | | | |
 | Basic | 39% | $3,139 | $4,494 |
 | Preferred | 54% | $2,992 | $3,852 |
 | Premium | 7% | $3,498 | $3,903 |
@@ -37,13 +37,13 @@ Without known care the winner is Basic; with the crown it is Preferred. All tota
 
 ## What the user sees (Plans page, new "Which plan fits us?" section)
 1. **Who is covered:** the household members are pre-filled from the database (ages drive the odds). Tap a person to mark a care level: *Low* (healthy teeth), *Average*, *High* (frequent dental work).
-2. **Known care:** tap treatments someone already knows they need (for example AC's crown). Reuses the Plan My Year treatment cards.
+2. **Known care:** tap treatments someone already knows they need (for example Mary's crown). Reuses the Plan My Year treatment cards.
 3. **Results, one card per plan:**
    - "Cheapest in **X%** of years" (the headline, largest number on the card)
    - Typical year (median) total: premiums + what you pay
    - Bad year (90th percentile) total
    - A small distribution chart (box plot or overlaid histogram, Recharts) for the three plans
-4. **Why:** plain-language reasons from the engine trace, for example "Premium costs $204 more a year in premiums, but your planned crown and AC's higher care level make big bills likely, where Premium's 70% major coverage and $2,500 maximum pay more."
+4. **Why:** plain-language reasons from the engine trace, for example "Premium costs $204 more a year in premiums, but your planned crown and Mary's higher care level make big bills likely, where Premium's 70% major coverage and $2,500 maximum pay more."
 5. The estimate disclaimer, plus: "Based on simulated years with synthetic odds, not a prediction for your family."
 
 The assistant gets a new tool, `compare_plans`, so "Which plan should we choose?" returns the same numbers in chat.
@@ -90,8 +90,8 @@ No new backend dependency was added: the pure-Python version with cached pricing
 - Golden numbers G1-G6 and S2 still pass unchanged.
 
 ## Acceptance
-- With the seeded Halog household on Average care and no known care, the page shows one card per plan with a "cheapest in X% of years" figure, median and bad-year totals, and a chart, in under 2 seconds.
-- Marking AC's crown as known care visibly shifts the result toward the plan with better major coverage.
+- With the seeded Lincoln household on Average care and no known care, the page shows one card per plan with a "cheapest in X% of years" figure, median and bad-year totals, and a chart, in under 2 seconds.
+- Marking Mary's crown as known care visibly shifts the result toward the plan with better major coverage.
 - Asking the assistant "Which plan should we pick?" returns the same percentages as the page.
 
 ## Risks and limits
@@ -104,7 +104,7 @@ No new backend dependency was added: the pure-Python version with cached pricing
 
 
 ## Decisions made before building (2026-10-04)
-- **No numpy.** Pure Python (`random.Random(seed)`) is enough *if* pricing is cached: a person's simulated year is a list of procedure codes, and its cost under a plan depends only on (plan, ordered code list). Cache by that key (`functools.lru_cache` or a dict per request). Most simulated years repeat, so n = 5,000 x 4 people x 3 plans needs only a few hundred real `run_year()` calls. Target: under 2 seconds for the Halog household. If it is still too slow, lower the default to 2,000 and say so.
+- **No numpy.** Pure Python (`random.Random(seed)`) is enough *if* pricing is cached: a person's simulated year is a list of procedure codes, and its cost under a plan depends only on (plan, ordered code list). Cache by that key (`functools.lru_cache` or a dict per request). Most simulated years repeat, so n = 5,000 x 4 people x 3 plans needs only a few hundred real `run_year()` calls. Target: under 2 seconds for the Lincoln household. If it is still too slow, lower the default to 2,000 and say so.
 - **Canonical order inside a simulated year:** preventive, then basic, then major, ties by code. This makes results deterministic and lets the cache hit more. (The Plan My Year sequencer handles ordering for real treatments; this feature only prices a typical year.)
 - **Poisson sampling** by Knuth's method with the seeded generator (rates are small).
 - **Sampling order and common random numbers:** draw every person's year once, in a fixed person order, then price the same years under each plan. Never reseed per plan.
@@ -120,7 +120,7 @@ No new backend dependency was added: the pure-Python version with cached pricing
 `POST /simulate` (bearer token)
 ```json
 {
-  "members": [{"id": "m-alex", "name": "AC", "age": 34, "care_level": "average",
+  "members": [{"id": "m-alex", "name": "Mary", "age": 34, "care_level": "average",
                "known_care": [{"code": "D2740", "count": 1}]}],
   "plan_ids": ["basic", "preferred", "premium"],
   "n": 5000, "seed": 42, "in_network": true

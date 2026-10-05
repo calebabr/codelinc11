@@ -30,7 +30,7 @@ const sfx = (n: number) => `${(0x3f9a1c + n).toString(16)}`
 function makeFamily(n: number) {
   const s = sfx(n)
   const members = ALL_MEMBERS.map((m) => ({ ...m, id: `${m.id}.${s}`, household_id: `hh-rivera.${s}` }))
-  families[`hh-rivera.${s}`] = { members, name: "Halog household" }
+  families[`hh-rivera.${s}`] = { members, name: "Lincoln household" }
   return `hh-rivera.${s}`
 }
 function householdOf(id: string, viewerId: string): FamilyHousehold {
@@ -163,7 +163,7 @@ describe("one-tap demo entry", () => {
     renderApp("/login")
     expect(await screen.findByText(/This is your own demo family\. Changes you make don't affect anyone else\./)).toBeInTheDocument()
     await user.click(await screen.findByRole("button", { name: /Try the demo/ }))
-    expect(await screen.findByTestId("household-label")).toHaveTextContent("Halog household")
+    expect(await screen.findByTestId("household-label")).toHaveTextContent("Lincoln household")
     expect(loginCalls()).toHaveLength(1)
     // The account holder is picked from the account data (role "primary"), with no household id yet.
     expect(loginCalls()[0].body).toEqual({ member_id: ACCOUNTS.find((a) => a.role === "primary")!.member_id, sandbox: true })
@@ -188,8 +188,8 @@ describe("one-tap demo entry", () => {
     expect(screen.queryByRole("button", { name: /Try the demo/ })).toBeNull()
     expect(calls.some((c) => c.url.includes(`/auth/demo-accounts?household_id=${encodeURIComponent(hid)}`))).toBe(true)
     // The account cards stay below, for the same family.
-    await user.click(await screen.findByRole("button", { name: /AC/ }))
-    await waitFor(() => expect(screen.getByTestId("active-member-label")).toHaveTextContent("AC"))
+    await user.click(await screen.findByRole("button", { name: /Mary/ }))
+    await waitFor(() => expect(screen.getByTestId("active-member-label")).toHaveTextContent("Mary"))
     expect(loginCalls()[0].body).toEqual({ member_id: "m-alex.3f9a1c", sandbox: true, household_id: hid })
     expect(Object.keys(families)).toHaveLength(1) // reused, not a new family
   })
@@ -208,11 +208,11 @@ describe("one-tap demo entry", () => {
   it("a refresh in the same tab reuses the family and the person", async () => {
     const user = userEvent.setup()
     const first = renderApp("/login")
-    await user.click(await screen.findByRole("button", { name: /AC/ }))
-    await waitFor(() => expect(screen.getByTestId("active-member-label")).toHaveTextContent("AC"))
+    await user.click(await screen.findByRole("button", { name: /Mary/ }))
+    await waitFor(() => expect(screen.getByTestId("active-member-label")).toHaveTextContent("Mary"))
     first.unmount()
     renderApp("/plans")
-    await waitFor(() => expect(screen.getByTestId("active-member-label")).toHaveTextContent("AC"))
+    await waitFor(() => expect(screen.getByTestId("active-member-label")).toHaveTextContent("Mary"))
     expect(Object.keys(families)).toHaveLength(1)
     expect(loginCalls().at(-1)!.body).toMatchObject({ household_id: "hh-rivera.3f9a1c" })
   })
@@ -251,7 +251,7 @@ describe("one-tap demo entry", () => {
     renderApp("/login")
     expect(await screen.findByRole("button", { name: /Try the demo/ })).toBeInTheDocument()
     expect(localStorage.getItem(FAMILY_KEY)).toBeNull()
-    expect(screen.getByRole("button", { name: /Marc Halog/ })).toBeInTheDocument() // template accounts again
+    expect(screen.getByRole("button", { name: /Abraham Lincoln/ })).toBeInTheDocument() // template accounts again
   })
 
   it("a family that expires while the page is open (410 on sign-in) is replaced by a new one as the same person", async () => {
@@ -260,10 +260,10 @@ describe("one-tap demo entry", () => {
     localStorage.setItem(FAMILY_KEY, JSON.stringify({ v: 1, household_id: hid, naming_pending: false }))
     const user = userEvent.setup()
     renderApp("/login")
-    const card = await screen.findByRole("button", { name: /AC/ })
+    const card = await screen.findByRole("button", { name: /Mary/ })
     gone.add(hid)
     await user.click(card)
-    await waitFor(() => expect(screen.getByTestId("active-member-label")).toHaveTextContent("AC"))
+    await waitFor(() => expect(screen.getByTestId("active-member-label")).toHaveTextContent("Mary"))
     const logins = loginCalls()
     expect(logins).toHaveLength(2)
     expect(logins[0].body).toMatchObject({ member_id: "m-alex.3f9a1c", household_id: hid })
@@ -273,8 +273,8 @@ describe("one-tap demo entry", () => {
 
   it("shows the pending label from the account's own status", async () => {
     renderApp("/login")
-    expect(await screen.findByRole("button", { name: /Hannah/ })).toHaveTextContent("Waiting for approval")
-    expect(screen.getByRole("button", { name: /AC/ })).not.toHaveTextContent("Waiting for approval")
+    expect(await screen.findByRole("button", { name: /Robert/ })).toHaveTextContent("Waiting for approval")
+    expect(screen.getByRole("button", { name: /Mary/ })).not.toHaveTextContent("Waiting for approval")
   })
 })
 
@@ -332,13 +332,13 @@ describe("Name your family", () => {
 
   it("shows four labelled fields prefilled by role and relationship, an optional surname and the helper line", async () => {
     await signInFresh()
-    expect(screen.getByLabelText("You")).toHaveValue("Marc Halog")
-    expect(screen.getByLabelText("Your spouse")).toHaveValue("AC")
-    expect(screen.getByLabelText("Your young child")).toHaveValue("Sophia")
-    expect(screen.getByLabelText("Your older child")).toHaveValue("Hannah")
+    expect(screen.getByLabelText("You")).toHaveValue("Abraham Lincoln")
+    expect(screen.getByLabelText("Your spouse")).toHaveValue("Mary")
+    expect(screen.getByLabelText("Your young child")).toHaveValue("Tad")
+    expect(screen.getByLabelText("Your older child")).toHaveValue("Robert")
     expect(screen.getByText("You manage their account.")).toBeInTheDocument()
     expect(screen.getByText("Too old to be a dependent, has their own account.")).toBeInTheDocument()
-    expect(screen.getByLabelText("Family surname (optional)")).toHaveValue("Halog")
+    expect(screen.getByLabelText("Family surname (optional)")).toHaveValue("Lincoln")
     expect(screen.getByText("Use made-up names, this is a demo.")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Skip" })).toBeInTheDocument()
   })
@@ -412,7 +412,7 @@ describe("Name your family", () => {
   it("is not offered when someone other than the account holder starts a new family", async () => {
     const user = userEvent.setup()
     renderApp("/login")
-    await user.click(await screen.findByRole("button", { name: /AC/ }))
+    await user.click(await screen.findByRole("button", { name: /Mary/ }))
     await screen.findByTestId("household-label")
     expect(screen.queryByRole("heading", { name: "Name your family" })).toBeNull()
     expect(stored().naming_pending).toBe(false)
@@ -426,7 +426,7 @@ describe("Name your family", () => {
     await user.click(within(screen.getByRole("navigation", { name: "Main" })).getByRole("link", { name: "Family" }))
     await user.click(await screen.findByRole("button", { name: "Rename family" }))
     expect(screen.getByRole("heading", { name: "Rename family" })).toBeInTheDocument()
-    expect(screen.getByLabelText("Your spouse")).toHaveValue("AC")
+    expect(screen.getByLabelText("Your spouse")).toHaveValue("Mary")
     await user.click(screen.getByRole("button", { name: "Cancel" }))
     expect(screen.getByRole("button", { name: "Rename family" })).toBeInTheDocument()
   })

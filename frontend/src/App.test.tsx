@@ -92,14 +92,14 @@ describe('member switching', () => {
   it('updates the header label when another member is chosen', async () => {
     const user = userEvent.setup()
     renderAt('/family')
-    expect(screen.getByTestId('active-member-label')).toHaveTextContent('Marc Halog')
+    expect(screen.getByTestId('active-member-label')).toHaveTextContent('Abraham Lincoln')
 
     await user.click(screen.getByRole('button', { name: /^viewing(?! as)/i }))
     await user.click(
-      within(screen.getByRole('group', { name: 'Choose a family member' })).getByRole('button', { name: /AC/ }),
+      within(screen.getByRole('group', { name: 'Choose a family member' })).getByRole('button', { name: /Mary/ }),
     )
 
-    expect(screen.getByTestId('active-member-label')).toHaveTextContent('AC')
+    expect(screen.getByTestId('active-member-label')).toHaveTextContent('Mary')
     expect(screen.queryByRole('group', { name: 'Choose a family member' })).not.toBeInTheDocument()
   })
 
@@ -108,8 +108,8 @@ describe('member switching', () => {
     const { container } = renderAt('/')
     await user.click(screen.getByRole('button', { name: /^viewing(?! as)/i }))
     const menu = within(screen.getByRole('group', { name: 'Choose a family member' }))
-    expect(menu.getByRole('button', { name: /Marc Halog/ })).toHaveAttribute('aria-pressed', 'true')
-    expect(menu.getByRole('button', { name: /Sophia/ })).toHaveAttribute('aria-pressed', 'false')
+    expect(menu.getByRole('button', { name: /Abraham Lincoln/ })).toHaveAttribute('aria-pressed', 'true')
+    expect(menu.getByRole('button', { name: /Tad/ })).toHaveAttribute('aria-pressed', 'false')
     expect(container.querySelector('select')).toBeNull()
   })
 })

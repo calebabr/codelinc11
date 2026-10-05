@@ -24,7 +24,7 @@ Decisions D1, D2, D6, F1 (demo sign-in on the real data model), and the kept fea
 - **Running at the same time:** T06 (owns `agent/`, `rag/`). Do not touch its files.
 
 ## Acceptance checks
-- Tests: the visibility rule (primary reads all; adult reads self only; wrong member gets 403), overview numbers for each demo member (AC: $400 left of $1,500 on Preferred in November), annual cost matches a hand calculation for one case, invites create a pending record.
+- Tests: the visibility rule (primary reads all; adult reads self only; wrong member gets 403), overview numbers for each demo member (Mary: $400 left of $1,500 on Preferred in November), annual cost matches a hand calculation for one case, invites create a pending record.
 - Golden numbers still pass. `pytest -q` and `ruff check .` pass.
 - OpenAPI (`/docs`) shows every endpoint.
 

@@ -10,7 +10,7 @@ const SUGG: Record<string, string[]> = {
   "m-alex": ["What will a crown cost me?"],
   "m-jordan": ["Who's covered on my plan?"],
 }
-const FOLLOW = ["Why is Basic cheapest?", "What if AC needs a crown?"]
+const FOLLOW = ["Why is Basic cheapest?", "What if Mary needs a crown?"]
 
 function sse(events: [string, object][]) {
   return events.map(([e, d]) => `event: ${e}\ndata: ${JSON.stringify(d)}\n\n`).join("")
@@ -35,7 +35,7 @@ beforeEach(() => {
       m = url.match(/\/members\/([\w-]+)\/assistant-context/)
       if (m)
         return json({
-          member_id: m[1], name: m[1] === "m-alex" ? "AC" : "Marc Halog", age: 40, relationship: "self",
+          member_id: m[1], name: m[1] === "m-alex" ? "Mary" : "Abraham Lincoln", age: 40, relationship: "self",
           status: "active", plan: "Preferred", plan_highlights: "", history: [], preferences: [], must_haves: [],
           chat_memory: [], shared_with_assistant: [],
         })
@@ -102,7 +102,7 @@ describe("follow-up questions", () => {
     render(<TestSessionProvider activeId="m-alex"><AssistantPage /></TestSessionProvider>)
     await askFirst(user)
     await screen.findByText("Ask next")
-    await user.click(screen.getByRole("button", { name: "Marc" }))
+    await user.click(screen.getByRole("button", { name: "Abraham" }))
     expect(await screen.findByRole("button", { name: "Who's covered on my plan?" })).toBeInTheDocument()
     expect(screen.queryByText("Ask next")).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Why is Basic cheapest?" })).not.toBeInTheDocument()

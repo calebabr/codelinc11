@@ -43,7 +43,7 @@ Caleb (git identity `calebabr`, `cjabrantes06@gmail.com`) is the product owner a
 - Renamed the product to **Molar Money** everywhere user-visible; README team list updated; README and docs refreshed (counts, live deployment, notifications, demo script).
 - Deployment guide `docs/DEPLOYMENT.md` rewritten for AWS plus Netlify; an unused AWS reference kit is in `infra/aws/` (CloudFormation, never run).
 
-**Verified numbers on `main` before the stop:** backend **523 tests pass**, ruff clean; frontend **205 tests pass**, typecheck and build clean. Golden numbers (never change them to make code pass): cleaning **$0**; crown fresh year **$625**; crown with $1,100 used **$800**; out of network fresh year **$925** (**$300** balance billing); plan-year scenario **$2,300 to $1,405, saves $895**. AC has $1,100 used and $400 left. Simulation, Halog household average care, seed 42: cheapest shares Basic 82 / Preferred 17 / Premium 1; with AC's crown 39 / 54 / 7 (Preferred wins).
+**Verified numbers on `main` before the stop:** backend **523 tests pass**, ruff clean; frontend **205 tests pass**, typecheck and build clean. Golden numbers (never change them to make code pass): cleaning **$0**; crown fresh year **$625**; crown with $1,100 used **$800**; out of network fresh year **$925** (**$300** balance billing); plan-year scenario **$2,300 to $1,405, saves $895**. Mary has $1,100 used and $400 left. Simulation, Lincoln household average care, seed 42: cheapest shares Basic 82 / Preferred 17 / Premium 1; with Mary's crown 39 / 54 / 7 (Preferred wins).
 
 ## 4. What is LEFT (in order)
 

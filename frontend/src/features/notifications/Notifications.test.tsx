@@ -36,10 +36,10 @@ function note(id: number, over: Partial<N> = {}): N {
 }
 
 const SCHEDULE = [
-  { id: 1, member_id: "m-jordan", member_name: "Marc", kind: "appointment", due_date: "2026-11-18", title: "Cleaning visit", note: null },
-  { id: 2, member_id: "m-jordan", member_name: "Marc", kind: "reminder", due_date: "2026-12-01", title: "Use your benefits", note: null },
-  { id: 3, member_id: "m-jordan", member_name: "Marc", kind: "reminder", due_date: "2026-12-10", title: "Third", note: null },
-  { id: 4, member_id: "m-jordan", member_name: "Marc", kind: "reminder", due_date: "2026-12-20", title: "Fourth hidden", note: null },
+  { id: 1, member_id: "m-jordan", member_name: "Abraham", kind: "appointment", due_date: "2026-11-18", title: "Cleaning visit", note: null },
+  { id: 2, member_id: "m-jordan", member_name: "Abraham", kind: "reminder", due_date: "2026-12-01", title: "Use your benefits", note: null },
+  { id: 3, member_id: "m-jordan", member_name: "Abraham", kind: "reminder", due_date: "2026-12-10", title: "Third", note: null },
+  { id: 4, member_id: "m-jordan", member_name: "Abraham", kind: "reminder", due_date: "2026-12-20", title: "Fourth hidden", note: null },
 ]
 
 let items: N[]
@@ -86,7 +86,7 @@ function mockApi() {
       }
       if (/\/notification-prefs$/.test(url)) {
         if (method === "PUT") {
-          if (putStatus === 422) return res(422, { detail: "Add an email address to Sophia's profile before turning on email." })
+          if (putStatus === 422) return res(422, { detail: "Add an email address to Tad's profile before turning on email." })
           if (putStatus === 403) return res(403, { detail: "the shared demo family can't be edited; start your own demo family" })
           prefs = { ...prefs, ...JSON.parse(String(init?.body)) }
         }
@@ -225,7 +225,7 @@ describe("Notification bell", () => {
     const user = userEvent.setup()
     renderBell("m-maya")
     await user.click(await screen.findByRole("button", { name: /Notifications/ }))
-    expect(await screen.findByRole("region", { name: "Sophia's notifications" })).toBeInTheDocument()
+    expect(await screen.findByRole("region", { name: "Tad's notifications" })).toBeInTheDocument()
     expect(calls.some((c) => c.url.includes("/members/m-maya/notifications"))).toBe(true)
     expect(calls.some((c) => c.url.includes("/members/m-maya/schedule"))).toBe(true)
   })
@@ -379,7 +379,7 @@ describe("Notifications page", () => {
       const user = userEvent.setup()
       renderPage()
       await user.click(await screen.findByRole("button", { name: /^Text message/ }))
-      expect(await screen.findByText("Add an email address to Sophia's profile before turning on email.")).toBeInTheDocument()
+      expect(await screen.findByText("Add an email address to Tad's profile before turning on email.")).toBeInTheDocument()
       expect(screen.getByRole("button", { name: /^Text message/ })).toHaveAttribute("aria-pressed", "false")
     })
 
@@ -414,7 +414,7 @@ describe("Notifications page", () => {
 
     it("has the #settings anchor", async () => {
       renderPage("m-jordan", "/notifications#settings")
-      const section = await screen.findByRole("heading", { name: /Settings for Marc/ })
+      const section = await screen.findByRole("heading", { name: /Settings for Abraham/ })
       expect(section.closest("section")).toHaveAttribute("id", "settings")
     })
   })

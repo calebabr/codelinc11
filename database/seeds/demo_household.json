@@ -6,18 +6,18 @@
     {"id": "premium", "name": "Premium", "monthly_cents": 6100, "annual_max_cents": 250000, "deductible_cents": 5000, "preventive_pct": 100, "basic_pct": 90, "major_pct": 70, "ortho_pct": 60}
   ],
   "households": [
-    {"id": "hh-rivera", "name": "Halog household", "plan_tier_id": "preferred"}
+    {"id": "hh-rivera", "name": "Lincoln household", "plan_tier_id": "preferred"}
   ],
   "members": [
-    {"id": "m-jordan", "household_id": "hh-rivera", "name": "Marc Halog", "relationship": "self", "age": 41, "full_time_student": 0, "status": "active", "role": "primary", "has_login": 1, "dob": "1985-03-14", "email": "marc.halog@example.test", "phone": "3345550142", "zip": "36830"},
-    {"id": "m-alex", "household_id": "hh-rivera", "name": "AC", "relationship": "spouse", "age": 39, "full_time_student": 0, "status": "active", "role": "adult", "has_login": 1, "dob": "1987-07-22", "email": "ac.halog@example.test", "phone": "3345550143", "zip": "36830"},
-    {"id": "m-maya", "household_id": "hh-rivera", "name": "Sophia", "relationship": "child", "age": 9, "full_time_student": 0, "status": "active", "role": "managed", "has_login": 0, "dob": "2017-05-09", "email": null, "phone": null, "zip": "36830"},
-    {"id": "m-noah", "household_id": "hh-rivera", "name": "Hannah", "relationship": "child", "age": 23, "full_time_student": 1, "status": "pending", "status_note": "Over age 19. Covered to age 26 only as a full-time student; enrollment verification needed.", "role": "adult", "has_login": 1, "dob": "2003-09-30", "email": "hannah.halog@example.test", "phone": "3345550147", "zip": "36849"}
+    {"id": "m-jordan", "household_id": "hh-rivera", "name": "Abraham Lincoln", "relationship": "self", "age": 41, "full_time_student": 0, "status": "active", "role": "primary", "has_login": 1, "dob": "1985-03-14", "email": "abraham.lincoln@example.test", "phone": "3345550142", "zip": "36830"},
+    {"id": "m-alex", "household_id": "hh-rivera", "name": "Mary", "relationship": "spouse", "age": 39, "full_time_student": 0, "status": "active", "role": "adult", "has_login": 1, "dob": "1987-07-22", "email": "mary.lincoln@example.test", "phone": "3345550143", "zip": "36830"},
+    {"id": "m-maya", "household_id": "hh-rivera", "name": "Tad", "relationship": "child", "age": 9, "full_time_student": 0, "status": "active", "role": "managed", "has_login": 0, "dob": "2017-05-09", "email": null, "phone": null, "zip": "36830"},
+    {"id": "m-noah", "household_id": "hh-rivera", "name": "Robert", "relationship": "child", "age": 23, "full_time_student": 1, "status": "pending", "status_note": "Over age 19. Covered to age 26 only as a full-time student; enrollment verification needed.", "role": "adult", "has_login": 1, "dob": "2003-09-30", "email": "robert.lincoln@example.test", "phone": "3345550147", "zip": "36849"}
   ],
   "accounts": [
-    {"id": "acct-jordan", "member_id": "m-jordan", "email": "marc.halog@example.test", "display_name": "Marc Halog"},
-    {"id": "acct-alex", "member_id": "m-alex", "email": "ac.halog@example.test", "display_name": "AC"},
-    {"id": "acct-noah", "member_id": "m-noah", "email": "hannah.halog@example.test", "display_name": "Hannah"}
+    {"id": "acct-jordan", "member_id": "m-jordan", "email": "abraham.lincoln@example.test", "display_name": "Abraham Lincoln"},
+    {"id": "acct-alex", "member_id": "m-alex", "email": "mary.lincoln@example.test", "display_name": "Mary"},
+    {"id": "acct-noah", "member_id": "m-noah", "email": "robert.lincoln@example.test", "display_name": "Robert"}
   ],
   "member_usage": [
     {"member_id": "m-jordan", "plan_year": 2026, "max_used_cents": 21000, "deductible_met_cents": 0, "visits": 1, "cleanings_used": 1},
@@ -36,7 +36,7 @@
     {"member_id": "m-jordan", "kind": "appointment", "due_date": "2026-11-18", "title": "Cleaning and exam", "note": "Second cleaning of the year."},
     {"member_id": "m-alex", "kind": "reminder", "due_date": "2026-12-15", "title": "Use your remaining benefits", "note": "$400 of the yearly maximum is left. It resets on Jan 1."},
     {"member_id": "m-maya", "kind": "appointment", "due_date": "2026-12-04", "title": "Checkup and cleaning", "note": null},
-    {"member_id": "m-noah", "kind": "reminder", "due_date": "2026-11-30", "title": "Send student enrollment proof", "note": "Needed to keep Hannah covered."}
+    {"member_id": "m-noah", "kind": "reminder", "due_date": "2026-11-30", "title": "Send student enrollment proof", "note": "Needed to keep Robert covered."}
   ],
   "member_context": [
     {"member_id": "m-jordan", "plan_highlights": "Preferred plan. Cleanings 100%, fillings 80%, crowns 50%. $50 deductible, $1,500 yearly maximum. Plan year starts Jan 1."},

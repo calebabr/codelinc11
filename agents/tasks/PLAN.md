@@ -55,7 +55,7 @@ CSS variables and matching Tailwind names: `--burgundy #650030`, `--burgundy-dar
 - **Member:** id, household id, name, relationship (`self` | `spouse` | `child`), age, full-time student, status (`active` | `pending`), role (`primary` | `adult` | `managed`), has login (adults 18 and over only), per-person plan-year **usage** (maximum used, deductible met, visits), eligibility by service.
 - **Per-person context:** plan highlights, history of procedures and what was paid, preferences and must-haves, chat memory. Stored in the database.
 - **Visibility:** the primary account holder can read **everything** for everyone in the household. An adult with a login reads their own data. A managed member (under 18) has no login.
-- **Halog household** (fictional, from Sai's data): Marc Halog (41, primary), AC (39, spouse), Sophia (9, managed), Hannah (23, child, pending student verification). Seeds must give **AC** a starting usage of $1,100 used and deductible met so Plan My Year reproduces $2,300 to $1,405 (saves $895). The demo clock is fixed to **November** so timing advice is stable.
+- **Lincoln household** (fictional, from Sai's data): Abraham Lincoln (41, primary), Mary (39, spouse), Tad (9, managed), Robert (23, child, pending student verification). Seeds must give **Mary** a starting usage of $1,100 used and deductible met so Plan My Year reproduces $2,300 to $1,405 (saves $895). The demo clock is fixed to **November** so timing advice is stable.
 
 ### Plans (T03 and T04)
 Preferred is the golden demo plan: deductible $50, maximum $1,500, preventive 100%, basic 80%, major 50%. Basic and Premium use the numbers in `docs/decisions/README.md` (D6).

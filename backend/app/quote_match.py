@@ -76,7 +76,7 @@ def match_provider(text: str, providers: list[dict[str, Any]], plan_id: str | No
 
 def _quote(practice: str, dentist: str, address: str, phone: str, items: list[str]) -> str:
     head = [practice, f"Dentist: {dentist}", f"Address: {address}", f"Phone: {phone}",
-            "Treatment plan for: AC (made-up sample)", ""]
+            "Treatment plan for: Mary (made-up sample)", ""]
     return "\n".join(head + items) + "\n"
 
 

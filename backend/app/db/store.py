@@ -120,7 +120,7 @@ class Store:
     def rename_household(self, viewer_id: str, household_id: str, household_name: str | None,
                          names: dict[str, str]) -> dict[str, Any]:
         """Primary only, sandbox households only: change display names. Ids, roles, ages, plan and
-        usage never change. `household_name` is a surname e.g. "Halog"."""
+        usage never change. `household_name` is a surname e.g. "Lincoln"."""
         with session(self.path) as conn:
             viewer = self._viewer(conn, viewer_id)
             if viewer["household_id"] != household_id or viewer["role"] != "primary":

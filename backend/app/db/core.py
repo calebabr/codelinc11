@@ -50,7 +50,12 @@ def connect(path: str | Path) -> sqlite3.Connection:
     key = str(path)
     if key not in _wal_done:
         # Set once per database: it persists in the file. In-memory databases ignore it.
-        conn.execute("PRAGMA journal_mode = WAL")
+        # Some disks (network or odd container mounts) cannot do WAL; the app must still start,
+        # so a failure here falls back to SQLite's normal journal instead of failing every request.
+        try:
+            conn.execute("PRAGMA journal_mode = WAL")
+        except sqlite3.Error:
+            pass
         if key != ":memory:":
             _wal_done.add(key)
     conn.execute("PRAGMA synchronous = NORMAL")

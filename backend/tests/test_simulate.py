@@ -21,11 +21,11 @@ from app.models import SimulateKnownCare, SimulateMember, SimulateRequest, Usage
 
 def rivera(alex_known=None, level="average"):
     return [
-        SimulateMember(id="m-jordan", name="Marc Halog", age=41, care_level=level),
-        SimulateMember(id="m-alex", name="AC", age=39, care_level=level,
+        SimulateMember(id="m-jordan", name="Abraham Lincoln", age=41, care_level=level),
+        SimulateMember(id="m-alex", name="Mary", age=39, care_level=level,
                        known_care=alex_known or []),
-        SimulateMember(id="m-maya", name="Sophia", age=9, care_level=level),
-        SimulateMember(id="m-noah", name="Hannah", age=23, care_level=level),
+        SimulateMember(id="m-maya", name="Tad", age=9, care_level=level),
+        SimulateMember(id="m-noah", name="Robert", age=23, care_level=level),
     ]
 
 

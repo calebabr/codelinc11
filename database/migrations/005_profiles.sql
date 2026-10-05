@@ -38,13 +38,13 @@ CREATE INDEX idx_members_household ON members(household_id);
 
 -- Existing databases: give the four demo people their synthetic profile (sandbox copies end in
 -- ".<sid>"). New databases get the same values from the seed file.
-UPDATE members SET dob = '1985-03-14', email = 'marc.halog@example.test', phone = '3345550142', zip = '36830'
+UPDATE members SET dob = '1985-03-14', email = 'abraham.lincoln@example.test', phone = '3345550142', zip = '36830'
  WHERE id = 'm-jordan' OR id LIKE 'm-jordan.%';
-UPDATE members SET dob = '1987-07-22', email = 'ac.halog@example.test', phone = '3345550143', zip = '36830'
+UPDATE members SET dob = '1987-07-22', email = 'mary.lincoln@example.test', phone = '3345550143', zip = '36830'
  WHERE id = 'm-alex' OR id LIKE 'm-alex.%';
 UPDATE members SET dob = '2017-05-09', email = NULL, phone = NULL, zip = '36830'
  WHERE id = 'm-maya' OR id LIKE 'm-maya.%';
-UPDATE members SET dob = '2003-09-30', email = 'hannah.halog@example.test', phone = '3345550147', zip = '36849'
+UPDATE members SET dob = '2003-09-30', email = 'robert.lincoln@example.test', phone = '3345550147', zip = '36849'
  WHERE id = 'm-noah' OR id LIKE 'm-noah.%';
 
 PRAGMA foreign_keys = ON;

@@ -33,8 +33,8 @@ These run with the normal backend and frontend commands (no extra setup, no serv
 
 | File | What it proves |
 |---|---|
-| `backend/tests/test_contract_api.py` | Every documented endpoint is in `/openapi.json`; response shapes for sign-in, household, overview, schedule, estimate, Plan My Year and annual cost; primary sees all, an adult only themself, Sophia cannot sign in, bad tokens get 401; golden numbers G1-G6 and S2 ($2,300 to $1,405, saves $895) through HTTP |
-| `backend/tests/test_contract_demo.py` | Demo flow: sign in as AC, $400 left, Plan My Year golden numbers, assistant (scripted fake model) says only tool-sourced dollar amounts; "model unavailable" path invents no numbers |
+| `backend/tests/test_contract_api.py` | Every documented endpoint is in `/openapi.json`; response shapes for sign-in, household, overview, schedule, estimate, Plan My Year and annual cost; primary sees all, an adult only themself, Tad cannot sign in, bad tokens get 401; golden numbers G1-G6 and S2 ($2,300 to $1,405, saves $895) through HTTP |
+| `backend/tests/test_contract_demo.py` | Demo flow: sign in as Mary, $400 left, Plan My Year golden numbers, assistant (scripted fake model) says only tool-sourced dollar amounts; "model unavailable" path invents no numbers |
 | `frontend/src/routes.smoke.test.tsx` | The six routes render for a signed-in session with a mocked API and write nothing to `console.error` or `console.warn` |
 
 ## Other tests that guard the demo (run 2026-10-03)

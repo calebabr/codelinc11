@@ -119,9 +119,9 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks())
 
 describe("Home page", () => {
-  it("shows AC's numbers, the reminder and upcoming events", async () => {
+  it("shows Mary's numbers, the reminder and upcoming events", async () => {
     const { container } = renderPage("m-alex")
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Welcome back, AC")
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Welcome back, Mary")
     expect(await within(await screen.findByTestId("card-max")).findByText("$400")).toBeInTheDocument()
     expect(screen.getByTestId("card-max")).toHaveTextContent("left of $1,500")
     expect(screen.getByTestId("card-deductible")).toHaveTextContent("Met")
@@ -140,7 +140,7 @@ describe("Home page", () => {
     expect(calls.some((c) => c.url.endsWith("/auth/demo-login"))).toBe(false)
   })
 
-  it("shows different numbers for Marc and no reminder", async () => {
+  it("shows different numbers for Abraham and no reminder", async () => {
     renderPage("m-jordan")
     expect(await within(await screen.findByTestId("card-max")).findByText("$1,300")).toBeInTheDocument()
     expect(screen.getByTestId("card-deductible")).toHaveTextContent("$50")
@@ -220,7 +220,7 @@ describe("Home page", () => {
   it("shows an empty state when nothing is scheduled", async () => {
     mockApi(false, true)
     renderPage()
-    expect(await screen.findByText(/Nothing is scheduled for AC yet/)).toBeInTheDocument()
+    expect(await screen.findByText(/Nothing is scheduled for Mary yet/)).toBeInTheDocument()
   })
 
   it("shows an error with retry when the server is down", async () => {

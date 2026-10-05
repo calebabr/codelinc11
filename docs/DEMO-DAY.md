@@ -4,28 +4,28 @@ One page for the presenter. The long script with every click is in [DEMO.md](DEM
 
 ## 30 minutes before: checklist
 - [ ] **Backend:** open `https://<your Netlify site>/api/health`. It should show `"chat_mode":"anthropic"`. (Direct address: `http://3-149-89-171.sslip.io:8000/health`.)
-- [ ] **Live site:** open the Netlify site, tap **Try the demo**. You land on Home as **Marc Halog** in a new demo family.
-- [ ] **Reports:** open **Reports**. Marc has one unpaid explanation of benefits (EOB) for a filling. It should show **$90 owed**.
+- [ ] **Live site:** open the Netlify site, tap **Try the demo**. You land on Home as **Abraham Lincoln** in a new demo family.
+- [ ] **Reports:** open **Reports**. Abraham has one unpaid explanation of benefits (EOB) for a filling. It should show **$90 owed**.
 - [ ] **Find Providers:** open **Find Providers** and enter ZIP **36830**. You should see fictional dentists with distances, in and out of network.
-- [ ] **Estimate:** **Costs**, pick **Crown, porcelain/ceramic**. Marc should show **$625**.
+- [ ] **Estimate:** **Costs**, pick **Crown, porcelain/ceramic**. Abraham should show **$625**.
 - [ ] **Assistant:** ask "How much would a crown cost me?" and wait for the full answer.
 - [ ] **Phone check:** on a phone using **cellular** (not the venue Wi-Fi), open `/join` on the site, scan the QR code, tap **Try the demo**.
 - [ ] Press **Reset demo data** on Home so your numbers are back to the seed.
 - [ ] Screen recording of the demo path saved on the laptop (backup).
 
 ## The script, in order
-Move between pages with the nav tabs, not the browser reload button (a reload puts **Viewing** back on Marc).
+Move between pages with the nav tabs, not the browser reload button (a reload puts **Viewing** back on Abraham).
 
 | # | Do this | Say out loud |
 |---|---|---|
 | 1 | `/welcome`, tap **Try the demo** | "Everyone gets their own demo family. All people and dentists are made up." |
-| 2 | **Home** as Marc Halog | Left this year, deductible, cleanings used, the bell |
-| 3 | **Family** | Marc, AC, Sophia (9, managed by Marc), Hannah (23, waiting for student verification) |
+| 2 | **Home** as Abraham Lincoln | Left this year, deductible, cleanings used, the bell |
+| 3 | **Family** | Abraham, Mary, Tad (9, managed by Abraham), Robert (23, waiting for student verification) |
 | 4 | **Costs**, cleaning | **You pay $0** |
 | 5 | **Costs**, crown, in network (fresh year) | **You pay $625** |
-| 6 | Switch **Viewing** to AC, **Costs**, crown | AC has $1,100 used: **you pay $800** (waiting for January saves $175) |
+| 6 | Switch **Viewing** to Mary, **Costs**, crown | Mary has $1,100 used: **you pay $800** (waiting for January saves $175) |
 | 7 | Toggle **Out of network** | **You pay $925**, which includes **$300 balance billing** |
-| 8 | **Plan My Year**, **Try the demo case** as AC | **$2,300 now, $1,405 with the best order, you save $895.** The urgent root canal stays this year |
+| 8 | **Plan My Year**, **Try the demo case** as Mary | **$2,300 now, $1,405 with the best order, you save $895.** The urgent root canal stays this year |
 | 9 | **Plans**, **Which plan fits us?** (average care for everyone, in network, seed 42) | Whole household: **Basic cheapest in 82% of years, Preferred 17%, Premium 1%.** "These odds are synthetic placeholders." |
 | 10 | **Assistant** | "The engine does the math. The AI only explains it." |
 | 11 | Optional: **Find Providers** (ZIP 36830), **Reports** ($90 owed), **Reports** ask page, the bell | Quote to dentist matching is on **Costs**. Email and text are previews only |

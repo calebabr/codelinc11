@@ -20,7 +20,7 @@ The engine, `backend/app/models.py`, other `backend/app/` code (T03, T05, T06), 
 - Start with a single local file database (SQLite) behind a small interface. Money in integer cents.
 - Tables (names are yours to refine): households, members, accounts (demo logins), invites, plan tiers, member usage (per member per plan year), visits and claims, appointments and reminders, member context (plan highlights, preferences and must-haves, chat memory).
 - Access-layer functions the others will call (agree names in your report): get household, get member, list demo accounts, get member usage, record a visit (updates usage), get/append member context, list upcoming schedule, create invite.
-- **Halog household and seeds:** see "Data" in agents/tasks/PLAN.md. Marc, AC, Sophia, Hannah. **AC starts with $1,100 used and deductible met** (so Plan My Year gives $2,300 to $1,405, saving $895). Hannah is 23 and pending student verification. Adults 18+ (Marc, AC, Hannah) can have a demo login; Sophia cannot.
+- **Lincoln household and seeds:** see "Data" in agents/tasks/PLAN.md. Abraham, Mary, Tad, Robert. **Mary starts with $1,100 used and deductible met** (so Plan My Year gives $2,300 to $1,405, saving $895). Robert is 23 and pending student verification. Adults 18+ (Abraham, Mary, Robert) can have a demo login; Tad cannot.
 - Synthetic data only. Context for each person is separate; no query may return one member's context under another member's id.
 - **Running at the same time:** T01, T02, T03.
 

@@ -29,7 +29,7 @@ Hard deadline: **hackathon demo, 2026-10-04 10:00 AM.** Plan: [../agents/tasks/P
 ## Completed
 - [x] Sprint 2 stories 6 to 8: Find Providers (`/providers`), quote to dentist matching on Costs, Reports (`/reports`) and the report questions page (`/reports/ask`) with synthetic claims, EOBs and copays. **Owner: backend, frontend and ai agents**, completed 2026-10-04
   - Outcome: backend 633 tests, frontend 240 tests. Report uploads accept only the sample documents. Text-to-speech was dropped and is not part of the demo (voice input with the mic stays)
-- [x] Demo family renamed: Marc Halog (primary), AC, Sophia (9), Hannah (23, pending student verification), Halog household. **Owner: orchestrator and agents**, completed 2026-10-04
+- [x] Demo family renamed: Abraham Lincoln (primary), Mary, Tad (9), Robert (23, pending student verification), Lincoln household. **Owner: orchestrator and agents**, completed 2026-10-04
 - [x] Demo day runbook [DEMO-DAY.md](DEMO-DAY.md) and the backend update steps in [DEPLOYMENT.md](DEPLOYMENT.md). **Owner: docs agent**, completed 2026-10-04
 - [x] Sprint 2 story 1: `$NaN` on "Log a visit" fixed. Story 2: bigger chat box. Story 3: pytest suite foundation (markers, 14 regression tests, coverage 96%). **Owner: frontend and tests agents**, completed 2026-10-04
 - [x] Sprint 2 story 4: profiles and family members (date of birth, email, text number, ZIP, notes; add and remove members, demo family only), API and Family page screens. **Owner: backend and frontend agents**, completed 2026-10-04
@@ -41,7 +41,7 @@ Hard deadline: **hackathon demo, 2026-10-04 10:00 AM.** Plan: [../agents/tasks/P
 - [x] T37 Rate limiting (`backend/app/ratelimit.py`): per-household chat, global daily chat cap, sign-in per IP, compute, upload, reset; 429 with `Retry-After`. **Owner: backend agent**, completed 2026-10-03
   - Outcome: protects the Anthropic key. In memory, per process
 - [x] T27 to T29 F7 Monte Carlo ("Which plan fits us?"): `engine/simulate.py`, `POST /simulate`, assistant tool `compare_plans`, Plans page section, docs. **Owner: backend, frontend and docs agents**, completed 2026-10-03
-  - Outcome: Halog household, average care: Basic 82% / Preferred 17% / Premium 1% cheapest; with AC's crown, Preferred 54%
+  - Outcome: Lincoln household, average care: Basic 82% / Preferred 17% / Premium 1% cheapest; with Mary's crown, Preferred 54%
 - [x] T31 Plan-comparison follow-ups: "Ask next" chips, plan terms in the tool result, percentage number guard. **Owner: AI agent**, completed 2026-10-03
 - [x] T34 and T35 Saved plan comparisons (`/members/{id}/saved-simulations`, the server computes the summary) and "Save to Plan My Year" / "Saved plan comparisons". **Owner: backend and frontend agents**, completed 2026-10-03
 - [x] Assistant chips "Summarize the plan simulations" and "How are the simulations calculated?" (up to 7 chips); "Questions to ask your dentist" is a plain list. Completed 2026-10-03

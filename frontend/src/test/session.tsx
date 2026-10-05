@@ -20,13 +20,13 @@ export const TIER: PlanTierSummary = {
 
 const base = { household_id: "hh-rivera", status_note: null }
 export const MEMBERS: Record<"jordan" | "alex" | "maya" | "noah", FamilyMember> = {
-  jordan: { ...base, id: "m-jordan", name: "Marc Halog", relationship: "self", age: 41, role: "primary", has_login: true, status: "active" },
-  alex: { ...base, id: "m-alex", name: "AC", relationship: "spouse", age: 39, role: "adult", has_login: true, status: "active" },
-  maya: { ...base, id: "m-maya", name: "Sophia", relationship: "child", age: 9, role: "managed", has_login: false, status: "active" },
+  jordan: { ...base, id: "m-jordan", name: "Abraham Lincoln", relationship: "self", age: 41, role: "primary", has_login: true, status: "active" },
+  alex: { ...base, id: "m-alex", name: "Mary", relationship: "spouse", age: 39, role: "adult", has_login: true, status: "active" },
+  maya: { ...base, id: "m-maya", name: "Tad", relationship: "child", age: 9, role: "managed", has_login: false, status: "active" },
   noah: {
     ...base,
     id: "m-noah",
-    name: "Hannah",
+    name: "Robert",
     relationship: "child",
     age: 23,
     role: "adult",
@@ -38,9 +38,9 @@ export const MEMBERS: Record<"jordan" | "alex" | "maya" | "noah", FamilyMember> 
 export const ALL_MEMBERS: FamilyMember[] = [MEMBERS.jordan, MEMBERS.alex, MEMBERS.maya, MEMBERS.noah]
 
 export const ACCOUNTS: DemoAccount[] = [
-  { account_id: "acct-jordan", email: "marc.halog@example.test", display_name: "Marc Halog", member_id: "m-jordan", role: "primary", household_id: "hh-rivera" },
-  { account_id: "acct-alex", email: "ac.halog@example.test", display_name: "AC", member_id: "m-alex", role: "adult", household_id: "hh-rivera" },
-  { account_id: "acct-noah", email: "hannah.halog@example.test", display_name: "Hannah", member_id: "m-noah", role: "adult", household_id: "hh-rivera", status: "pending" },
+  { account_id: "acct-jordan", email: "abraham.lincoln@example.test", display_name: "Abraham Lincoln", member_id: "m-jordan", role: "primary", household_id: "hh-rivera" },
+  { account_id: "acct-alex", email: "mary.lincoln@example.test", display_name: "Mary", member_id: "m-alex", role: "adult", household_id: "hh-rivera" },
+  { account_id: "acct-noah", email: "robert.lincoln@example.test", display_name: "Robert", member_id: "m-noah", role: "adult", household_id: "hh-rivera", status: "pending" },
 ]
 
 /** What the backend returns for this person: the primary sees everyone, others only themselves. */
@@ -48,7 +48,7 @@ export function householdFor(memberId: string, all: FamilyMember[] = ALL_MEMBERS
   const me = all.find((m) => m.id === memberId)!
   return {
     id: "hh-rivera",
-    name: "Halog household",
+    name: "Lincoln household",
     plan_tier: TIER,
     members: me.role === "primary" ? all : [me],
   }
@@ -67,7 +67,7 @@ export function TestSessionProvider({
   signedInId?: string
   /** Who is shown first. Defaults to the signed-in person. */
   activeId?: string
-  /** Replace the household members (for example to give Hannah no login). */
+  /** Replace the household members (for example to give Robert no login). */
   members?: FamilyMember[]
   /** Show the "Name your family" card (first sign-in in a new demo family). */
   namingPending?: boolean

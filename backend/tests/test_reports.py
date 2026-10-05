@@ -125,11 +125,11 @@ def test_alex_seeded_reports_match_his_visits_and_the_golden_usage(client):
     assert body["count"] == 5
     assert [i["kind"] for i in body["items"]] == ["copay", "claim", "eob", "claim", "eob"]
     assert [i["service_date"] for i in body["items"]] == sorted(i["service_date"] for i in body["items"])
-    # AC's visit history: a cleaning, a filling and an extraction (database/seeds/demo_household.json).
+    # Mary's visit history: a cleaning, a filling and an extraction (database/seeds/demo_household.json).
     assert [i["service_date"] for i in body["items"] if i["kind"] != "claim"] == ["2026-02-20", "2026-06-03", "2026-08-12"]
     t = body["totals"]
     assert t == {"billed": 1410.0, "allowed": 1410.0, "plan_paid": 1100.0, "you_paid": 310.0, "you_owe_open": 0.0}
-    assert t["plan_paid"] == 1100.0                      # equals AC's $1,100 of yearly maximum used (S2)
+    assert t["plan_paid"] == 1100.0                      # equals Mary's $1,100 of yearly maximum used (S2)
     filling = next(i for i in body["items"] if i["kind"] == "eob" and i["code"] == "D2392")
     d = filling["data"]
     assert (d["billed"], d["allowed"], d["deductible_applied"], d["plan_paid"], d["you_owe"]) == (340, 340, 50, 220, 120)
@@ -191,9 +191,9 @@ def test_visibility_rules(client):
     assert client.get(f"/members/{ids['maya']}/reports", headers=heads["jordan"]).status_code == 200
     assert client.get("/members/m-nobody/reports", headers=heads["jordan"]).status_code == 404
     assert client.get(f"/members/{ids['alex']}/reports").status_code == 401
-    # Sophia is a managed member: she has no login at all.
+    # Tad is a managed member: he has no login at all.
     assert client.post("/auth/demo-login", json={"member_id": "m-maya"}).status_code != 200
-    # AC cannot write to Marc's reports either.
+    # Mary cannot write to Abraham's reports either.
     r = client.post(f"/members/{ids['jordan']}/reports/samples/sample-paid-claim", headers=heads["alex"])
     assert r.status_code == 403
     assert upload(client, ids["jordan"], heads["alex"], doc()).status_code == 403
@@ -451,7 +451,7 @@ def test_expired_sandbox_and_removed_member_delete_their_reports(client, store):
     from app.db import sandbox
     hid, ids, heads = family(client)
     assert rows(store, "SELECT COUNT(*) AS n FROM report_items WHERE member_id LIKE '%.%'")[0]["n"] == 6
-    # Removing a person removes their reports too (Sophia has none; use AC).
+    # Removing a person removes their reports too (Tad has none; use Mary).
     r = client.delete(f"/households/{hid}/members/{ids['alex']}", headers=heads["jordan"])
     assert r.status_code == 200, r.text
     assert rows(store, "SELECT COUNT(*) AS n FROM report_items WHERE member_id = ?", (ids["alex"],))[0]["n"] == 0
